@@ -1,0 +1,105 @@
+@import url('https://fonts.bunny.net/css?family=inter:100,200,300,400,500,600,700,800,900');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    body {
+        @apply bg-background text-navy antialiased;
+    }
+
+    ::selection {
+        @apply bg-primary-soft text-primary-dark;
+    }
+}
+
+@layer components {
+    .btn {
+        @apply inline-flex items-center justify-center px-4 py-2.5 border border-transparent rounded-xl font-semibold text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.99];
+    }
+
+    .btn-primary {
+        @apply btn bg-primary hover:bg-primary-dark text-white shadow-soft hover:shadow-soft-md;
+    }
+
+    .btn-secondary {
+        @apply btn bg-surface hover:bg-primary-soft text-navy border-border hover:border-primary/40 focus:ring-primary;
+    }
+
+    .btn-danger {
+        @apply btn bg-accent hover:bg-accent-dark text-white shadow-soft focus:ring-accent;
+    }
+
+    .card {
+        @apply bg-surface border border-border rounded-2xl shadow-card;
+    }
+
+    .input {
+        @apply block w-full rounded-xl border-border bg-surface text-navy placeholder-muted focus:border-primary focus:ring-primary/20 focus:ring-2 sm:text-sm transition-colors;
+    }
+
+    .label {
+        @apply block text-sm font-semibold text-navy mb-1.5;
+    }
+
+    .badge {
+        @apply inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border;
+    }
+
+    .stat-card {
+        @apply bg-surface border border-border rounded-2xl shadow-card hover:shadow-soft-md hover:-translate-y-0.5 transition-all duration-200 p-6 flex flex-col justify-between;
+    }
+
+    .stat-card-title {
+        @apply text-xs font-semibold uppercase tracking-wider text-muted;
+    }
+
+    .stat-card-value {
+        @apply text-2xl lg:text-3xl font-bold text-navy tracking-tight;
+    }
+
+    .stat-card-subtitle {
+        @apply text-xs text-muted mt-1 flex items-center gap-1;
+    }
+
+    .icon-wrapper {
+        @apply w-10 h-10 rounded-xl flex items-center justify-center;
+    }
+
+    .icon-wrapper-primary {
+        @apply icon-wrapper bg-primary-soft text-primary-dark;
+    }
+
+    .icon-wrapper-accent {
+        @apply icon-wrapper bg-accent-soft text-accent;
+    }
+
+    .table-shell {
+        @apply overflow-hidden rounded-2xl border border-border bg-surface shadow-card;
+    }
+
+    .table-shell table {
+        @apply min-w-full divide-y divide-border;
+    }
+
+    .table-shell thead {
+        @apply bg-background;
+    }
+
+    .table-shell th {
+        @apply px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted;
+    }
+
+    .table-shell td {
+        @apply px-5 py-4 text-sm text-navy;
+    }
+
+    .table-shell tbody tr {
+        @apply border-t border-border transition-colors hover:bg-primary-soft/40;
+    }
+}
+
+[x-cloak] {
+    display: none !important;
+}
