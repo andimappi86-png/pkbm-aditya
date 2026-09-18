@@ -181,6 +181,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Operator Routes
     Route::prefix('operator')->name('operator.')->group(function () {
         Route::get('/dashboard', [OperatorController::class, 'dashboard'])->name('dashboard')->middleware('can:dashboard.view');
+        Route::get('/profile', [OperatorController::class, 'profile'])->name('profile')->middleware('can:dashboard.view');
+        Route::put('/profile', [OperatorController::class, 'updateProfile'])->name('profile.update')->middleware('can:dashboard.view');
         Route::get('/security/aes-gcm', [OperatorController::class, 'security'])->name('security')->middleware('can:dashboard.view');
         Route::post('/security/encrypt', [OperatorController::class, 'encryptData'])->name('encrypt')->middleware('can:dashboard.view');
         Route::post('/security/decrypt', [OperatorController::class, 'decryptData'])->name('decrypt')->middleware('can:dashboard.view');

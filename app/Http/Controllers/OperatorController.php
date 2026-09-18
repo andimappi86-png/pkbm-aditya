@@ -68,6 +68,35 @@ class OperatorController extends Controller
         ])->onlyInput('email');
     }
 
+    public function profile()
+    {
+        return view('operator.profile');
+    }
+
+    public function updateProfile(Request $request)
+    {
+        $user = Auth::user();
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users,email,'.$user->id,
+            'phone' => 'nullable|string|max:20',
+            'current_password' => 'nullable|required_with:password|current_password',
+            'password' => 'nullable|min:8|confirmed',
+        ]);
+
+        $user->name = $request->name;
+        $user->email = $request->email;
+        $user->phone = $request->phone;
+
+        if ($request->filled('password')) {
+            $user->password = IlluminateSupportFacadesHash::make($request->password);
+        }
+
+        $user->save();
+
+        return back()->with('status', 'Profil berhasil diperbarui.');
+    }
+
     public function dashboard()
     {
         $stats = [

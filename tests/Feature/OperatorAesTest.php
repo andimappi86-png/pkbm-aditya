@@ -75,6 +75,15 @@ class OperatorAesTest extends TestCase
         $response->assertViewIs('operator.security');
     }
 
+    public function test_profile_page_renders()
+    {
+        $operator = $this->getOperator();
+        $response = $this->actingAs($operator)->get(route('operator.profile'));
+
+        $response->assertStatus(200);
+        $response->assertViewIs('operator.profile');
+    }
+
     public function test_aes_encrypt_decrypt()
     {
         $service = app(AesGcmService::class);
