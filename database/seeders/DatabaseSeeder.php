@@ -63,6 +63,7 @@ class DatabaseSeeder extends Seeder
             ForumSeeder::class,
             PpdbSeeder::class,
             DocumentLetterSeeder::class,
+            AnnouncementSeeder::class,
         ]);
     }
 }

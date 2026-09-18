@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\AssignmentController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\ClassroomAssignmentController;
@@ -166,6 +167,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::put('/{letter}', [LetterController::class, 'update'])->name('update')->middleware('can:letters.manage');
         Route::delete('/{letter}', [LetterController::class, 'destroy'])->name('destroy')->middleware('can:letters.manage');
     });
+
+    // Announcements
+    Route::resource('pengumuman', AnnouncementController::class)->parameters([
+        'pengumuman' => 'announcement',
+    ])->names('announcements');
 
     // Notifications
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
