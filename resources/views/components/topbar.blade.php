@@ -22,13 +22,6 @@
 
         <!-- Right section -->
         <div class="flex items-center gap-3">
-            <!-- Notifications -->
-            <button class="relative p-2 rounded-lg text-muted hover:text-primary-dark hover:bg-primary-soft transition-colors focus:outline-none focus:ring-2 focus:ring-primary/20">
-                <x-icon name="bell" />
-                <!-- Notification badge -->
-                <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-accent rounded-full"></span>
-            </button>
-
             <!-- User dropdown -->
             <div class="relative" x-data="{ open: false }">
                 <button 

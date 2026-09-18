@@ -5,15 +5,19 @@ use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\ClassroomAssignmentController;
 use App\Http\Controllers\ClassroomController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\QuestionController;
-use App\Http\Controllers\QuizAttemptController;
-use App\Http\Controllers\QuizController;
+use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\ForumCommentController;
 use App\Http\Controllers\ForumController;
 use App\Http\Controllers\GradeController;
+use App\Http\Controllers\LetterController;
 use App\Http\Controllers\MaterialController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PenugasanMengajarController;
+use App\Http\Controllers\PpdbController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\QuestionController;
+use App\Http\Controllers\QuizAttemptController;
+use App\Http\Controllers\QuizController;
 use App\Http\Controllers\RaporController;
 use App\Http\Controllers\RekapAkademikController;
 use App\Http\Controllers\ScheduleController;
@@ -117,6 +121,56 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('mata-pelajaran', SubjectController::class)->parameters([
         'mata-pelajaran' => 'subject',
     ]);
+
+    // PPDB Routes
+    Route::prefix('ppdb')->name('ppdb.')->group(function () {
+        Route::get('/', [PpdbController::class, 'index'])->name('index');
+        Route::get('/daftar', [PpdbController::class, 'create'])->name('create');
+        Route::post('/', [PpdbController::class, 'store'])->name('store');
+        Route::get('/{ppdb}', [PpdbController::class, 'show'])->name('show');
+        Route::get('/{ppdb}/bukti', [PpdbController::class, 'bukti'])->name('bukti');
+
+        // Verification routes (Kepala PKBM)
+        Route::middleware('can:admissions.manage')->group(function () {
+            Route::get('/{ppdb}/edit', [PpdbController::class, 'edit'])->name('edit');
+            Route::put('/{ppdb}', [PpdbController::class, 'update'])->name('update');
+            Route::post('/{ppdb}/verify', [PpdbController::class, 'verify'])->name('verify');
+        });
+    });
+
+    // Document Routes
+    Route::prefix('documents')->name('documents.')->group(function () {
+        Route::get('/', [DocumentController::class, 'index'])->name('index');
+        Route::get('/create', [DocumentController::class, 'create'])->name('create')->middleware('can:documents.upload');
+        Route::post('/', [DocumentController::class, 'store'])->name('store')->middleware('can:documents.upload');
+        Route::get('/{document}', [DocumentController::class, 'show'])->name('show')->middleware('can:documents.view');
+        Route::get('/{document}/download', [DocumentController::class, 'download'])->name('download')->middleware('can:documents.download');
+        Route::delete('/{document}', [DocumentController::class, 'destroy'])->name('destroy')->middleware('can:documents.delete');
+
+        // Verification routes (Kepala PKBM)
+        Route::middleware('can:documents.verify')->group(function () {
+            Route::get('/{document}/edit', [DocumentController::class, 'edit'])->name('edit');
+            Route::put('/{document}', [DocumentController::class, 'update'])->name('update');
+            Route::post('/{document}/verify', [DocumentController::class, 'verify'])->name('verify');
+        });
+    });
+
+    // Letter Routes
+    Route::prefix('letters')->name('letters.')->group(function () {
+        Route::get('/', [LetterController::class, 'index'])->name('index');
+        Route::get('/create', [LetterController::class, 'create'])->name('create')->middleware('can:letters.create');
+        Route::post('/', [LetterController::class, 'store'])->name('store')->middleware('can:letters.create');
+        Route::get('/{letter}', [LetterController::class, 'show'])->name('show')->middleware('can:letters.view');
+        Route::get('/{letter}/print', [LetterController::class, 'print'])->name('print')->middleware('can:letters.print');
+        Route::get('/{letter}/edit', [LetterController::class, 'edit'])->name('edit')->middleware('can:letters.manage');
+        Route::put('/{letter}', [LetterController::class, 'update'])->name('update')->middleware('can:letters.manage');
+        Route::delete('/{letter}', [LetterController::class, 'destroy'])->name('destroy')->middleware('can:letters.manage');
+    });
+
+    // Notifications
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllRead');
+    Route::post('/notifications/{notification}/mark-read', [NotificationController::class, 'markAsRead'])->name('notifications.markRead');
 
     // Classroom Assignments
     Route::middleware(['auth', 'verified'])->group(function () {

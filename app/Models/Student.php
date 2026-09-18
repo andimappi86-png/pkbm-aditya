@@ -88,4 +88,14 @@ class Student extends Model
     {
         return $this->hasMany(Submission::class);
     }
+
+    public function documents(): HasMany
+    {
+        return $this->hasMany(Document::class);
+    }
+
+    public function letters(): HasMany
+    {
+        return $this->hasMany(Letter::class);
+    }
 }

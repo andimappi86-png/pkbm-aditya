@@ -74,17 +74,17 @@
             />
         </div>
 
-        <!-- Info Phase 3 -->
+        <!-- Info Monitoring -->
         <div class="card p-6">
             <div class="flex items-start gap-4">
-                <div class="w-12 h-12 rounded-xl bg-background text-muted flex items-center justify-center flex-shrink-0">
-                    <x-icon name="info-circle" class="w-6 h-6" />
+                <div class="w-12 h-12 rounded-xl bg-primary-soft text-primary-dark flex items-center justify-center flex-shrink-0">
+                    <x-icon name="chart-bar" class="w-6 h-6" />
                 </div>
                 <div class="flex-1">
-                    <h3 class="text-lg font-semibold text-navy mb-2">Data Master Akan Tersedia di Phase 3</h3>
+                    <h3 class="text-lg font-semibold text-navy mb-2">Ringkasan Operasional</h3>
                     <p class="text-muted text-sm">
-                        Statistik lengkap, grafik, dan laporan institusional akan dimuat dari database setelah 
-                        modul master data (Peserta Didik, Tutor, Rombel, Program) diimplementasikan.
+                        Statistik di atas merupakan ringkasan dari seluruh entitas aktif yang terdaftar di PKBM Aditya. 
+                        Data diperbarui secara real-time.
                     </p>
                 </div>
             </div>

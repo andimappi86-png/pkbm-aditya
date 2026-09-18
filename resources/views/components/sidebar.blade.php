@@ -118,6 +118,18 @@
                     <span class="text-[10px] font-medium text-muted">Phase 3</span>
                 </div>
                 @endcan
+
+                @can('admissions.view')
+                <a href="{{ route('ppdb.index') }}" class="flex items-center justify-between px-3.5 py-2 rounded-xl text-sm font-medium transition-colors {{ request()->routeIs('ppdb.*') ? 'bg-primary-soft text-primary-dark font-semibold shadow-sm ring-1 ring-primary/10' : 'text-muted hover:text-primary-dark hover:bg-primary-soft/60' }}">
+                    <div class="flex items-center gap-3">
+                        <svg class="w-5 h-5 {{ request()->routeIs('ppdb.*') ? 'text-primary' : 'text-muted' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>PPDB</span>
+                    </div>
+                    <span class="text-[10px] font-medium text-muted">Phase 6</span>
+                </a>
+                @endcan
             </nav>
         </div>
         @endif

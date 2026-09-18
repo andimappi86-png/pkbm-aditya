@@ -91,33 +91,30 @@
                 @endcan
 
                 @can('tutors.manage')
-                <button class="flex flex-col items-center gap-2 p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-primary-soft transition-colors" disabled>
+                <a href="{{ route('tutors.index') }}" class="flex flex-col items-center gap-2 p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-primary-soft transition-colors cursor-pointer">
                     <div class="w-10 h-10 rounded-xl bg-primary-soft text-primary-dark flex items-center justify-center">
                         <x-icon name="user-check" class="w-5 h-5" />
                     </div>
                     <span class="text-sm font-medium text-navy">Kelola Tutor</span>
-                    <span class="text-xs text-muted">Phase 3</span>
-                </button>
+                </a>
                 @endcan
 
                 @can('classrooms.manage')
-                <button class="flex flex-col items-center gap-2 p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-primary-soft transition-colors" disabled>
+                <a href="{{ route('rombel.index') }}" class="flex flex-col items-center gap-2 p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-primary-soft transition-colors cursor-pointer">
                     <div class="w-10 h-10 rounded-xl bg-primary-soft text-primary-dark flex items-center justify-center">
                         <x-icon name="layers" class="w-5 h-5" />
                     </div>
                     <span class="text-sm font-medium text-navy">Kelola Rombel</span>
-                    <span class="text-xs text-muted">Phase 3</span>
-                </button>
+                </a>
                 @endcan
 
                 @can('reports.view')
-                <button class="flex flex-col items-center gap-2 p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-primary-soft transition-colors" disabled>
+                <a href="{{ route('rekap.index') }}" class="flex flex-col items-center gap-2 p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-primary-soft transition-colors cursor-pointer">
                     <div class="w-10 h-10 rounded-xl bg-primary-soft text-primary-dark flex items-center justify-center">
                         <x-icon name="chart-bar" class="w-5 h-5" />
                     </div>
                     <span class="text-sm font-medium text-navy">Lihat Laporan</span>
-                    <span class="text-xs text-muted">Phase 6</span>
-                </button>
+                </a>
                 @endcan
             </div>
         </div>

@@ -107,6 +107,16 @@ class RolePermissionSeeder extends Seeder
             // Documents
             'documents.view',
             'documents.manage',
+            'documents.upload',
+            'documents.verify',
+            'documents.download',
+            'documents.delete',
+
+            // Letters
+            'letters.view',
+            'letters.manage',
+            'letters.create',
+            'letters.print',
 
             // Reports
             'reports.view',
@@ -169,7 +179,8 @@ class RolePermissionSeeder extends Seeder
             'quizzes.view', 'quizzes.manage',
             'exams.view', 'exams.manage',
             'announcements.view', 'announcements.manage',
-            'documents.view', 'documents.manage',
+            'documents.view', 'documents.manage', 'documents.upload', 'documents.verify', 'documents.download', 'documents.delete',
+            'letters.view', 'letters.manage', 'letters.create', 'letters.print',
             'reports.view', 'reports.manage',
             'admissions.view', 'admissions.manage',
             'settings.view', 'settings.manage',
@@ -208,6 +219,7 @@ class RolePermissionSeeder extends Seeder
             'exams.view',
             'announcements.view',
             'documents.view',
+            'letters.view',
             'reports.view',
             'admissions.view',
             'audit.view',
@@ -296,6 +308,10 @@ class RolePermissionSeeder extends Seeder
             'exams.view',
             'exams.take',
             'announcements.view',
+            'documents.view',
+            'documents.upload',
+            'documents.download',
+            'letters.view',
         ];
 
         $role->syncPermissions($permissions);

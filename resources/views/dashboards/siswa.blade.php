@@ -50,6 +50,28 @@
             </div>
         </div>
 
+        <!-- Stats Grid -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <x-stat-card 
+                title="Materi Belajar" 
+                :value="$stats['total_materi']" 
+                variant="primary" 
+                icon="<path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253' />"
+            />
+            <x-stat-card 
+                title="Tugas Terkumpul" 
+                :value="$stats['tugas_selesai'] . ' / ' . $stats['total_tugas']" 
+                variant="primary" 
+                icon="<path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2' />"
+            />
+            <x-stat-card 
+                title="Persentase Kehadiran" 
+                :value="$stats['kehadiran'] . '%'" 
+                variant="primary" 
+                icon="<path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' />"
+            />
+        </div>
+
         <!-- My Info -->
         <div class="grid md:grid-cols-2 gap-6">
             <!-- My Program -->
@@ -65,8 +87,8 @@
                             <x-icon name="book" class="w-6 h-6" />
                         </div>
                         <div>
-                            <div class="font-semibold text-primary-dark">{{ $myProgram->name }}</div>
-                            <div class="text-sm text-muted">{{ $myProgram->level }}</div>
+                            <div class="font-semibold text-primary-dark">{{ $myProgram->nama }}</div>
+                            <div class="text-sm text-muted">{{ $myProgram->deskripsi }}</div>
                         </div>
                     </div>
                 @else
@@ -91,7 +113,7 @@
                             <x-icon name="users" class="w-6 h-6" />
                         </div>
                         <div>
-                            <div class="font-semibold text-primary-dark">{{ $myClassroom->name }}</div>
+                            <div class="font-semibold text-primary-dark">{{ $myClassroom->nama_rombel }}</div>
                             <div class="text-sm text-muted">Rombel Aktif</div>
                         </div>
                     </div>
@@ -113,43 +135,39 @@
             </h3>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                 @can('materials.view')
-                <button class="flex flex-col items-center gap-2 p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-primary-soft transition-colors" disabled>
+                <a href="{{ route('materi.index') }}" class="flex flex-col items-center gap-2 p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-primary-soft transition-colors cursor-pointer">
                     <div class="w-10 h-10 rounded-xl bg-primary-soft text-primary-dark flex items-center justify-center">
                         <x-icon name="book-open" class="w-5 h-5" />
                     </div>
                     <span class="text-sm font-medium text-navy">Materi</span>
-                    <span class="text-xs text-muted">Phase 5</span>
-                </button>
+                </a>
                 @endcan
 
                 @can('assignments.view')
-                <button class="flex flex-col items-center gap-2 p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-primary-soft transition-colors" disabled>
+                <a href="{{ route('tugas.index') }}" class="flex flex-col items-center gap-2 p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-primary-soft transition-colors cursor-pointer">
                     <div class="w-10 h-10 rounded-xl bg-primary-soft text-primary-dark flex items-center justify-center">
                         <x-icon name="clipboard" class="w-5 h-5" />
                     </div>
                     <span class="text-sm font-medium text-navy">Tugas</span>
-                    <span class="text-xs text-muted">Phase 5</span>
-                </button>
+                </a>
                 @endcan
 
                 @can('grades.view')
-                <button class="flex flex-col items-center gap-2 p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-primary-soft transition-colors" disabled>
+                <a href="{{ route('nilai.index') }}" class="flex flex-col items-center gap-2 p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-primary-soft transition-colors cursor-pointer">
                     <div class="w-10 h-10 rounded-xl bg-primary-soft text-primary-dark flex items-center justify-center">
                         <x-icon name="chart-bar" class="w-5 h-5" />
                     </div>
                     <span class="text-sm font-medium text-navy">Nilai</span>
-                    <span class="text-xs text-muted">Phase 4</span>
-                </button>
+                </a>
                 @endcan
 
                 @can('schedules.view')
-                <button class="flex flex-col items-center gap-2 p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-primary-soft transition-colors" disabled>
+                <a href="{{ route('jadwal.index') }}" class="flex flex-col items-center gap-2 p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-primary-soft transition-colors cursor-pointer">
                     <div class="w-10 h-10 rounded-xl bg-primary-soft text-primary-dark flex items-center justify-center">
                         <x-icon name="calendar" class="w-5 h-5" />
                     </div>
                     <span class="text-sm font-medium text-navy">Jadwal</span>
-                    <span class="text-xs text-muted">Phase 4</span>
-                </button>
+                </a>
                 @endcan
             </div>
         </div>

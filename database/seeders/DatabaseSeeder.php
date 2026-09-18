@@ -52,6 +52,7 @@ class DatabaseSeeder extends Seeder
         // Phase 2: RBAC seeders
         $this->call([
             RolePermissionSeeder::class,
+            RoleCalonPesertaSeeder::class,
             DemoUsersSeeder::class,
             MasterDataSeeder::class,
             StudentSeeder::class,
@@ -60,6 +61,8 @@ class DatabaseSeeder extends Seeder
             AssignmentSeeder::class,
             MaterialSeeder::class,
             ForumSeeder::class,
+            PpdbSeeder::class,
+            DocumentLetterSeeder::class,
         ]);
     }
 }
