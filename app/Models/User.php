@@ -104,6 +104,14 @@ class User extends Authenticatable
      */
     public function primaryRole(): string
     {
+        if ($this->hasRole('operator')) return 'operator';
+        if ($this->hasRole('kepala-pkbm')) return 'kepala-pkbm';
+        if ($this->hasRole('ketua-yayasan')) return 'ketua-yayasan';
+        if ($this->hasRole('wali-kelas')) return 'wali-kelas';
+        if ($this->hasRole('tutor')) return 'tutor';
+        if ($this->hasRole('peserta-didik')) return 'peserta-didik';
+        if ($this->hasRole('calon-peserta')) return 'calon-peserta';
+
         return $this->roles->first()?->name ?? 'user';
     }
 
@@ -113,11 +121,13 @@ class User extends Authenticatable
     public function dashboardRoute(): string
     {
         return match ($this->primaryRole()) {
+            'operator' => 'operator.dashboard',
             'ketua-yayasan' => 'dashboard.yayasan',
             'kepala-pkbm' => 'dashboard.kepala',
             'wali-kelas' => 'dashboard.walikelas',
             'tutor' => 'dashboard.tutor',
             'peserta-didik' => 'dashboard.siswa',
+            'calon-peserta' => 'ppdb.index',
             default => 'dashboard',
         };
     }

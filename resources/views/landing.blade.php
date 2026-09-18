@@ -35,7 +35,7 @@
 
                 <div class="flex items-center gap-4">
                     @auth
-                        <a href="{{ url('/dashboard') }}" class="inline-flex items-center justify-center px-6 py-2.5 bg-[#167C80] text-white text-sm font-semibold rounded-lg hover:bg-[#0F5F63] transition-all shadow-sm">
+                        <a href="{{ route('dashboard') }}" class="inline-flex items-center justify-center px-6 py-2.5 bg-[#167C80] text-white text-sm font-semibold rounded-lg hover:bg-[#0F5F63] transition-all shadow-sm">
                             Dashboard
                         </a>
                     @else
@@ -79,10 +79,17 @@
                     <a href="#program" class="w-full sm:w-auto inline-flex items-center justify-center px-8 py-3.5 bg-white text-[#172B3A] text-base font-semibold rounded-lg border border-[#D9E2E5] hover:bg-[#F5F7F8] hover:border-[#64748B] transition-all shadow-sm">
                         Lihat Program
                     </a>
-                    <a href="{{ route('login') }}" class="w-full sm:w-auto inline-flex items-center justify-center px-8 py-3.5 bg-[#167C80] text-white text-base font-semibold rounded-lg hover:bg-[#0F5F63] transition-all shadow-sm hover:shadow-md">
-                        Masuk Sistem
-                        <i data-lucide="log-in" class="w-5 h-5 ml-2"></i>
-                    </a>
+                    @auth
+                        <a href="{{ route('dashboard') }}" class="w-full sm:w-auto inline-flex items-center justify-center px-8 py-3.5 bg-[#167C80] text-white text-base font-semibold rounded-lg hover:bg-[#0F5F63] transition-all shadow-sm hover:shadow-md">
+                            Dashboard
+                            <i data-lucide="layout-dashboard" class="w-5 h-5 ml-2"></i>
+                        </a>
+                    @else
+                        <a href="{{ route('login') }}" class="w-full sm:w-auto inline-flex items-center justify-center px-8 py-3.5 bg-[#167C80] text-white text-base font-semibold rounded-lg hover:bg-[#0F5F63] transition-all shadow-sm hover:shadow-md">
+                            Masuk Sistem
+                            <i data-lucide="log-in" class="w-5 h-5 ml-2"></i>
+                        </a>
+                    @endauth
                 </div>
             </div>
         </div>
@@ -219,9 +226,15 @@
                     <h2 class="text-sm font-bold text-[#167C80] uppercase tracking-widest mb-3">Fasilitas Digital</h2>
                     <h3 class="text-3xl md:text-4xl font-bold text-[#172B3A]">Sistem Informasi & Pembelajaran Terpadu</h3>
                 </div>
-                <a href="{{ route('login') }}" class="hidden lg:inline-flex items-center justify-center px-6 py-3 bg-[#E8F5F4] text-[#0F5F63] font-semibold rounded-lg hover:bg-[#167C80] hover:text-white transition-colors">
-                    Coba Sekarang <i data-lucide="arrow-right" class="w-4 h-4 ml-2"></i>
-                </a>
+                @auth
+                    <a href="{{ route('dashboard') }}" class="hidden lg:inline-flex items-center justify-center px-6 py-3 bg-[#E8F5F4] text-[#0F5F63] font-semibold rounded-lg hover:bg-[#167C80] hover:text-white transition-colors">
+                        Buka Dashboard <i data-lucide="layout-dashboard" class="w-4 h-4 ml-2"></i>
+                    </a>
+                @else
+                    <a href="{{ route('login') }}" class="hidden lg:inline-flex items-center justify-center px-6 py-3 bg-[#E8F5F4] text-[#0F5F63] font-semibold rounded-lg hover:bg-[#167C80] hover:text-white transition-colors">
+                        Coba Sekarang <i data-lucide="arrow-right" class="w-4 h-4 ml-2"></i>
+                    </a>
+                @endauth
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-12">
@@ -364,10 +377,17 @@
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
             <h2 class="text-3xl md:text-5xl font-bold text-white mb-6">Mulai Perjalanan Belajarmu Bersama PKBM Aditya</h2>
             <p class="text-lg text-[#E8F5F4] mb-10 max-w-2xl mx-auto opacity-90">Akses seluruh fasilitas pembelajaran digital dan administrasi dengan masuk ke dalam sistem.</p>
-            <a href="{{ route('login') }}" class="inline-flex items-center justify-center px-10 py-4 bg-white text-[#0F5F63] text-lg font-bold rounded-lg hover:bg-[#F5F7F8] hover:shadow-xl transition-all group">
-                Masuk Sistem Sekarang
-                <i data-lucide="arrow-right" class="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform"></i>
-            </a>
+            @auth
+                <a href="{{ route('dashboard') }}" class="inline-flex items-center justify-center px-10 py-4 bg-white text-[#0F5F63] text-lg font-bold rounded-lg hover:bg-[#F5F7F8] hover:shadow-xl transition-all group">
+                    Buka Dashboard
+                    <i data-lucide="layout-dashboard" class="w-5 h-5 ml-2 group-hover:scale-110 transition-transform"></i>
+                </a>
+            @else
+                <a href="{{ route('login') }}" class="inline-flex items-center justify-center px-10 py-4 bg-white text-[#0F5F63] text-lg font-bold rounded-lg hover:bg-[#F5F7F8] hover:shadow-xl transition-all group">
+                    Masuk Sistem Sekarang
+                    <i data-lucide="arrow-right" class="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform"></i>
+                </a>
+            @endauth
         </div>
     </section>
 
