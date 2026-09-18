@@ -142,6 +142,7 @@ class RolePermissionSeeder extends Seeder
         $this->command->info('✅ Permissions created/verified');
 
         // Create roles and assign permissions
+        $this->createOperatorRole();
         $this->createKepalaRole();
         $this->createKetuaYayasanRole();
         $this->createWaliKelasRole();
@@ -149,6 +150,43 @@ class RolePermissionSeeder extends Seeder
         $this->createPesertaDidikRole();
 
         $this->command->info('✅ All roles and permissions configured');
+    }
+
+    /**
+     * Operator - Full access and Security Testing
+     */
+    private function createOperatorRole(): void
+    {
+        $role = Role::firstOrCreate(['name' => 'operator', 'guard_name' => 'web']);
+
+        $permissions = [
+            'dashboard.view',
+            'users.view', 'users.create', 'users.update', 'users.delete', 'users.manage',
+            'students.view', 'students.create', 'students.update', 'students.delete', 'students.manage',
+            'tutors.view', 'tutors.create', 'tutors.update', 'tutors.delete', 'tutors.manage',
+            'classrooms.view', 'classrooms.create', 'classrooms.update', 'classrooms.delete', 'classrooms.manage',
+            'programs.view', 'programs.manage',
+            'academic-years.view', 'academic-years.manage',
+            'semesters.view', 'semesters.manage',
+            'subjects.view', 'subjects.create', 'subjects.update', 'subjects.delete', 'subjects.manage',
+            'schedules.view', 'schedules.manage',
+            'attendance.view', 'attendance.manage',
+            'grades.view', 'grades.manage',
+            'materials.view', 'materials.manage',
+            'assignments.view', 'assignments.manage', 'assignments.submit',
+            'quizzes.view', 'quizzes.manage', 'quizzes.take',
+            'exams.view', 'exams.manage', 'exams.take',
+            'announcements.view', 'announcements.manage',
+            'documents.view', 'documents.manage', 'documents.upload', 'documents.verify', 'documents.download', 'documents.delete',
+            'letters.view', 'letters.manage', 'letters.create', 'letters.print',
+            'reports.view', 'reports.manage',
+            'admissions.view', 'admissions.manage',
+            'settings.view', 'settings.manage',
+            'audit.view',
+        ];
+
+        $role->syncPermissions($permissions);
+        $this->command->info('✅ Operator role configured');
     }
 
     /**

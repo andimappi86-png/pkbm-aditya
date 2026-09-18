@@ -128,6 +128,27 @@ class DemoUsersSeeder extends Seeder
             $this->command->info('✅ Admin user assigned kepala-pkbm role');
         }
 
+        // 6. Operator
+        $operator = User::firstOrCreate(
+            ['email' => 'operator@pkbm-aditya.test'],
+            [
+                'name' => 'Operator Demo',
+                'phone' => '081234567806',
+                'status' => 'active',
+                'password' => Hash::make('password'),
+                'email_verified_at' => now(),
+            ]
+        );
+        $operator->syncRoles(['operator']);
+        Profile::updateOrCreate(
+            ['user_id' => $operator->id],
+            [
+                'gender' => 'L',
+                'address' => 'Mamuju, Sulawesi Barat',
+            ]
+        );
+        $this->command->info('✅ Operator: operator@pkbm-aditya.test / password');
+
         $this->command->info('');
         $this->command->info('═══════════════════════════════════════');
         $this->command->info('Demo Users Created:');
@@ -137,6 +158,7 @@ class DemoUsersSeeder extends Seeder
         $this->command->info('3. Wali Kelas    : walikelas@pkbm-aditya.test');
         $this->command->info('4. Tutor         : tutor@pkbm-aditya.test');
         $this->command->info('5. Peserta Didik : siswa@pkbm-aditya.test');
+        $this->command->info('6. Operator      : operator@pkbm-aditya.test');
         $this->command->info('Password (all)   : password');
         $this->command->info('═══════════════════════════════════════');
     }

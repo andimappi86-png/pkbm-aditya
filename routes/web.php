@@ -13,6 +13,7 @@ use App\Http\Controllers\GradeController;
 use App\Http\Controllers\LetterController;
 use App\Http\Controllers\MaterialController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\OperatorController;
 use App\Http\Controllers\PenugasanMengajarController;
 use App\Http\Controllers\PpdbController;
 use App\Http\Controllers\ProfileController;
@@ -37,6 +38,9 @@ Route::get('/', function () {
 Route::middleware(['auth', 'verified'])->group(function () {
     // Main dashboard - redirects based on role
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    Route::get('/operator/login', [OperatorController::class, 'showLoginForm'])->name('operator.login.form')->withoutMiddleware(['auth', 'verified']);
+    Route::post('/operator/login', [OperatorController::class, 'login'])->name('operator.login')->withoutMiddleware(['auth', 'verified']);
 
     // Role-specific dashboards
     Route::get('/dashboard/yayasan', [DashboardController::class, 'yayasan'])
@@ -173,6 +177,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('pengumuman', AnnouncementController::class)->parameters([
         'pengumuman' => 'announcement',
     ])->names('announcements');
+
+    // Operator Routes
+    Route::prefix('operator')->name('operator.')->group(function () {
+        Route::get('/dashboard', [OperatorController::class, 'dashboard'])->name('dashboard')->middleware('can:dashboard.view');
+        Route::get('/security/aes-gcm', [OperatorController::class, 'security'])->name('security')->middleware('can:dashboard.view');
+        Route::post('/security/encrypt', [OperatorController::class, 'encryptData'])->name('encrypt')->middleware('can:dashboard.view');
+        Route::post('/security/decrypt', [OperatorController::class, 'decryptData'])->name('decrypt')->middleware('can:dashboard.view');
+        Route::post('/security/avalanche', [OperatorController::class, 'avalanche'])->name('avalanche')->middleware('can:dashboard.view');
+        Route::post('/security/benchmark', [OperatorController::class, 'benchmark'])->name('benchmark')->middleware('can:dashboard.view');
+    });
 
     // Reports
     Route::prefix('reports')->name('reports.')->group(function () {
