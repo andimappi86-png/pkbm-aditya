@@ -21,6 +21,7 @@ use App\Http\Controllers\QuizAttemptController;
 use App\Http\Controllers\QuizController;
 use App\Http\Controllers\RaporController;
 use App\Http\Controllers\RekapAkademikController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\SubjectController;
@@ -172,6 +173,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('pengumuman', AnnouncementController::class)->parameters([
         'pengumuman' => 'announcement',
     ])->names('announcements');
+
+    // Reports
+    Route::prefix('reports')->name('reports.')->group(function () {
+        Route::get('/', [ReportController::class, 'index'])->name('index');
+        Route::get('/students', [ReportController::class, 'students'])->name('students');
+        Route::get('/tutors', [ReportController::class, 'tutors'])->name('tutors');
+        Route::get('/classrooms', [ReportController::class, 'classrooms'])->name('classrooms');
+        Route::get('/attendance', [ReportController::class, 'attendance'])->name('attendance');
+        Route::get('/grades', [ReportController::class, 'grades'])->name('grades');
+        Route::get('/assignments', [ReportController::class, 'assignments'])->name('assignments');
+        Route::get('/ppdb', [ReportController::class, 'ppdb'])->name('ppdb');
+        Route::get('/learning', [ReportController::class, 'learningActivity'])->name('learning');
+        Route::get('/print/{type}', [ReportController::class, 'print'])->name('print');
+    });
 
     // Notifications
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');

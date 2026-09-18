@@ -56,22 +56,98 @@
                 title="Peserta Didik" 
                 :value="$totalStudents" 
                 variant="primary" 
+                icon="users"
             />
             <x-stat-card 
                 title="Tutor" 
                 :value="$totalTutors" 
-                variant="primary" 
+                variant="primary"
+                icon="user-check" 
             />
             <x-stat-card 
                 title="Rombel" 
                 :value="$totalClassrooms" 
                 variant="primary" 
+                icon="layers"
             />
             <x-stat-card 
                 title="Program" 
                 :value="$totalPrograms" 
                 variant="primary" 
+                icon="book"
             />
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Left Column -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Academic Overview -->
+                <div class="card p-6">
+                    <h3 class="text-lg font-semibold text-navy mb-4">Ringkasan Akademik</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="p-4 rounded-xl border border-border bg-surface text-center">
+                            <div class="text-2xl font-bold text-primary">{{ number_format($avgGrade, 1) }}</div>
+                            <div class="text-sm text-muted">Rata-rata Nilai</div>
+                        </div>
+                        <div class="p-4 rounded-xl border border-border bg-surface text-center">
+                            <div class="text-2xl font-bold text-primary">{{ $attendanceRate }}%</div>
+                            <div class="text-sm text-muted">Tingkat Kehadiran</div>
+                        </div>
+                        <div class="p-4 rounded-xl border border-border bg-surface text-center">
+                            <div class="text-2xl font-bold text-primary">{{ $assignmentsCount }}</div>
+                            <div class="text-sm text-muted">Total Tugas</div>
+                        </div>
+                        <div class="p-4 rounded-xl border border-border bg-surface text-center">
+                            <div class="text-2xl font-bold text-primary">{{ $quizzesCount }}</div>
+                            <div class="text-sm text-muted">Total Kuis</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Program Breakdown -->
+                <div class="card p-6">
+                    <h3 class="text-lg font-semibold text-navy mb-4">Sebaran per Program</h3>
+                    <div class="space-y-4">
+                        @foreach($programStats as $program)
+                        <div>
+                            <div class="flex justify-between text-sm mb-1">
+                                <span class="font-medium text-navy">{{ $program->nama }}</span>
+                                <span class="text-muted">{{ $program->students_count }} Siswa</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-primary rounded-full h-2" style="width: {{ $totalStudents > 0 ? ($program->students_count / $totalStudents) * 100 : 0 }}%"></div>
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column -->
+            <div class="space-y-6">
+                <!-- Administrative Stats -->
+                <div class="card p-6">
+                    <h3 class="text-lg font-semibold text-navy mb-4">Administrasi & PPDB</h3>
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center p-3 rounded-lg border border-border">
+                            <span class="text-sm font-medium text-navy">PPDB Menunggu</span>
+                            <span class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs font-bold">{{ $ppdbStats['pending'] }}</span>
+                        </div>
+                        <div class="flex justify-between items-center p-3 rounded-lg border border-border">
+                            <span class="text-sm font-medium text-navy">PPDB Diterima</span>
+                            <span class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-bold">{{ $ppdbStats['diterima'] }}</span>
+                        </div>
+                        <div class="flex justify-between items-center p-3 rounded-lg border border-border">
+                            <span class="text-sm font-medium text-navy">Dokumen Menunggu Verifikasi</span>
+                            <span class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs font-bold">{{ $pendingDocuments }}</span>
+                        </div>
+                        <div class="flex justify-between items-center p-3 rounded-lg border border-border">
+                            <span class="text-sm font-medium text-navy">Total Pengumuman Aktif</span>
+                            <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-bold">{{ $activeAnnouncements }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Quick Actions -->

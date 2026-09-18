@@ -52,31 +52,77 @@
         </div>
 
         <!-- Stats Grid -->
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="grid grid-cols-2 lg:grid-cols-6 gap-4">
             <x-stat-card 
                 title="Total Siswa" 
                 :value="$stats['total_siswa']" 
                 variant="primary" 
-                icon="<path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z' />"
             />
             <x-stat-card 
                 title="Rombel" 
                 :value="$stats['total_rombel']" 
                 variant="primary" 
-                icon="<path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z' />"
             />
             <x-stat-card 
-                title="Materi & Tugas" 
-                :value="$stats['total_materi'] + $stats['total_tugas']" 
+                title="Materi" 
+                :value="$stats['total_materi']" 
                 variant="primary" 
-                icon="<path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2' />"
+            />
+            <x-stat-card 
+                title="Tugas" 
+                :value="$stats['total_tugas']" 
+                variant="primary" 
+            />
+            <x-stat-card 
+                title="Kuis" 
+                :value="$stats['total_kuis']" 
+                variant="primary" 
             />
             <x-stat-card 
                 title="Kehadiran Rata-rata" 
                 :value="$stats['kehadiran_rata'] . '%'" 
                 variant="primary" 
-                icon="<path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' />"
             />
+        </div>
+
+        <!-- Academic Performance -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="card p-6">
+                <h3 class="text-lg font-semibold text-navy mb-4">Performa Akademik Kelas</h3>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="p-4 rounded-xl border border-border bg-surface text-center">
+                        <div class="text-3xl font-bold text-primary">{{ number_format($stats['rata_rata_nilai'], 1) }}</div>
+                        <div class="text-sm text-muted">Rata-rata Nilai</div>
+                    </div>
+                    <div class="p-4 rounded-xl border border-border bg-surface text-center">
+                        <div class="text-3xl font-bold text-primary">{{ $stats['kehadiran_rata'] }}%</div>
+                        <div class="text-sm text-muted">Kehadiran</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Announcements -->
+            <div class="card p-6">
+                <h3 class="text-lg font-semibold text-navy mb-4 flex items-center justify-between">
+                    Pengumuman Terbaru
+                    <a href="{{ route('announcements.index') }}" class="text-sm text-primary hover:underline">Lihat Semua</a>
+                </h3>
+                @if($recentAnnouncements->isNotEmpty())
+                    <div class="space-y-3">
+                        @foreach($recentAnnouncements as $announcement)
+                        <a href="{{ route('announcements.show', $announcement) }}" class="block p-3 rounded-lg border border-border hover:bg-primary-soft transition-colors">
+                            <div class="flex items-center justify-between">
+                                <span class="font-medium text-navy">{{ $announcement->judul }}</span>
+                                <span class="text-xs px-2 py-1 bg-primary-soft text-primary-dark rounded">{{ $announcement->kategori }}</span>
+                            </div>
+                            <div class="text-sm text-muted mt-1">{{ $announcement->published_at->format('d M Y') }}</div>
+                        </a>
+                        @endforeach
+                    </div>
+                @else
+                    <p class="text-muted text-center py-4">Tidak ada pengumuman</p>
+                @endif
+            </div>
         </div>
 
         <!-- My Classrooms -->

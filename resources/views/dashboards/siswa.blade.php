@@ -51,124 +51,167 @@
         </div>
 
         <!-- Stats Grid -->
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
             <x-stat-card 
                 title="Materi Belajar" 
                 :value="$stats['total_materi']" 
                 variant="primary" 
-                icon="<path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253' />"
+                icon="book-open"
             />
             <x-stat-card 
                 title="Tugas Terkumpul" 
                 :value="$stats['tugas_selesai'] . ' / ' . $stats['total_tugas']" 
                 variant="primary" 
-                icon="<path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2' />"
+                icon="clipboard"
             />
             <x-stat-card 
-                title="Persentase Kehadiran" 
+                title="Kuis Diikuti" 
+                :value="$stats['kuis_diikuti'] . ' / ' . $stats['total_kuis']" 
+                variant="primary" 
+                icon="lightning-bolt"
+            />
+            <x-stat-card 
+                title="Rata-rata Nilai" 
+                :value="number_format($stats['rata_rata_nilai'], 1)" 
+                variant="primary" 
+                icon="chart-bar"
+            />
+            <x-stat-card 
+                title="Kehadiran" 
                 :value="$stats['kehadiran'] . '%'" 
                 variant="primary" 
-                icon="<path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' />"
+                icon="calendar"
             />
         </div>
 
-        <!-- My Info -->
-        <div class="grid md:grid-cols-2 gap-6">
-            <!-- My Program -->
-            <div class="card p-6">
-                <h3 class="text-lg font-semibold text-navy mb-4 flex items-center gap-2">
-                    <x-icon name="package" class="w-5 h-5 text-primary" />
-                    Program Saya
-                </h3>
-                
-                @if($myProgram)
-                    <div class="flex items-center gap-4 p-4 rounded-xl bg-primary-soft border border-primary/20">
-                        <div class="w-12 h-12 rounded-xl bg-primary text-white flex items-center justify-center">
-                            <x-icon name="book" class="w-6 h-6" />
-                        </div>
-                        <div>
-                            <div class="font-semibold text-primary-dark">{{ $myProgram->nama }}</div>
-                            <div class="text-sm text-muted">{{ $myProgram->deskripsi }}</div>
-                        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Left Column: Info & Links -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- My Info -->
+                <div class="grid md:grid-cols-2 gap-6">
+                    <!-- My Program -->
+                    <div class="card p-6">
+                        <h3 class="text-lg font-semibold text-navy mb-4 flex items-center gap-2">
+                            <x-icon name="package" class="w-5 h-5 text-primary" />
+                            Program Saya
+                        </h3>
+                        
+                        @if($myProgram)
+                            <div class="flex items-center gap-4 p-4 rounded-xl bg-primary-soft border border-primary/20">
+                                <div class="w-12 h-12 rounded-xl bg-primary text-white flex items-center justify-center">
+                                    <x-icon name="book" class="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <div class="font-semibold text-primary-dark">{{ $myProgram->nama }}</div>
+                                    <div class="text-sm text-muted">{{ $myProgram->deskripsi }}</div>
+                                </div>
+                            </div>
+                        @else
+                            <x-empty-state 
+                                icon="package"
+                                title="Belum Terdaftar di Program"
+                                description="Anda belum terdaftar."
+                            />
+                        @endif
                     </div>
-                @else
-                    <x-empty-state 
-                        icon="package"
-                        title="Belum Terdaftar di Program"
-                        description="Data program akan tersedia setelah Anda terdaftar sebagai peserta didik di Phase 3."
-                    />
-                @endif
+
+                    <!-- My Classroom -->
+                    <div class="card p-6">
+                        <h3 class="text-lg font-semibold text-navy mb-4 flex items-center gap-2">
+                            <x-icon name="layers" class="w-5 h-5 text-primary" />
+                            Kelas Saya
+                        </h3>
+                        
+                        @if($myClassroom)
+                            <div class="flex items-center gap-4 p-4 rounded-xl bg-primary-soft border border-primary/20">
+                                <div class="w-12 h-12 rounded-xl bg-primary text-white flex items-center justify-center">
+                                    <x-icon name="users" class="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <div class="font-semibold text-primary-dark">{{ $myClassroom->nama_rombel }}</div>
+                                    <div class="text-sm text-muted">Rombel Aktif</div>
+                                </div>
+                            </div>
+                        @else
+                            <x-empty-state 
+                                icon="layers"
+                                title="Belum Masuk Rombel"
+                                description="Anda belum dimasukkan ke kelas."
+                            />
+                        @endif
+                    </div>
+                </div>
+
+                <!-- Quick Access -->
+                <div class="card p-6">
+                    <h3 class="text-lg font-semibold text-navy mb-4 flex items-center gap-2">
+                        <x-icon name="book-open" class="w-5 h-5 text-primary" />
+                        Akses Cepat
+                    </h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        @can('materials.view')
+                        <a href="{{ route('materi.index') }}" class="flex flex-col items-center gap-2 p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-primary-soft transition-colors cursor-pointer">
+                            <div class="w-10 h-10 rounded-xl bg-primary-soft text-primary-dark flex items-center justify-center">
+                                <x-icon name="book-open" class="w-5 h-5" />
+                            </div>
+                            <span class="text-sm font-medium text-navy">Materi</span>
+                        </a>
+                        @endcan
+
+                        @can('assignments.view')
+                        <a href="{{ route('tugas.index') }}" class="flex flex-col items-center gap-2 p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-primary-soft transition-colors cursor-pointer">
+                            <div class="w-10 h-10 rounded-xl bg-primary-soft text-primary-dark flex items-center justify-center">
+                                <x-icon name="clipboard" class="w-5 h-5" />
+                            </div>
+                            <span class="text-sm font-medium text-navy">Tugas</span>
+                        </a>
+                        @endcan
+
+                        @can('grades.view')
+                        <a href="{{ route('nilai.index') }}" class="flex flex-col items-center gap-2 p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-primary-soft transition-colors cursor-pointer">
+                            <div class="w-10 h-10 rounded-xl bg-primary-soft text-primary-dark flex items-center justify-center">
+                                <x-icon name="chart-bar" class="w-5 h-5" />
+                            </div>
+                            <span class="text-sm font-medium text-navy">Nilai</span>
+                        </a>
+                        @endcan
+
+                        @can('schedules.view')
+                        <a href="{{ route('jadwal.index') }}" class="flex flex-col items-center gap-2 p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-primary-soft transition-colors cursor-pointer">
+                            <div class="w-10 h-10 rounded-xl bg-primary-soft text-primary-dark flex items-center justify-center">
+                                <x-icon name="calendar" class="w-5 h-5" />
+                            </div>
+                            <span class="text-sm font-medium text-navy">Jadwal</span>
+                        </a>
+                        @endcan
+                    </div>
+                </div>
             </div>
-
-            <!-- My Classroom -->
-            <div class="card p-6">
-                <h3 class="text-lg font-semibold text-navy mb-4 flex items-center gap-2">
-                    <x-icon name="layers" class="w-5 h-5 text-primary" />
-                    Kelas Saya
-                </h3>
-                
-                @if($myClassroom)
-                    <div class="flex items-center gap-4 p-4 rounded-xl bg-primary-soft border border-primary/20">
-                        <div class="w-12 h-12 rounded-xl bg-primary text-white flex items-center justify-center">
-                            <x-icon name="users" class="w-6 h-6" />
+            
+            <!-- Right Column -->
+            <div class="space-y-6">
+                <!-- Recent Announcements -->
+                <div class="card p-6">
+                    <h3 class="text-lg font-semibold text-navy mb-4 flex items-center justify-between">
+                        Pengumuman
+                        <a href="{{ route('announcements.index') }}" class="text-sm text-primary hover:underline">Semua</a>
+                    </h3>
+                    @if($recentAnnouncements->isNotEmpty())
+                        <div class="space-y-3">
+                            @foreach($recentAnnouncements as $announcement)
+                            <a href="{{ route('announcements.show', $announcement) }}" class="block p-3 rounded-lg border border-border hover:bg-primary-soft transition-colors">
+                                <div class="flex items-center justify-between">
+                                    <span class="font-medium text-navy">{{ $announcement->judul }}</span>
+                                    <span class="text-xs px-2 py-1 bg-primary-soft text-primary-dark rounded">{{ $announcement->kategori }}</span>
+                                </div>
+                                <div class="text-sm text-muted mt-1">{{ $announcement->published_at->format('d M Y') }}</div>
+                            </a>
+                            @endforeach
                         </div>
-                        <div>
-                            <div class="font-semibold text-primary-dark">{{ $myClassroom->nama_rombel }}</div>
-                            <div class="text-sm text-muted">Rombel Aktif</div>
-                        </div>
-                    </div>
-                @else
-                    <x-empty-state 
-                        icon="layers"
-                        title="Belum Masuk Rombel"
-                        description="Data kelas akan tersedia setelah Anda ditugaskan ke rombel di Phase 3."
-                    />
-                @endif
-            </div>
-        </div>
-
-        <!-- Quick Access -->
-        <div class="card p-6">
-            <h3 class="text-lg font-semibold text-navy mb-4 flex items-center gap-2">
-                <x-icon name="book-open" class="w-5 h-5 text-primary" />
-                Akses Cepat
-            </h3>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                @can('materials.view')
-                <a href="{{ route('materi.index') }}" class="flex flex-col items-center gap-2 p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-primary-soft transition-colors cursor-pointer">
-                    <div class="w-10 h-10 rounded-xl bg-primary-soft text-primary-dark flex items-center justify-center">
-                        <x-icon name="book-open" class="w-5 h-5" />
-                    </div>
-                    <span class="text-sm font-medium text-navy">Materi</span>
-                </a>
-                @endcan
-
-                @can('assignments.view')
-                <a href="{{ route('tugas.index') }}" class="flex flex-col items-center gap-2 p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-primary-soft transition-colors cursor-pointer">
-                    <div class="w-10 h-10 rounded-xl bg-primary-soft text-primary-dark flex items-center justify-center">
-                        <x-icon name="clipboard" class="w-5 h-5" />
-                    </div>
-                    <span class="text-sm font-medium text-navy">Tugas</span>
-                </a>
-                @endcan
-
-                @can('grades.view')
-                <a href="{{ route('nilai.index') }}" class="flex flex-col items-center gap-2 p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-primary-soft transition-colors cursor-pointer">
-                    <div class="w-10 h-10 rounded-xl bg-primary-soft text-primary-dark flex items-center justify-center">
-                        <x-icon name="chart-bar" class="w-5 h-5" />
-                    </div>
-                    <span class="text-sm font-medium text-navy">Nilai</span>
-                </a>
-                @endcan
-
-                @can('schedules.view')
-                <a href="{{ route('jadwal.index') }}" class="flex flex-col items-center gap-2 p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-primary-soft transition-colors cursor-pointer">
-                    <div class="w-10 h-10 rounded-xl bg-primary-soft text-primary-dark flex items-center justify-center">
-                        <x-icon name="calendar" class="w-5 h-5" />
-                    </div>
-                    <span class="text-sm font-medium text-navy">Jadwal</span>
-                </a>
-                @endcan
+                    @else
+                        <p class="text-muted text-center py-4">Tidak ada pengumuman</p>
+                    @endif
+                </div>
             </div>
         </div>
     </div>
