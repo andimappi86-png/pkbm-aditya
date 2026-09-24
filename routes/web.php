@@ -12,7 +12,6 @@ use App\Http\Controllers\ForumController;
 use App\Http\Controllers\GradeController;
 use App\Http\Controllers\LetterController;
 use App\Http\Controllers\MaterialController;
-use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OperatorController;
 use App\Http\Controllers\PenugasanMengajarController;
 use App\Http\Controllers\PpdbController;
@@ -44,7 +43,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Role-specific dashboards
     Route::get('/dashboard/yayasan', [DashboardController::class, 'yayasan'])
-        ->middleware('can:dashboard.view')
+        ->middleware(['can:dashboard.view', 'role:ketua-yayasan'])
         ->name('dashboard.yayasan');
 
     Route::get('/dashboard/kepala', [DashboardController::class, 'kepala'])
@@ -62,6 +61,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard/siswa', [DashboardController::class, 'siswa'])
         ->middleware('can:dashboard.view')
         ->name('dashboard.siswa');
+
+    // LMS - Kelas Saya (Student)
+    Route::get('/kelas-saya', [DashboardController::class, 'kelasSaya'])
+        ->middleware('can:dashboard.view')
+        ->name('kelas-saya.index');
+    Route::get('/kelas-saya/{penugasanMengajar}', [DashboardController::class, 'kelasSayaShow'])
+        ->middleware('can:dashboard.view')
+        ->name('kelas-saya.show');
 
     Route::resource('jadwal', ScheduleController::class)->parameters([
         'jadwal' => 'schedule',
@@ -188,6 +195,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/security/decrypt', [OperatorController::class, 'decryptData'])->name('decrypt')->middleware('can:dashboard.view');
         Route::post('/security/avalanche', [OperatorController::class, 'avalanche'])->name('avalanche')->middleware('can:dashboard.view');
         Route::post('/security/benchmark', [OperatorController::class, 'benchmark'])->name('benchmark')->middleware('can:dashboard.view');
+
+        // Bulk Import Data
+        Route::get('/import-data', [OperatorController::class, 'importForm'])->name('import.index')->middleware('can:operator.import');
+        Route::post('/import-data/preview', [OperatorController::class, 'importPreview'])->name('import.preview')->middleware('can:operator.import');
+        Route::post('/import-data/process', [OperatorController::class, 'importProcess'])->name('import.process')->middleware('can:operator.import');
+
+        // Import Tutor khusus
+        Route::get('/import-tutor', [OperatorController::class, 'importTutorForm'])->name('import-tutor.index')->middleware('can:operator.import');
+        Route::post('/import-tutor/preview', [OperatorController::class, 'importTutorPreview'])->name('import-tutor.preview')->middleware('can:operator.import');
+        Route::post('/import-tutor/process', [OperatorController::class, 'importTutorProcess'])->name('import-tutor.process')->middleware('can:operator.import');
+        Route::get('/import-tutor/template', [OperatorController::class, 'importTutorTemplate'])->name('import-tutor.template')->middleware('can:operator.import');
     });
 
     // Reports
@@ -203,11 +221,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/learning', [ReportController::class, 'learningActivity'])->name('learning');
         Route::get('/print/{type}', [ReportController::class, 'print'])->name('print');
     });
-
-    // Notifications
-    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
-    Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllRead');
-    Route::post('/notifications/{notification}/mark-read', [NotificationController::class, 'markAsRead'])->name('notifications.markRead');
 
     // Classroom Assignments
     Route::middleware(['auth', 'verified'])->group(function () {
@@ -227,6 +240,13 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
+    Route::prefix('peserta-didik')->name('peserta-didik.')->group(function () {
+        Route::get('template', [StudentController::class, 'template'])->name('template');
+        Route::get('template/csv', [StudentController::class, 'templateCsv'])->name('template.csv');
+        Route::get('import', [StudentController::class, 'importForm'])->name('import');
+        Route::post('import/preview', [StudentController::class, 'importPreview'])->name('import.preview');
+        Route::post('import/process', [StudentController::class, 'importProcess'])->name('import.process');
+    });
     Route::resource('peserta-didik', StudentController::class)->parameters([
         'peserta-didik' => 'peserta_didik',
     ]);

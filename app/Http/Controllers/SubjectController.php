@@ -34,8 +34,11 @@ class SubjectController extends Controller
         }
 
         $subjects = $query->latest()->paginate(10)->withQueryString();
+        $total = Subject::count();
+        $totalAktif = Subject::where('status_aktif', true)->count();
+        $totalNonAktif = $total - $totalAktif;
 
-        return view('subjects.index', compact('subjects'));
+        return view('subjects.index', compact('subjects', 'total', 'totalAktif', 'totalNonAktif'));
     }
 
     public function create(): View

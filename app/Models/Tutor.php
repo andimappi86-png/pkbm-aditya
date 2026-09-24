@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\EncryptedAttribute;
 use Database\Factories\TutorFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -37,8 +38,13 @@ class Tutor extends Model
     protected function casts(): array
     {
         return [
-            'tanggal_lahir' => 'date',
             'tanggal_mulai_mengajar' => 'date',
+            'tanggal_lahir' => 'date',
+            'nik' => EncryptedAttribute::class,
+            'alamat' => EncryptedAttribute::class,
+            'no_hp' => EncryptedAttribute::class,
+            'email' => EncryptedAttribute::class,
+            'bidang_keahlian' => EncryptedAttribute::class,
         ];
     }
 
@@ -49,6 +55,11 @@ class Tutor extends Model
 
     public function subjects(): BelongsToMany
     {
-        return $this->belongsToMany(Subject::class);
+        return $this->belongsToMany(Subject::class, 'tutor_subject');
+    }
+
+    public function classrooms(): BelongsToMany
+    {
+        return $this->belongsToMany(Classroom::class, 'tutor_classroom');
     }
 }

@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateClassroomRequest;
 use App\Models\AcademicYear;
 use App\Models\Classroom;
 use App\Models\Program;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -19,6 +20,23 @@ class ClassroomController extends Controller
         Gate::authorize('classrooms.view');
 
         $query = Classroom::with(['program', 'academicYear', 'homeroomTeacher', 'students']);
+
+        $user = auth()->user();
+
+        // Scope access based on roles
+        if ($user->hasRole('wali-kelas')) {
+            $query->where('wali_kelas_id', $user->id);
+        } elseif ($user->hasRole('tutor')) {
+            $query->whereHas('penugasanMengajar', function ($q) use ($user) {
+                if ($user->tutor) {
+                    $q->where('tutor_id', $user->tutor->id);
+                }
+            });
+        } elseif ($user->hasRole('peserta-didik')) {
+            if ($user->student) {
+                $query->where('id', $user->student->rombel_id);
+            }
+        }
 
         // Filter by program
         if ($request->filled('program_id')) {
@@ -57,10 +75,11 @@ class ClassroomController extends Controller
     {
         Gate::authorize('classrooms.create');
 
-        $programs = Program::where('status_aktif', true)->get();
+        $programs = Program::where('status_aktif', true)->get()->unique('nama');
         $academicYears = AcademicYear::where('status_aktif', true)->latest('tanggal_mulai')->get();
+        $waliKelas = User::role('wali-kelas')->orderBy('name')->get();
 
-        return view('classrooms.create', compact('programs', 'academicYears'));
+        return view('classrooms.create', compact('programs', 'academicYears', 'waliKelas'));
     }
 
     public function store(StoreClassroomRequest $request): RedirectResponse
@@ -73,42 +92,44 @@ class ClassroomController extends Controller
             ->with('success', 'Rombel berhasil ditambahkan.');
     }
 
-    public function show(Classroom $rombel): View
+    public function show(Classroom $classroom): View
     {
-        Gate::authorize('classrooms.view', $rombel);
+        Gate::authorize('classrooms.view', $classroom);
 
-        $rombel->load(['program', 'academicYear', 'homeroomTeacher', 'students.user']);
+        $classroom->load(['program', 'academicYear', 'homeroomTeacher', 'students.user']);
 
-        return view('classrooms.show', compact('rombel'));
+        return view('classrooms.show', compact('classroom'));
     }
 
-    public function edit(Classroom $rombel): View
+    public function edit(Classroom $classroom): View
     {
-        Gate::authorize('classrooms.update', $rombel);
+        Gate::authorize('classrooms.update', $classroom);
 
-        $programs = Program::where('status_aktif', true)->get();
+        $classroom->load('homeroomTeacher');
+        $programs = Program::where('status_aktif', true)->get()->unique('nama');
         $academicYears = AcademicYear::where('status_aktif', true)->latest('tanggal_mulai')->get();
+        $waliKelas = User::role('wali-kelas')->orderBy('name')->get();
 
-        return view('classrooms.edit', compact('rombel', 'programs', 'academicYears'));
+        return view('classrooms.edit', compact('classroom', 'programs', 'academicYears', 'waliKelas'));
     }
 
-    public function update(UpdateClassroomRequest $request, Classroom $rombel): RedirectResponse
+    public function update(UpdateClassroomRequest $request, Classroom $classroom): RedirectResponse
     {
-        Gate::authorize('classrooms.update', $rombel);
+        Gate::authorize('classrooms.update', $classroom);
 
         $validated = $request->validated();
 
-        $rombel->update($validated);
+        $classroom->update($validated);
 
         return redirect()->route('rombel.index')
             ->with('success', 'Data rombel berhasil diperbarui.');
     }
 
-    public function destroy(Classroom $rombel): RedirectResponse
+    public function destroy(Classroom $classroom): RedirectResponse
     {
-        Gate::authorize('classrooms.delete', $rombel);
+        Gate::authorize('classrooms.delete', $classroom);
 
-        $rombel->delete();
+        $classroom->delete();
 
         return redirect()->route('rombel.index')
             ->with('success', 'Rombel berhasil dihapus.');

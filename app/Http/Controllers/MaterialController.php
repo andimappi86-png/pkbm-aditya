@@ -39,16 +39,14 @@ class MaterialController extends Controller
         // Role-based filtering
         if ($roles->contains('peserta-didik')) {
             $student = $user->student;
-            abort_if(! $student, 403);
-            $penugasanIds = $student->classroom ? $student->classroom->penugasanMengajar()->where('status_aktif', true)->pluck('id') : [];
+            $penugasanIds = ($student && $student->classroom) ? $student->classroom->penugasanMengajar()->where('status_aktif', true)->pluck('id') : [];
             $query->whereIn('penugasan_mengajar_id', $penugasanIds);
         } elseif ($roles->contains('tutor')) {
             $tutor = Tutor::where('user_id', $user->id)->first();
             abort_if(! $tutor, 403);
             $query->whereHas('penugasanMengajar', fn ($q) => $q->where('tutor_id', $tutor->id));
         } elseif ($roles->contains('wali-kelas')) {
-            $wali = Tutor::where('user_id', $user->id)->first();
-            $classroomIds = Classroom::where('wali_kelas_id', $wali?->id)->pluck('id');
+            $classroomIds = Classroom::where('wali_kelas_id', $user->id)->pluck('id');
             $query->whereHas('penugasanMengajar', fn ($q) => $q->whereIn('classroom_id', $classroomIds));
         }
 

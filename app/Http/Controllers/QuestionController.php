@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Option;
 use App\Models\Question;
 use App\Models\Quiz;
+use App\Models\Tutor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
@@ -14,6 +14,7 @@ class QuestionController extends Controller
     {
         Gate::authorize('materials.manage');
         $this->authorizeQuiz($quiz);
+
         return view('questions.create', compact('quiz'));
     }
 
@@ -46,7 +47,7 @@ class QuestionController extends Controller
             }
         }
 
-        return redirect()->route('quizzes.show', $quiz)->with('success', 'Soal ditambahkan.');
+        return redirect()->route('quiz.show', $quiz)->with('success', 'Soal ditambahkan.');
     }
 
     public function edit(Question $question)
@@ -54,6 +55,7 @@ class QuestionController extends Controller
         Gate::authorize('materials.manage');
         $this->authorizeQuiz($question->quiz);
         $question->load('options');
+
         return view('questions.edit', compact('question'));
     }
 
@@ -83,7 +85,7 @@ class QuestionController extends Controller
             }
         }
 
-        return redirect()->route('quizzes.show', $question->quiz)->with('success', 'Soal diperbarui.');
+        return redirect()->route('quiz.show', $question->quiz)->with('success', 'Soal diperbarui.');
     }
 
     public function destroy(Question $question)
@@ -92,7 +94,8 @@ class QuestionController extends Controller
         $quiz = $question->quiz;
         $this->authorizeQuiz($quiz);
         $question->delete();
-        return redirect()->route('quizzes.show', $quiz)->with('success', 'Soal dihapus.');
+
+        return redirect()->route('quiz.show', $quiz)->with('success', 'Soal dihapus.');
     }
 
     private function authorizeQuiz(Quiz $quiz)
@@ -101,7 +104,7 @@ class QuestionController extends Controller
         $user = auth()->user();
 
         if ($user->hasRole('tutor')) {
-            $tutor = \App\Models\Tutor::where('user_id', $user->id)->first();
+            $tutor = Tutor::where('user_id', $user->id)->first();
             abort_if($penugasan->tutor_id !== $tutor?->id, 403);
         }
     }

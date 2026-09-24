@@ -6,12 +6,21 @@ use App\Http\Requests\StoreTutorRequest;
 use App\Http\Requests\UpdateTutorRequest;
 use App\Models\Tutor;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 class TutorController extends Controller
 {
     public function index(Request $request)
     {
+        Gate::authorize('tutors.view');
+
         $query = Tutor::query();
+
+        $user = auth()->user();
+        if ($user->hasRole('peserta-didik') || $user->hasRole('wali-kelas')) {
+            // They shouldn't see tutors list generally, but keep permission check
+            // If they have the permission, they can see all
+        }
 
         $search = $request->get('search');
         if ($search) {
@@ -40,11 +49,14 @@ class TutorController extends Controller
 
     public function create()
     {
+        Gate::authorize('tutors.create');
+
         return view('dashboards.tutor.create');
     }
 
     public function store(StoreTutorRequest $request)
     {
+        Gate::authorize('tutors.create');
         $validated = $request->validated();
         $tutor = Tutor::create($validated);
 
@@ -55,6 +67,8 @@ class TutorController extends Controller
 
     public function show(Tutor $tutor)
     {
+        Gate::authorize('tutors.view');
+
         return view('dashboards.tutor.show', [
             'tutor' => $tutor,
         ]);
@@ -62,6 +76,8 @@ class TutorController extends Controller
 
     public function edit(Tutor $tutor)
     {
+        Gate::authorize('tutors.update');
+
         return view('dashboards.tutor.edit', [
             'tutor' => $tutor,
         ]);
@@ -69,6 +85,7 @@ class TutorController extends Controller
 
     public function update(UpdateTutorRequest $request, Tutor $tutor)
     {
+        Gate::authorize('tutors.update');
         $validated = $request->validated();
         $tutor->update($validated);
 
@@ -79,6 +96,7 @@ class TutorController extends Controller
 
     public function destroy(Tutor $tutor)
     {
+        Gate::authorize('tutors.delete');
         $tutor->delete();
 
         return redirect()

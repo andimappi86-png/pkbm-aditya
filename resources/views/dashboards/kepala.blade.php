@@ -9,7 +9,7 @@
                     <x-avatar :src="auth()->user()->avatarUrl" :alt="auth()->user()->name" size="xl" />
                 </div>
                 <div class="flex-1">
-                    <h1 class="text-2xl lg:text-3xl font-bold text-navy mb-2">
+                    <h1 class="text-2xl lg:text-3xl font-bold text-text mb-2">
                         Selamat datang, {{ auth()->user()->name }}
                     </h1>
                     <p class="text-muted mb-4">
@@ -37,7 +37,7 @@
                     </div>
                 </div>
                 <div class="flex-1">
-                    <h3 class="text-lg font-semibold text-navy mb-2">Dashboard Pengendalian Operasional</h3>
+                    <h3 class="text-lg font-semibold text-text mb-2">Dashboard Pengendalian Operasional</h3>
                     <p class="text-muted text-sm leading-relaxed mb-3">
                         Sebagai Kepala PKBM, Anda memiliki kontrol penuh terhadap seluruh operasional PKBM Aditya. 
                         Anda dapat mengelola data peserta didik, tutor, rombel, akademik, dan sistem.
@@ -62,7 +62,7 @@
                 title="Tutor" 
                 :value="$totalTutors" 
                 variant="primary"
-                icon="user-check" 
+                icon="user-group" 
             />
             <x-stat-card 
                 title="Rombel" 
@@ -83,35 +83,35 @@
             <div class="lg:col-span-2 space-y-6">
                 <!-- Academic Overview -->
                 <div class="card p-6">
-                    <h3 class="text-lg font-semibold text-navy mb-4">Ringkasan Akademik</h3>
+                    <h3 class="text-lg font-semibold text-text mb-4">Ringkasan Operasional</h3>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div class="p-4 rounded-xl border border-border bg-surface text-center">
-                            <div class="text-2xl font-bold text-primary">{{ number_format($avgGrade, 1) }}</div>
-                            <div class="text-sm text-muted">Rata-rata Nilai</div>
-                        </div>
-                        <div class="p-4 rounded-xl border border-border bg-surface text-center">
+                        <div class="p-4 rounded-xl border border-gray-200 bg-surface text-center">
                             <div class="text-2xl font-bold text-primary">{{ $attendanceRate }}%</div>
                             <div class="text-sm text-muted">Tingkat Kehadiran</div>
                         </div>
-                        <div class="p-4 rounded-xl border border-border bg-surface text-center">
-                            <div class="text-2xl font-bold text-primary">{{ $assignmentsCount }}</div>
-                            <div class="text-sm text-muted">Total Tugas</div>
+                        <div class="p-4 rounded-xl border border-gray-200 bg-surface text-center">
+                            <div class="text-2xl font-bold text-primary">{{ $ppdbStats['total'] }}</div>
+                            <div class="text-sm text-muted">Total PPDB</div>
                         </div>
-                        <div class="p-4 rounded-xl border border-border bg-surface text-center">
-                            <div class="text-2xl font-bold text-primary">{{ $quizzesCount }}</div>
-                            <div class="text-sm text-muted">Total Kuis</div>
+                        <div class="p-4 rounded-xl border border-gray-200 bg-surface text-center">
+                            <div class="text-2xl font-bold text-primary">{{ $documentsCount }}</div>
+                            <div class="text-sm text-muted">Total Dokumen</div>
+                        </div>
+                        <div class="p-4 rounded-xl border border-gray-200 bg-surface text-center">
+                            <div class="text-2xl font-bold text-primary">{{ $lettersCount }}</div>
+                            <div class="text-sm text-muted">Total Surat</div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Program Breakdown -->
                 <div class="card p-6">
-                    <h3 class="text-lg font-semibold text-navy mb-4">Sebaran per Program</h3>
+                    <h3 class="text-lg font-semibold text-text mb-4">Sebaran per Program</h3>
                     <div class="space-y-4">
                         @foreach($programStats as $program)
                         <div>
                             <div class="flex justify-between text-sm mb-1">
-                                <span class="font-medium text-navy">{{ $program->nama }}</span>
+                                <span class="font-medium text-text">{{ $program->nama }}</span>
                                 <span class="text-muted">{{ $program->students_count }} Siswa</span>
                             </div>
                             <div class="w-full bg-gray-200 rounded-full h-2">
@@ -127,22 +127,22 @@
             <div class="space-y-6">
                 <!-- Administrative Stats -->
                 <div class="card p-6">
-                    <h3 class="text-lg font-semibold text-navy mb-4">Administrasi & PPDB</h3>
+                    <h3 class="text-lg font-semibold text-text mb-4">Administrasi & PPDB</h3>
                     <div class="space-y-4">
-                        <div class="flex justify-between items-center p-3 rounded-lg border border-border">
-                            <span class="text-sm font-medium text-navy">PPDB Menunggu</span>
+                        <div class="flex justify-between items-center p-3 rounded-lg border border-gray-200">
+                            <span class="text-sm font-medium text-text">PPDB Menunggu</span>
                             <span class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs font-bold">{{ $ppdbStats['pending'] }}</span>
                         </div>
-                        <div class="flex justify-between items-center p-3 rounded-lg border border-border">
-                            <span class="text-sm font-medium text-navy">PPDB Diterima</span>
+                        <div class="flex justify-between items-center p-3 rounded-lg border border-gray-200">
+                            <span class="text-sm font-medium text-text">PPDB Diterima</span>
                             <span class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-bold">{{ $ppdbStats['diterima'] }}</span>
                         </div>
-                        <div class="flex justify-between items-center p-3 rounded-lg border border-border">
-                            <span class="text-sm font-medium text-navy">Dokumen Menunggu Verifikasi</span>
+                        <div class="flex justify-between items-center p-3 rounded-lg border border-gray-200">
+                            <span class="text-sm font-medium text-text">Dokumen Menunggu Verifikasi</span>
                             <span class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs font-bold">{{ $pendingDocuments }}</span>
                         </div>
-                        <div class="flex justify-between items-center p-3 rounded-lg border border-border">
-                            <span class="text-sm font-medium text-navy">Total Pengumuman Aktif</span>
+                        <div class="flex justify-between items-center p-3 rounded-lg border border-gray-200">
+                            <span class="text-sm font-medium text-text">Total Pengumuman Aktif</span>
                             <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-bold">{{ $activeAnnouncements }}</span>
                         </div>
                     </div>
@@ -152,44 +152,44 @@
 
         <!-- Quick Actions -->
         <div class="card p-6">
-            <h3 class="text-lg font-semibold text-navy mb-4 flex items-center gap-2">
+            <h3 class="text-lg font-semibold text-text mb-4 flex items-center gap-2">
                 <x-icon name="layers" class="w-5 h-5 text-primary" />
                 Aksi Cepat
             </h3>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                 @can('students.manage')
-                <a href="{{ route('peserta-didik.index') }}" class="flex flex-col items-center gap-2 p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-primary-soft transition-colors cursor-pointer">
+                <a href="{{ route('peserta-didik.index') }}" class="flex flex-col items-center gap-2 p-4 rounded-xl border border-gray-200 hover:border-primary/50 hover:bg-primary-soft transition-colors cursor-pointer">
                     <div class="w-10 h-10 rounded-xl bg-primary-soft text-primary-dark flex items-center justify-center">
                         <x-icon name="users" class="w-5 h-5" />
                     </div>
-                    <span class="text-sm font-medium text-navy">Kelola Siswa</span>
+                    <span class="text-sm font-medium text-text">Kelola Siswa</span>
                 </a>
                 @endcan
 
                 @can('tutors.manage')
-                <a href="{{ route('tutors.index') }}" class="flex flex-col items-center gap-2 p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-primary-soft transition-colors cursor-pointer">
+                <a href="{{ route('tutors.index') }}" class="flex flex-col items-center gap-2 p-4 rounded-xl border border-gray-200 hover:border-primary/50 hover:bg-primary-soft transition-colors cursor-pointer">
                     <div class="w-10 h-10 rounded-xl bg-primary-soft text-primary-dark flex items-center justify-center">
-                        <x-icon name="user-check" class="w-5 h-5" />
+                        <x-icon name="user-group" class="w-5 h-5" />
                     </div>
-                    <span class="text-sm font-medium text-navy">Kelola Tutor</span>
+                    <span class="text-sm font-medium text-text">Kelola Tutor</span>
                 </a>
                 @endcan
 
                 @can('classrooms.manage')
-                <a href="{{ route('rombel.index') }}" class="flex flex-col items-center gap-2 p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-primary-soft transition-colors cursor-pointer">
+                <a href="{{ route('rombel.index') }}" class="flex flex-col items-center gap-2 p-4 rounded-xl border border-gray-200 hover:border-primary/50 hover:bg-primary-soft transition-colors cursor-pointer">
                     <div class="w-10 h-10 rounded-xl bg-primary-soft text-primary-dark flex items-center justify-center">
                         <x-icon name="layers" class="w-5 h-5" />
                     </div>
-                    <span class="text-sm font-medium text-navy">Kelola Rombel</span>
+                    <span class="text-sm font-medium text-text">Kelola Rombel</span>
                 </a>
                 @endcan
 
                 @can('reports.view')
-                <a href="{{ route('rekap.index') }}" class="flex flex-col items-center gap-2 p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-primary-soft transition-colors cursor-pointer">
+                <a href="{{ route('rekap.index') }}" class="flex flex-col items-center gap-2 p-4 rounded-xl border border-gray-200 hover:border-primary/50 hover:bg-primary-soft transition-colors cursor-pointer">
                     <div class="w-10 h-10 rounded-xl bg-primary-soft text-primary-dark flex items-center justify-center">
                         <x-icon name="chart-bar" class="w-5 h-5" />
                     </div>
-                    <span class="text-sm font-medium text-navy">Lihat Laporan</span>
+                    <span class="text-sm font-medium text-text">Lihat Laporan</span>
                 </a>
                 @endcan
             </div>

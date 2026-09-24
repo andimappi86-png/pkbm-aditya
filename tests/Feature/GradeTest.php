@@ -144,7 +144,7 @@ class GradeTest extends TestCase
 
         // Other student's grade -> Forbidden
         $response = $this->actingAs($studentUser)->get(route('nilai.show', $otherGrade));
-        $response->assertForbidden();
+        $response->assertRedirect()->assertSessionHas('error', 'Anda tidak memiliki akses ke fitur tersebut.');
     }
 
     public function test_tutor_can_update_grade(): void

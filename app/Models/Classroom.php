@@ -6,6 +6,7 @@ use Database\Factories\ClassroomFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Classroom extends Model
@@ -39,23 +40,23 @@ class Classroom extends Model
         return $this->belongsTo(AcademicYear::class, 'tahun_ajaran_id');
     }
 
-    public function homeroomTeacher(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'wali_kelas_id');
-    }
-
     public function waliKelas(): BelongsTo
     {
-        return $this->homeroomTeacher();
-    }
-
-    public function students(): HasMany
-    {
-        return $this->hasMany(Student::class, 'rombel_id');
+        return $this->belongsTo(User::class, 'wali_kelas_id');
     }
 
     public function penugasanMengajar(): HasMany
     {
         return $this->hasMany(PenugasanMengajar::class, 'classroom_id');
+    }
+
+    public function tutors(): BelongsToMany
+    {
+        return $this->belongsToMany(Tutor::class, 'tutor_classroom');
+    }
+
+    public function subjects(): BelongsToMany
+    {
+        return $this->belongsToMany(Subject::class, 'subject_classroom');
     }
 }

@@ -1,0 +1,56 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\User;
+use App\Models\Program;
+use App\Models\AcademicYear;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\WithFaker;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\Permission;
+use Tests\TestCase;
+
+class StudentImportTest extends TestCase
+{
+    use RefreshDatabase;
+
+    private User $admin;
+    private Program $program;
+    private AcademicYear $year;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Permission::create(['name' => 'students.create']);
+        $role = Role::create(['name' => 'kepala-pkbm']);
+        $role->givePermissionTo(['students.create']);
+
+        $this->admin = User::factory()->create();
+        $this->admin->assignRole('kepala-pkbm');
+
+        $this->program = Program::create([
+            'kode' => 'PKT-B',
+            'nama' => 'Paket B',
+            'deskripsi' => 'Program Paket B setara SMP',
+            'status_aktif' => true
+        ]);
+
+        $this->year = AcademicYear::create([
+            'nama' => '2026/2027',
+            'tanggal_mulai' => '2026-07-01',
+            'tanggal_selesai' => '2027-06-30',
+            'status_aktif' => true
+        ]);
+    }
+
+    public function test_can_download_template(): void
+    {
+        $response = $this->actingAs($this->admin)->get(route('peserta-didik.template'));
+        $response->assertStatus(200);
+        $response->assertHeader('content-disposition', 'attachment; filename=template_import_peserta_didik.xlsx');
+    }
+}

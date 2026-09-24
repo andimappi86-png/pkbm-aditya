@@ -47,8 +47,7 @@ class AssignmentController extends Controller
             abort_if(! $tutor, 403);
             $query->whereHas('penugasanMengajar', fn ($q) => $q->where('tutor_id', $tutor->id));
         } elseif ($roles->contains('wali-kelas')) {
-            $wali = Tutor::where('user_id', $user->id)->first();
-            $classroomIds = Classroom::where('wali_kelas_id', $wali?->id)->pluck('id');
+            $classroomIds = Classroom::where('wali_kelas_id', $user->id)->pluck('id');
             $query->whereHas('penugasanMengajar', fn ($q) => $q->whereIn('classroom_id', $classroomIds));
         }
 

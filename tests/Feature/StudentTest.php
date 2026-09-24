@@ -62,7 +62,12 @@ class StudentTest extends TestCase
             'nik' => '7600000000',
             'nama_lengkap' => 'Test Student',
             'jenis_kelamin' => 'Laki-laki',
-            'alamat' => 'Test Address',
+            'alamat' => 'Jl. Test',
+            'no_hp' => '081234567890',
+            'nama_ayah' => 'Ayah',
+            'nama_ibu' => 'Ibu',
+            'pekerjaan_ayah' => 'Pekerjaan',
+            'pekerjaan_ibu' => 'Pekerjaan',
             'program_id' => $this->program->id,
             'tahun_ajaran_id' => $this->year->id,
             'status' => 'aktif',
@@ -166,6 +171,6 @@ class StudentTest extends TestCase
 
         // View detail other student (forbidden)
         $response = $this->actingAs($teacher)->get(route('peserta-didik.show', $student2->id));
-        $response->assertStatus(403);
+        $response->assertRedirect('/dashboard/walikelas')->assertSessionHas('error');
     }
 }

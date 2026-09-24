@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests;
 
+use App\Models\PenugasanMengajar;
+use App\Models\Schedule;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -30,5 +32,92 @@ class UpdateScheduleRequest extends FormRequest
             'ruangan' => ['nullable', 'string', 'max:50'],
             'status_aktif' => ['nullable', 'boolean'],
         ];
+    }
+
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            $penugasanId = $this->input('penugasan_mengajar_id');
+            $hari = $this->input('hari');
+            $jamMulai = $this->input('jam_mulai');
+            $jamSelesai = $this->input('jam_selesai');
+            $scheduleId = $this->route('schedule')?->id;
+
+            if (! $penugasanId || ! $hari || ! $jamMulai || ! $jamSelesai) {
+                return;
+            }
+
+            $penugasan = PenugasanMengajar::find($penugasanId);
+            if (! $penugasan) {
+                return;
+            }
+
+            // Cek konflik Tutor (exclude current schedule)
+            $tutorConflict = Schedule::where('hari', $hari)
+                ->whereHas('penugasanMengajar', function ($q) use ($penugasan) {
+                    $q->where('tutor_id', $penugasan->tutor_id);
+                })
+                ->where(function ($q) use ($jamMulai, $jamSelesai) {
+                    $q->whereBetween('jam_mulai', [$jamMulai, $jamSelesai])
+                        ->orWhereBetween('jam_selesai', [$jamMulai, $jamSelesai])
+                        ->orWhere(function ($q2) use ($jamMulai, $jamSelesai) {
+                            $q2->where('jam_mulai', '<=', $jamMulai)
+                                ->where('jam_selesai', '>=', $jamSelesai);
+                        });
+                });
+
+            if ($scheduleId) {
+                $tutorConflict->where('id', '!=', $scheduleId);
+            }
+
+            if ($tutorConflict->exists()) {
+                $validator->errors()->add('jam_mulai', 'Jadwal bertabrakan dengan jadwal tutor lain pada waktu yang sama.');
+            }
+
+            // Cek konflik Rombel (exclude current schedule)
+            $rombelConflict = Schedule::where('hari', $hari)
+                ->whereHas('penugasanMengajar', function ($q) use ($penugasan) {
+                    $q->where('classroom_id', $penugasan->classroom_id);
+                })
+                ->where(function ($q) use ($jamMulai, $jamSelesai) {
+                    $q->whereBetween('jam_mulai', [$jamMulai, $jamSelesai])
+                        ->orWhereBetween('jam_selesai', [$jamMulai, $jamSelesai])
+                        ->orWhere(function ($q2) use ($jamMulai, $jamSelesai) {
+                            $q2->where('jam_mulai', '<=', $jamMulai)
+                                ->where('jam_selesai', '>=', $jamSelesai);
+                        });
+                });
+
+            if ($scheduleId) {
+                $rombelConflict->where('id', '!=', $scheduleId);
+            }
+
+            if ($rombelConflict->exists()) {
+                $validator->errors()->add('jam_mulai', 'Jadwal bertabrakan dengan pembelajaran lain di rombel yang sama.');
+            }
+
+            // Cek konflik Ruangan (opsional, jika ruang diisi)
+            $ruangan = $this->input('ruangan');
+            if ($ruangan) {
+                $ruangConflict = Schedule::where('hari', $hari)
+                    ->where('ruangan', $ruangan)
+                    ->where(function ($q) use ($jamMulai, $jamSelesai) {
+                        $q->whereBetween('jam_mulai', [$jamMulai, $jamSelesai])
+                            ->orWhereBetween('jam_selesai', [$jamMulai, $jamSelesai])
+                            ->orWhere(function ($q2) use ($jamMulai, $jamSelesai) {
+                                $q2->where('jam_mulai', '<=', $jamMulai)
+                                    ->where('jam_selesai', '>=', $jamSelesai);
+                            });
+                    });
+
+                if ($scheduleId) {
+                    $ruangConflict->where('id', '!=', $scheduleId);
+                }
+
+                if ($ruangConflict->exists()) {
+                    $validator->errors()->add('ruangan', 'Ruangan sudah digunakan pada waktu tersebut.');
+                }
+            }
+        });
     }
 }

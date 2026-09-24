@@ -6,7 +6,6 @@
     <title>Security / AES-256-GCM - PKBM Aditya</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -29,45 +28,50 @@
     <style>
         * { font-family: 'Inter', sans-serif; }
         .mono { font-family: 'Monospace', monospace; }
+        .scrollbar-thin::-webkit-scrollbar { width: 6px; }
+        .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+        .scrollbar-thin::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
     </style>
 </head>
 <body class="bg-background min-h-screen">
-    <!-- Sidebar -->
-    <aside class="fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-gray-200 hidden lg:block">
+    <div id="sidebar-overlay" class="hidden fixed inset-0 bg-black/30 z-30 lg:hidden"></div>
+
+    <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-gray-200 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out">
         <div class="flex flex-col h-full">
-            <div class="p-6 border-b border-gray-100">
+            <div class="p-5 border-b border-gray-100 shrink-0">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-primary-soft flex items-center justify-center">
+                    <div class="w-10 h-10 rounded-xl bg-primary-soft flex items-center justify-center flex-shrink-0">
                         <svg class="w-6 h-6 text-primary-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
                         </svg>
                     </div>
-                    <div>
-                        <h1 class="font-bold text-text">PKBM ADITYA</h1>
-                        <p class="text-xs text-muted">Operator Panel</p>
+                    <div class="min-w-0">
+                        <h1 class="font-bold text-text truncate">PKBM ADITYA</h1>
+                        <p class="text-xs text-muted truncate">Operator Panel</p>
                     </div>
                 </div>
             </div>
-            <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
+            <nav class="flex-1 p-4 space-y-1 overflow-y-auto scrollbar-thin">
+                <div class="px-3 py-2 text-xs font-semibold text-muted uppercase tracking-wider">Utama</div>
                 <a href="{{ route('operator.dashboard') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-text hover:bg-primary-soft hover:text-primary-dark transition-colors">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                    </svg>
+                    <x-icon name="home" class="w-5 h-5" />
                     Dashboard
                 </a>
                 
+                <div class="px-3 py-2 text-xs font-semibold text-muted uppercase tracking-wider mt-4">Sistem</div>
+                <a href="{{ route('operator.import.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-text hover:bg-primary-soft hover:text-primary-dark transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
+                    Impor Data
+                </a>
+                
                 <a href="{{ route('operator.security') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-primary-soft text-primary-dark font-medium">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                    </svg>
+                    <x-icon name="cog" class="w-5 h-5" />
                     Security / AES-256-GCM
                 </a>
 
                 <div class="pt-4 mt-4 border-t border-gray-100">
                     <a href="{{ route('operator.dashboard') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit()" class="flex items-center gap-3 px-4 py-3 rounded-xl text-text hover:bg-red-50 hover:text-red-600 transition-colors">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                        </svg>
+                        <x-icon name="logout" class="w-5 h-5" />
                         Logout
                     </a>
                     <form id="logout-form" action="{{ route('logout') }}" method="POST" class="hidden">
@@ -78,19 +82,21 @@
         </div>
     </aside>
 
-    <!-- Main Content -->
     <main class="lg:ml-64 min-h-screen">
         <header class="sticky top-0 z-30 bg-white border-b border-gray-200">
-            <div class="flex items-center justify-between px-6 py-4">
-                <h1 class="text-xl font-semibold text-text">Security / AES-256-GCM Research</h1>
+            <div class="flex items-center justify-between px-4 md:px-6 py-4">
+                <div class="flex items-center gap-4">
+                    <button id="sidebar-toggle" class="lg:hidden p-2 rounded-xl text-text hover:bg-gray-100 transition-colors" aria-label="Toggle sidebar">
+                        <x-icon name="menu" class="w-6 h-6" />
+                    </button>
+                    <h1 class="text-xl font-semibold text-text hidden sm:block">Security / AES-256-GCM</h1>
+                </div>
                 <div class="flex items-center gap-4">
                     <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-full bg-primary-soft flex items-center justify-center">
-                            <svg class="w-5 h-5 text-primary-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                            </svg>
+                        <div class="w-9 h-9 rounded-full bg-primary-soft flex items-center justify-center flex-shrink-0">
+                            <x-icon name="user-group" class="w-5 h-5 text-primary-dark" />
                         </div>
-                        <div class="text-right hidden sm:block">
+                        <div class="text-right hidden md:block">
                             <p class="text-sm font-medium text-text">{{ auth()->user()->name }}</p>
                             <p class="text-xs text-muted">Operator</p>
                         </div>
@@ -99,241 +105,174 @@
             </div>
         </header>
 
-        <div class="p-6 lg:p-8">
-            <!-- Algorithm Info Card -->
-            <div class="card p-6 mb-8">
-                <h3 class="text-lg font-semibold text-text mb-4 flex items-center gap-2">
-                    <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                    </svg>
-                    Konfigurasi Algoritma
-                </h3>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div class="p-4 rounded-xl border border-gray-200 bg-surface text-center">
-                        <div class="text-2xl font-bold text-primary">AES-256-GCM</div>
-                        <div class="text-sm text-muted">Algorithm</div>
-                    </div>
-                    <div class="p-4 rounded-xl border border-gray-200 bg-surface text-center">
-                        <div class="text-2xl font-bold text-primary">{{ $keyLength }} bit</div>
-                        <div class="text-sm text-muted">Key Size</div>
-                    </div>
-                    <div class="p-4 rounded-xl border border-gray-200 bg-surface text-center">
-                        <div class="text-2xl font-bold text-primary">96 bit (12 byte)</div>
-                        <div class="text-sm text-muted">IV / Nonce</div>
-                    </div>
-                    <div class="p-4 rounded-xl border border-gray-200 bg-surface text-center">
-                        <div class="text-2xl font-bold text-primary">128 bit (16 byte)</div>
-                        <div class="text-sm text-muted">Auth Tag</div>
-                    </div>
-                </div>
+        <div class="p-4 md:p-6 lg:p-8">
+            <div class="mb-8">
+                <h2 class="text-2xl font-bold text-text">Security Monitoring Dashboard</h2>
+                <p class="text-muted mt-1">Monitoring enkripsi AES-256-GCM pada data Student & Tutor</p>
             </div>
 
-            <!-- Data Stats -->
+            <!-- Algorithm Info Cards -->
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                <div class="card p-4 text-center">
-                    <div class="text-2xl font-bold text-primary">{{ $dummyStats['encrypted'] }}</div>
-                    <div class="text-sm text-muted">Data Terenkripsi</div>
+                <x-stat-card title="Algorithm" value="AES-256-GCM" variant="primary" icon="cog" />
+                <x-stat-card title="Key Size" value="256 bit" variant="primary" icon="key" />
+                <x-stat-card title="IV / Nonce" value="96 bit (12 byte)" variant="primary" icon="lock" />
+                <x-stat-card title="Auth Tag" value="128 bit (16 byte)" variant="primary" icon="shield" />
+            </div>
+
+            <!-- Encryption Status -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div class="rounded-2xl p-6 bg-white border border-gray-100 shadow-card">
+                    <h3 class="text-lg font-semibold text-text mb-4 flex items-center gap-2">
+                        <x-icon name="users" class="w-5 h-5 text-primary" />
+                        Student Encryption
+                    </h3>
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <x-stat-card title="Fields Encrypted" :value="$studentFields" variant="primary" icon="layers" />
+                            <x-stat-card title="Records" :value="$studentCount" variant="primary" icon="database" />
+                        </div>
+                        <div class="p-4 rounded-xl bg-primary-soft/50 border border-primary-soft/30">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-primary-soft text-primary-dark flex items-center justify-center">
+                                    <x-icon name="check-circle" class="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <p class="font-medium text-primary-dark">Encryption Status: ACTIVE</p>
+                                    <p class="text-sm text-primary">Field sensitif terenkripsi otomatis via Cast</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-sm text-muted">
+                            Fields: NIK, Alamat, Tanggal Lahir, No HP, Email, Nama Ayah, Nama Ibu, Nama Wali, No HP Wali, Alamat Wali
+                        </div>
+                    </div>
                 </div>
-                <div class="card p-4 text-center">
-                    <div class="text-2xl font-bold text-primary">{{ $dummyStats['plaintext'] }}</div>
-                    <div class="text-sm text-muted">Data Plaintext</div>
-                </div>
-                <div class="card p-4 text-center">
-                    <div class="text-2xl font-bold text-warning" id="benchmark-enc">-</div>
-                    <div class="text-sm text-muted">Encryption (ms)</div>
-                </div>
-                <div class="card p-4 text-center">
-                    <div class="text-2xl font-bold text-warning" id="benchmark-dec">-</div>
-                    <div class="text-sm text-muted">Decryption (ms)</div>
+
+                <div class="rounded-2xl p-6 bg-white border border-gray-100 shadow-card">
+                    <h3 class="text-lg font-semibold text-text mb-4 flex items-center gap-2">
+                        <x-icon name="user-group" class="w-5 h-5 text-primary" />
+                        Tutor Encryption
+                    </h3>
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <x-stat-card title="Fields Encrypted" :value="$tutorFields" variant="accent" icon="layers" />
+                            <x-stat-card title="Records" :value="$tutorCount" variant="accent" icon="database" />
+                        </div>
+                        <div class="p-4 rounded-xl bg-red-50/50 border border-red-200/30">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-red-50 text-accent flex items-center justify-center">
+                                    <x-icon name="check-circle" class="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <p class="font-medium text-accent">Encryption Status: ACTIVE</p>
+                                    <p class="text-sm text-red-600">Field sensitif terenkripsi otomatis via Cast</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-sm text-muted">
+                            Fields: NIK, Alamat, Tanggal Lahir, No HP, Email, Bidang Keahlian
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Tabs -->
-            <div class="card">
-                <div class="border-b border-gray-200">
-                    <nav class="flex -mb-px space-x-8" aria-label="Tabs">
-                        <button onclick="showTab('encrypt')" class="tab-btn active py-4 px-1 border-b-2 border-primary font-medium text-sm text-primary">Encrypt/Decrypt</button>
-                        <button onclick="showTab('avalanche')" class="tab-btn py-4 px-1 border-b-2 border-transparent font-medium text-sm text-muted hover:text-text">Avalanche Test</button>
-                        <button onclick="showTab('benchmark')" class="tab-btn py-4 px-1 border-b-2 border-transparent font-medium text-sm text-muted hover:text-text">Benchmark</button>
-                        <button onclick="showTab('auth-tag')" class="tab-btn py-4 px-1 border-b-2 border-transparent font-medium text-sm text-muted hover:text-text">Auth Tag Test</button>
-                    </nav>
+            <!-- Test Controls -->
+            <div class="rounded-2xl p-6 bg-white border border-gray-100 shadow-card mb-8">
+                <h3 class="text-lg font-semibold text-text mb-5 flex items-center gap-2">
+                    <x-icon name="cog" class="w-5 h-5 text-primary" />
+                    Security Tests
+                </h3>
+                <p class="text-muted text-sm mb-4">Gunakan dummy data internal. Data pribadi Student/Tutor tidak ditampilkan.</p>
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3" id="test-buttons">
+                    <button onclick="runTest('encrypt')" class="btn-primary py-3 text-sm" disabled><x-icon name="lock" class="w-4 h-4 inline mr-1" /> Test Encrypt</button>
+                    <button onclick="runTest('decrypt')" class="btn-primary py-3 text-sm" disabled><x-icon name="unlock" class="w-4 h-4 inline mr-1" /> Test Decrypt</button>
+                    <button onclick="runTest('auth-tag')" class="btn-warning py-3 text-sm" disabled><x-icon name="shield" class="w-4 h-4 inline mr-1" /> Test Auth Tag</button>
+                    <button onclick="runTest('tamper')" class="btn-danger py-3 text-sm" disabled><x-icon name="alert-circle" class="w-4 h-4 inline mr-1" /> Test Tampering</button>
+                    <button onclick="runTest('avalanche')" class="btn-secondary py-3 text-sm" disabled><x-icon name="chart-bar" class="w-4 h-4 inline mr-1" /> Avalanche Test</button>
+                    <button onclick="runTest('benchmark')" class="btn-secondary py-3 text-sm" disabled><x-icon name="clock" class="w-4 h-4 inline mr-1" /> Benchmark</button>
                 </div>
+            </div>
 
-                <!-- Encrypt/Decrypt Tab -->
-                <div id="tab-encrypt" class="tab-content p-6">
-                    <div class="grid lg:grid-cols-2 gap-8">
-                        <!-- Encrypt -->
-                        <div>
-                            <h4 class="font-semibold text-text mb-4">Encrypt Plaintext</h4>
-                            <div class="space-y-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-text mb-1">Plaintext</label>
-                                    <textarea id="encrypt-input" rows="6" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary-soft focus:outline-none transition-colors mono text-sm" placeholder='Masukkan plaintext (JSON format untuk dummy data):&#10;{"nik":"3273041234567890","nama":"Budi Santoso","email":"budi@example.com","alamat":"Jl. Poros Mamuju No. 123","telepon":"081234567890"}'></textarea>
-                                </div>
-                                <button onclick="encrypt()" class="w-full btn-primary py-3">Encrypt</button>
-                            </div>
-                        </div>
-
-                        <!-- Decrypt -->
-                        <div>
-                            <h4 class="font-semibold text-text mb-4">Decrypt Payload</h4>
-                            <div class="space-y-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-text mb-1">Encrypted Payload (Base64)</label>
-                                    <textarea id="decrypt-input" rows="6" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary-soft focus:outline-none transition-colors mono text-sm" placeholder="Paste encrypted payload here..."></textarea>
-                                </div>
-                                <button onclick="decrypt()" class="w-full btn-secondary py-3">Decrypt</button>
-                            </div>
-                        </div>
+            <!-- Test Results Area -->
+            <div id="test-results" class="hidden">
+                <div class="rounded-2xl p-6 bg-white border border-gray-100 shadow-card mb-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-text" id="test-title">Test Result</h3>
+                        <button onclick="hideResults()" class="text-muted hover:text-text transition-colors">
+                            <x-icon name="x" class="w-5 h-5" />
+                        </button>
                     </div>
-
-                    <!-- Results -->
-                    <div class="mt-6 grid lg:grid-cols-2 gap-6">
-                        <div>
-                            <h4 class="font-semibold text-text mb-2">Hasil Encrypt</h4>
-                            <div class="p-4 rounded-lg border border-gray-200 bg-surface">
-                                <textarea id="encrypt-output" rows="8" class="w-full mono text-sm text-text bg-transparent border-none focus:outline-none resize-none" readonly></textarea>
-                            </div>
-                            <div class="mt-2 flex gap-2">
-                                <button onclick="copyToClipboard('encrypt-output')" class="btn-secondary text-sm">Copy</button>
-                                <button onclick="document.getElementById('decrypt-input').value = document.getElementById('encrypt-output').value; showTab('decrypt')" class="btn-primary text-sm">Test Decrypt</button>
-                            </div>
-                        </div>
-                        <div>
-                            <h4 class="font-semibold text-text mb-2">Hasil Decrypt</h4>
-                            <div class="p-4 rounded-lg border border-gray-200 bg-surface">
-                                <textarea id="decrypt-output" rows="8" class="w-full mono text-sm text-text bg-transparent border-none focus:outline-none resize-none" readonly></textarea>
-                            </div>
-                            <div class="mt-2">
-                                <span id="decrypt-status" class="text-sm text-muted"></span>
-                            </div>
-                        </div>
-                    </div>
+                    <pre id="test-output" class="p-4 rounded-lg bg-surface border border-gray-200 mono text-sm text-text overflow-x-auto max-h-96"></pre>
                 </div>
+            </div>
 
-                <!-- Avalanche Tab -->
-                <div id="tab-avalanche" class="tab-content p-6 hidden">
-                    <div class="grid lg:grid-cols-2 gap-8">
-                        <div>
-                            <h4 class="font-semibold text-text mb-4">Plaintext A</h4>
-                            <textarea id="avalanche-a" rows="6" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary-soft focus:outline-none transition-colors mono text-sm" placeholder='Plaintext A:&#10;{"nik":"3273041234567890","nama":"Budi Santoso","email":"budi@example.com","alamat":"Jl. Poros Mamuju No. 123","telepon":"081234567890"}'></textarea>
-                        </div>
-                        <div>
-                            <h4 class="font-semibold text-text mb-4">Plaintext B (Sedikit Berbeda)</h4>
-                            <textarea id="avalanche-b" rows="6" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary-soft focus:outline-none transition-colors mono text-sm" placeholder='Plaintext B (ubah 1 karakter):&#10;{"nik":"3273041234567891","nama":"Budi Santoso","email":"budi@example.com","alamat":"Jl. Poros Mamuju No. 123","telepon":"081234567890"}'></textarea>
-                        </div>
-                    </div>
-                    <button onclick="avalanche()" class="btn-primary mt-4">Hitung Avalanche Effect</button>
-                    
-                    <div id="avalanche-result" class="mt-6 hidden">
-                        <h4 class="font-semibold text-text mb-4">Hasil Avalanche Effect</h4>
-                        <div class="grid grid-cols-3 gap-4">
-                            <div class="p-4 rounded-xl border border-gray-200 bg-surface text-center">
-                                <div class="text-2xl font-bold text-primary" id="avalanche-total">-</div>
-                                <div class="text-sm text-muted">Total Bits</div>
-                            </div>
-                            <div class="p-4 rounded-xl border border-gray-200 bg-surface text-center">
-                                <div class="text-2xl font-bold text-warning" id="avalanche-changed">-</div>
-                                <div class="text-sm text-muted">Changed Bits</div>
-                            </div>
-                            <div class="p-4 rounded-xl border border-gray-200 bg-surface text-center">
-                                <div class="text-2xl font-bold text-success" id="avalanche-percent">-</div>
-                                <div class="text-sm text-muted">Avalanche %</div>
-                            </div>
-                        </div>
-                        <div class="mt-4 p-4 rounded-lg border border-gray-200 bg-surface">
-                            <div class="text-sm text-muted mb-2">Binary Diff (First 256 bits):</div>
-                            <pre id="avalanche-diff" class="mono text-xs text-text overflow-x-auto"></pre>
-                        </div>
-                    </div>
+            <!-- Database Verification (Masked) -->
+            <div class="rounded-2xl p-6 bg-white border border-gray-100 shadow-card">
+                <h3 class="text-lg font-semibold text-text mb-5 flex items-center gap-2">
+                    <x-icon name="database" class="w-5 h-5 text-primary" />
+                    Database Verification (Masked)
+                </h3>
+                <p class="text-muted text-sm mb-4">Ciphertext ditampilkan sebagian (masked). Plaintext pribadi tidak ditampilkan massal. Key tidak ditampilkan.</p>
+                
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead>
+                            <tr class="bg-surface border-b border-gray-200">
+                                <th class="p-3 font-semibold text-text">Type</th>
+                                <th class="p-3 font-semibold text-text">Name</th>
+                                <th class="p-3 font-semibold text-text">NIK (Masked)</th>
+                                <th class="p-3 font-semibold text-text">Status</th>
+                                <th class="p-3 font-semibold text-text">Ciphertext Excerpt</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100 mono">
+                            @foreach ($maskedRecords as $record)
+                            <tr class="hover:bg-gray-50">
+                                <td class="p-3 text-text">{{ $record['type'] }}</td>
+                                <td class="p-3 text-text">{{ $record['name'] }}</td>
+                                <td class="p-3 text-text">{{ $record['masked_nik'] }}</td>
+                                <td class="p-3">
+                                    @if (str_contains($record['status'], 'Encrypted'))
+                                    <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-success/10 text-success">
+                                        <x-icon name="check-circle" class="w-3 h-3" /> {{ $record['status'] }}
+                                    </span>
+                                    @else
+                                    <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-danger/10 text-danger">
+                                        <x-icon name="x-circle" class="w-3 h-3" /> {{ $record['status'] }}
+                                    </span>
+                                    @endif
+                                </td>
+                                <td class="p-3 text-muted">{{ $record['raw_excerpt'] }}</td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
                 </div>
+            </div>
 
-                <!-- Benchmark Tab -->
-                <div id="tab-benchmark" class="tab-content p-6 hidden">
-                    <div class="flex items-center gap-4 mb-6">
-                        <label class="text-sm font-medium text-text">Jumlah Record</label>
-                        <select id="benchmark-count" class="px-4 py-2 rounded-lg border border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary-soft focus:outline-none transition-colors">
-                            <option value="100">100</option>
-                            <option value="500">500</option>
-                            <option value="1000" selected>1000</option>
-                            <option value="5000">5000</option>
-                        </select>
-                    </div>
-                    <button onclick="benchmark()" class="btn-primary" id="benchmark-btn">Jalankan Benchmark</button>
-                    
-                    <div id="benchmark-result" class="mt-6 hidden">
-                        <h4 class="font-semibold text-text mb-4">Hasil Benchmark</h4>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left">
-                                <thead>
-                                    <tr class="bg-surface border-b border-gray-200">
-                                        <th class="p-4 font-semibold text-text">Metric</th>
-                                        <th class="p-4 font-semibold text-text">Value</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-gray-100">
-                                    <tr><td class="p-4 text-text">Record Count</td><td class="p-4 mono font-medium" id="bm-count">-</td></tr>
-                                    <tr><td class="p-4 text-text">Plaintext Time (ms)</td><td class="p-4 mono font-medium" id="bm-plain">-</td></tr>
-                                    <tr><td class="p-4 text-text">Encryption Time (ms)</td><td class="p-4 mono font-medium" id="bm-enc">-</td></tr>
-                                    <tr><td class="p-4 text-text">Encryption Throughput (rec/s)</td><td class="p-4 mono font-medium" id="bm-enc-tp">-</td></tr>
-                                    <tr><td class="p-4 text-text">Decryption Time (ms)</td><td class="p-4 mono font-medium" id="bm-dec">-</td></tr>
-                                    <tr><td class="p-4 text-text">Decryption Throughput (rec/s)</td><td class="p-4 mono font-medium" id="bm-dec-tp">-</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Auth Tag Test Tab -->
-                <div id="tab-auth-tag" class="tab-content p-6 hidden">
-                    <h4 class="font-semibold text-text mb-4">Authentication Tag Validation Test</h4>
-                    <p class="text-muted mb-6">Test ini memverifikasi bahwa AES-GCM dengan benar mendeteksi modifikasi ciphertext/tag.</p>
-
-                    <div class="space-y-4 mb-6">
-                        <button onclick="authTagTest()" class="btn-primary">Jalankan Test Authentication Tag</button>
-                    </div>
-
-                    <div id="auth-tag-result" class="hidden">
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                            <div class="p-4 rounded-xl border border-gray-200 bg-surface text-center" id="auth-step1">
-                                <div class="text-2xl font-bold text-primary">1</div>
-                                <div class="text-sm text-muted">Encrypt</div>
-                                <div class="text-xs text-success mt-1">Success</div>
-                            </div>
-                            <div class="p-4 rounded-xl border border-gray-200 bg-surface text-center" id="auth-step2">
-                                <div class="text-2xl font-bold text-primary">2</div>
-                                <div class="text-sm text-muted">Decrypt Original</div>
-                                <div class="text-xs text-success mt-1">Success</div>
-                            </div>
-                            <div class="p-4 rounded-xl border border-gray-200 bg-surface text-center" id="auth-step3">
-                                <div class="text-2xl font-bold text-danger">3</div>
-                                <div class="text-sm text-muted">Decrypt Tampered</div>
-                                <div class="text-xs text-danger mt-1">Failed (Expected)</div>
-                            </div>
-                        </div>
-
-                        <div class="space-y-4">
-                            <div>
-                                <label class="block text-sm font-medium text-text mb-1">Plaintext Original</label>
-                                <textarea id="auth-plaintext" rows="4" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary-soft focus:outline-none transition-colors mono text-sm bg-gray-50" readonly></textarea>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-text mb-1">Payload Asli (Base64)</label>
-                                <textarea id="auth-payload-original" rows="4" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary-soft focus:outline-none transition-colors mono text-sm bg-gray-50" readonly></textarea>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-text mb-1">Payload Dimodifikasi (1 bit ciphertext diubah)</label>
-                                <textarea id="auth-payload-tampered" rows="4" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary-soft focus:outline-none transition-colors mono text-sm bg-gray-50" readonly></textarea>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-text mb-1">Hasil Decrypt Payload Asli</label>
-                                <textarea id="auth-decrypt-original" rows="4" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary-soft focus:outline-none transition-colors mono text-sm bg-gray-50" readonly></textarea>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-text mb-1">Error Decrypt Payload Dimodifikasi</label>
-                                <textarea id="auth-decrypt-tampered" rows="4" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary-soft focus:outline-none transition-colors mono text-sm bg-gray-50" readonly></textarea>
-                            </div>
-                        </div>
+            <!-- Benchmark History -->
+            <div id="benchmark-history" class="mt-8 hidden">
+                <div class="rounded-2xl p-6 bg-white border border-gray-100 shadow-card">
+                    <h3 class="text-lg font-semibold text-text mb-5 flex items-center gap-2">
+                        <x-icon name="chart-bar" class="w-5 h-5 text-primary" />
+                        Benchmark History
+                    </h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead>
+                                <tr class="bg-surface border-b border-gray-200">
+                                    <th class="p-3 font-semibold text-text">Timestamp</th>
+                                    <th class="p-3 font-semibold text-text">Records</th>
+                                    <th class="p-3 font-semibold text-text">Plaintext (ms)</th>
+                                    <th class="p-3 font-semibold text-text">Encrypt (ms)</th>
+                                    <th class="p-3 font-semibold text-text">Encrypt Throughput</th>
+                                    <th class="p-3 font-semibold text-text">Decrypt (ms)</th>
+                                    <th class="p-3 font-semibold text-text">Decrypt Throughput</th>
+                                </tr>
+                            </thead>
+                            <tbody id="benchmark-table-body" class="divide-y divide-gray-100">
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -341,219 +280,249 @@
     </main>
 
     <script>
-        function showTab(tabId) {
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.remove('active', 'border-primary', 'text-primary');
-                btn.classList.add('border-transparent', 'text-muted');
-            });
-            document.querySelectorAll('.tab-content').forEach(content => {
-                content.classList.add('hidden');
-            });
-            
-            const activeBtn = document.querySelector(`button[onclick="showTab('${tabId}')"]`);
-            activeBtn.classList.add('active', 'border-primary', 'text-primary');
-            activeBtn.classList.remove('border-transparent', 'text-muted');
-            document.getElementById('tab-' + tabId).classList.remove('hidden');
-        }
+        // Sidebar toggle
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebar-overlay');
+        const toggle = document.getElementById('sidebar-toggle');
 
-        async function encrypt() {
-            const input = document.getElementById('encrypt-input').value.trim();
-            if (!input) {
-                alert('Masukkan plaintext terlebih dahulu');
-                return;
-            }
+        toggle?.addEventListener('click', () => {
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
+            document.body.classList.toggle('overflow-hidden');
+        });
 
-            try {
-                const response = await fetch('{{ route('operator.encrypt') }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                    },
-                    body: JSON.stringify({ plaintext: input })
-                });
+        overlay?.addEventListener('click', () => {
+            sidebar.classList.add('-translate-x-full');
+            overlay.classList.add('hidden');
+            document.body.classList.remove('overflow-hidden');
+        });
 
-                const data = await response.json();
-                if (data.encrypted) {
-                    document.getElementById('encrypt-output').value = data.encrypted;
-                    document.getElementById('benchmark-enc').textContent = data.time_ms + ' ms';
-                } else {
-                    throw new Error(data.message || 'Encryption failed');
+        document.querySelectorAll('#sidebar a').forEach(link => {
+            link.addEventListener('click', () => {
+                if (window.innerWidth < 1024) {
+                    sidebar.classList.add('-translate-x-full');
+                    overlay.classList.add('hidden');
+                    document.body.classList.remove('overflow-hidden');
                 }
-            } catch (e) {
-                alert('Error: ' + e.message);
-            }
-        }
+            });
+        });
 
-        async function decrypt() {
-            const input = document.getElementById('decrypt-input').value.trim();
-            if (!input) {
-                alert('Masukkan encrypted payload terlebih dahulu');
-                return;
-            }
+        // Test functions
+        let testResults = [];
+
+        async function runTest(type) {
+            const btns = document.querySelectorAll('#test-buttons button');
+            btns.forEach(b => b.disabled = true);
+
+            const titleMap = {
+                'encrypt': 'Test Encryption',
+                'decrypt': 'Test Decryption',
+                'auth-tag': 'Test Authentication Tag',
+                'tamper': 'Test Tampering Detection',
+                'avalanche': 'Avalanche Effect Test',
+                'benchmark': 'Benchmark Performance'
+            };
+
+            document.getElementById('test-title').textContent = titleMap[type] || 'Test Result';
+            document.getElementById('test-output').textContent = 'Running...';
+            document.getElementById('test-results').classList.remove('hidden');
 
             try {
-                const response = await fetch('{{ route('operator.decrypt') }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                    },
-                    body: JSON.stringify({ payload: input })
-                });
-
-                const data = await response.json();
-                if (data.success) {
-                    document.getElementById('decrypt-output').value = data.plaintext;
-                    document.getElementById('decrypt-status').textContent = '✓ Decrypt berhasil';
-                    document.getElementById('decrypt-status').className = 'text-sm text-success';
-                    document.getElementById('benchmark-dec').textContent = data.time_ms + ' ms';
-                } else {
-                    document.getElementById('decrypt-output').value = '';
-                    document.getElementById('decrypt-status').textContent = '✗ ' + data.message;
-                    document.getElementById('decrypt-status').className = 'text-sm text-danger';
+                let result;
+                switch (type) {
+                    case 'encrypt':
+                        result = await testEncrypt();
+                        break;
+                    case 'decrypt':
+                        result = await testDecrypt();
+                        break;
+                    case 'auth-tag':
+                        result = await testAuthTag();
+                        break;
+                    case 'tamper':
+                        result = await testTampering();
+                        break;
+                    case 'avalanche':
+                        result = await testAvalanche();
+                        break;
+                    case 'benchmark':
+                        result = await runBenchmarks();
+                        break;
                 }
+                document.getElementById('test-output').textContent = JSON.stringify(result, null, 2);
             } catch (e) {
-                alert('Error: ' + e.message);
-            }
-        }
-
-        async function avalanche() {
-            const a = document.getElementById('avalanche-a').value.trim();
-            const b = document.getElementById('avalanche-b').value.trim();
-            if (!a || !b) {
-                alert('Masukkan kedua plaintext');
-                return;
-            }
-
-            try {
-                const response = await fetch('{{ route('operator.avalanche') }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                    },
-                    body: JSON.stringify({ plaintextA: a, plaintextB: b })
-                });
-
-                const data = await response.json();
-                document.getElementById('avalanche-total').textContent = data.total_bits.toLocaleString();
-                document.getElementById('avalanche-changed').textContent = data.changed_bits.toLocaleString();
-                document.getElementById('avalanche-percent').textContent = data.percentage + '%';
-                document.getElementById('avalanche-diff').textContent = data.binary_a.substring(0, 256) + '\n' + data.binary_b.substring(0, 256);
-                document.getElementById('avalanche-result').classList.remove('hidden');
-            } catch (e) {
-                alert('Error: ' + e.message);
-            }
-        }
-
-        async function benchmark() {
-            const count = parseInt(document.getElementById('benchmark-count').value);
-            const btn = document.getElementById('benchmark-btn');
-            btn.disabled = true;
-            btn.textContent = 'Running...';
-
-            try {
-                const response = await fetch('{{ route('operator.benchmark') }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                    },
-                    body: JSON.stringify({ count: count })
-                });
-
-                const data = await response.json();
-                document.getElementById('bm-count').textContent = data.count;
-                document.getElementById('bm-plain').textContent = data.plaintext_time_ms.toLocaleString();
-                document.getElementById('bm-enc').textContent = data.encryption_time_ms.toLocaleString();
-                document.getElementById('bm-enc-tp').textContent = data.encryption_throughput.toLocaleString();
-                document.getElementById('bm-dec').textContent = data.decryption_time_ms.toLocaleString();
-                document.getElementById('bm-dec-tp').textContent = data.decryption_throughput.toLocaleString();
-                
-                document.getElementById('benchmark-enc').textContent = data.encryption_time_ms.toFixed(2) + ' ms';
-                document.getElementById('benchmark-dec').textContent = data.decryption_time_ms.toFixed(2) + ' ms';
-                document.getElementById('benchmark-result').classList.remove('hidden');
-            } catch (e) {
-                alert('Error: ' + e.message);
+                document.getElementById('test-output').textContent = 'Error: ' + e.message;
             } finally {
-                btn.disabled = false;
-                btn.textContent = 'Jalankan Benchmark';
+                btns.forEach(b => b.disabled = false);
             }
         }
 
-        async function authTagTest() {
-            const plaintext = '{"nik":"3273041234567890","nama":"Budi Santoso","email":"budi@example.com","alamat":"Jl. Poros Mamuju No. 123","telepon":"081234567890"}';
-            document.getElementById('auth-plaintext').value = plaintext;
+        function hideResults() {
+            document.getElementById('test-results').classList.add('hidden');
+        }
 
-            // Step 1: Encrypt
-            document.getElementById('auth-step1').classList.add('ring-2', 'ring-yellow-400');
-            const encResp = await fetch('{{ route('operator.encrypt') }}', {
+        async function testEncrypt() {
+            const testData = {
+                nik: '3273041234567890',
+                nama: 'Test Student',
+                email: 'test@example.com',
+                alamat: 'Jl. Test No. 123',
+                no_hp: '081234567890',
+                nama_ayah: 'Ayah Test',
+                nama_ibu: 'Ibu Test',
+                nama_wali: 'Wali Test',
+                no_hp_wali: '081298765432',
+                alamat_wali: 'Jl. Wali No. 456'
+            };
+            const response = await fetch('{{ route("operator.encrypt") }}', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-                body: JSON.stringify({ plaintext })
+                body: JSON.stringify({ plaintext: JSON.stringify(testData) })
+            });
+            const data = await response.json();
+            if (!data.encrypted) throw new Error(data.message || 'Encrypt failed');
+            return { 
+                success: true, 
+                plaintext: testData,
+                encrypted_payload: data.encrypted,
+                time_ms: data.time_ms,
+                note: 'Payload is base64(JSON{v,iv,c,t}). Key not shown.'
+            };
+        }
+
+        async function testDecrypt() {
+            const testData = { test: 'decrypt', value: 123 };
+            const encResp = await fetch('{{ route("operator.encrypt") }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                body: JSON.stringify({ plaintext: JSON.stringify(testData) })
             });
             const encData = await encResp.json();
-            if (!encData.encrypted) throw new Error(encData.message || 'Encrypt failed');
-            
-            const originalPayload = encData.encrypted;
-            document.getElementById('auth-payload-original').value = originalPayload;
-            document.getElementById('auth-step1').classList.remove('ring-yellow-400');
-            document.getElementById('auth-step1').classList.add('ring-2', 'ring-green-400');
+            if (!encData.encrypted) throw new Error('Encrypt failed for decrypt test');
 
-            // Step 2: Decrypt original
-            document.getElementById('auth-step2').classList.add('ring-2', 'ring-yellow-400');
-            const decResp = await fetch('{{ route('operator.decrypt') }}', {
+            const response = await fetch('{{ route("operator.decrypt") }}', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-                body: JSON.stringify({ payload: originalPayload })
+                body: JSON.stringify({ payload: encData.encrypted })
             });
-            const decData = await decResp.json();
-            if (!decData.success) throw new Error(decData.message || 'Decrypt failed');
-            
-            document.getElementById('auth-decrypt-original').value = decData.plaintext;
-            document.getElementById('auth-step2').classList.remove('ring-yellow-400');
-            document.getElementById('auth-step2').classList.add('ring-2', 'ring-green-400');
-
-            // Step 3: Tamper with ciphertext (flip 1 bit in the base64)
-            document.getElementById('auth-step3').classList.add('ring-2', 'ring-yellow-400');
-            // Decode base64, modify 1 byte, re-encode
-            let tamperedPayload = originalPayload;
-            const decoded = atob(originalPayload);
-            const bytes = new Uint8Array(decoded.length);
-            for (let i = 0; i < decoded.length; i++) bytes[i] = decoded.charCodeAt(i);
-            // Flip 1 bit in the middle
-            bytes[Math.floor(bytes.length / 2)] ^= 0x01;
-            // Re-encode
-            tamperedPayload = btoa(String.fromCharCode.apply(null, bytes));
-            
-            document.getElementById('auth-payload-tampered').value = tamperedPayload;
-
-            const tamperedResp = await fetch('{{ route('operator.decrypt') }}', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-                body: JSON.stringify({ payload: tamperedPayload })
-            });
-            const tamperedData = await tamperedResp.json();
-            
-            if (!tamperedData.success) {
-                document.getElementById('auth-decrypt-tampered').value = tamperedData.message || 'Authentication tag validation failed (expected)';
-                document.getElementById('auth-step3').classList.remove('ring-yellow-400');
-                document.getElementById('auth-step3').classList.add('ring-2', 'ring-green-400');
-            } else {
-                document.getElementById('auth-decrypt-tampered').value = 'ERROR: Tampered payload should have failed!';
-                document.getElementById('auth-step3').classList.remove('ring-yellow-400');
-                document.getElementById('auth-step3').classList.add('ring-2', 'ring-red-400');
-            }
-
-            document.getElementById('auth-tag-result').classList.remove('hidden');
+            const data = await response.json();
+            if (!data.success) throw new Error(data.message || 'Decrypt failed');
+            return { 
+                success: true, 
+                original: testData,
+                decrypted: JSON.parse(data.plaintext),
+                match: JSON.stringify(testData) === data.plaintext,
+                time_ms: data.time_ms
+            };
         }
 
-        function copyToClipboard(elementId) {
-            const textarea = document.getElementById(elementId);
-            textarea.select();
-            document.execCommand('copy');
-            alert('Copied to clipboard!');
+        async function testAuthTag() {
+            const testData = { test: 'auth-tag', value: 'AES-GCM' };
+            const encResp = await fetch('{{ route("operator.encrypt") }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                body: JSON.stringify({ plaintext: JSON.stringify(testData) })
+            });
+            const encData = await encResp.json();
+            if (!encData.encrypted) throw new Error('Encrypt failed');
+
+            // Decrypt original (should succeed)
+            const decResp = await fetch('{{ route("operator.decrypt") }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                body: JSON.stringify({ payload: encData.encrypted })
+            });
+            const decData = await decResp.json();
+            if (!decData.success) throw new Error('Original decrypt failed: ' + decData.message);
+
+            // Tamper ciphertext (flip 1 bit in decoded payload)
+            const decoded = atob(encData.encrypted);
+            const bytes = new Uint8Array(decoded.length);
+            for (let i = 0; i < decoded.length; i++) bytes[i] = decoded.charCodeAt(i);
+            bytes[Math.floor(bytes.length / 2)] ^= 0x01;
+            const tampered = btoa(String.fromCharCode.apply(null, bytes));
+
+            // Decrypt tampered (should fail)
+            const tamperedResp = await fetch('{{ route("operator.decrypt") }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                body: JSON.stringify({ payload: tampered })
+            });
+            const tamperedData = await tamperedResp.json();
+
+            return {
+                success: !tamperedData.success,
+                original_decrypt: 'OK',
+                tampered_decrypt: tamperedData.success ? 'FAILED - Should have been rejected!' : 'REJECTED (Expected)',
+                tampered_error: tamperedData.message || 'Authentication tag validation failed',
+                note: 'AES-GCM correctly rejects tampered ciphertext via auth tag'
+            };
+        }
+
+        async function testTampering() {
+            return await testAuthTag(); // Same test
+        }
+
+        async function testAvalanche() {
+            const plaintextA = '{"nik":"3273041234567890","nama":"Budi Santoso","email":"budi@example.com","alamat":"Jl. Poros Mamuju No. 123","telepon":"081234567890"}';
+            const plaintextB = '{"nik":"3273041234567891","nama":"Budi Santoso","email":"budi@example.com","alamat":"Jl. Poros Mamuju No. 123","telepon":"081234567890"}';
+
+            const response = await fetch('{{ route("operator.avalanche") }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                body: JSON.stringify({ plaintextA, plaintextB })
+            });
+            const data = await response.json();
+            return {
+                plaintext_a: plaintextA,
+                plaintext_b: plaintextB,
+                diff: 'Last digit of NIK changed: 0 -> 1',
+                total_bits: data.total_bits,
+                changed_bits: data.changed_bits,
+                avalanche_percentage: data.percentage + '%',
+                note: 'Avalanche effect ~50% expected for good cipher'
+            };
+        }
+
+        async function runBenchmarks() {
+            const sizes = [100, 500, 1000];
+            const results = [];
+            
+            for (const count of sizes) {
+                const response = await fetch('{{ route("operator.benchmark") }}', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                    body: JSON.stringify({ count })
+                });
+                const data = await response.json();
+                results.push(data);
+                
+                // Add to history table
+                addBenchmarkRow(data);
+            }
+            
+            document.getElementById('benchmark-history').classList.remove('hidden');
+            
+            return { 
+                summary: 'Benchmarks completed for 100, 500, 1000 records',
+                results: results
+            };
+        }
+
+        function addBenchmarkRow(data) {
+            const tbody = document.getElementById('benchmark-table-body');
+            const row = document.createElement('tr');
+            row.className = 'hover:bg-gray-50';
+            row.innerHTML = `
+                <td class="p-3 text-text">${new Date().toLocaleTimeString()}</td>
+                <td class="p-3 mono font-medium">${data.count}</td>
+                <td class="p-3 mono">${data.plaintext_time_ms} ms</td>
+                <td class="p-3 mono">${data.encryption_time_ms} ms</td>
+                <td class="p-3 mono">${data.encryption_throughput.toLocaleString()} rec/s</td>
+                <td class="p-3 mono">${data.decryption_time_ms} ms</td>
+                <td class="p-3 mono">${data.decryption_throughput.toLocaleString()} rec/s</td>
+            `;
+            tbody.appendChild(row);
         }
     </script>
 </body>

@@ -9,7 +9,7 @@
                     <x-avatar :src="auth()->user()->avatarUrl" :alt="auth()->user()->name" size="xl" />
                 </div>
                 <div class="flex-1">
-                    <h1 class="text-2xl lg:text-3xl font-bold text-navy mb-2">
+                    <h1 class="text-2xl lg:text-3xl font-bold text-text mb-2">
                         Selamat datang, {{ auth()->user()->name }}
                     </h1>
                     <p class="text-muted mb-4">
@@ -37,7 +37,7 @@
                     </div>
                 </div>
                 <div class="flex-1">
-                    <h3 class="text-lg font-semibold text-navy mb-2">Dashboard Monitoring & Pengawasan</h3>
+                    <h3 class="text-lg font-semibold text-text mb-2">Dashboard Monitoring & Pengawasan</h3>
                     <p class="text-muted text-sm leading-relaxed mb-3">
                         Sebagai Ketua Yayasan, Anda memiliki akses monitoring untuk seluruh data PKBM Aditya. 
                         Dashboard ini menampilkan ringkasan dan laporan institusional.
@@ -53,16 +53,16 @@
         <!-- Stats Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <x-stat-card 
-                title="Peserta Didik" 
-                :value="$totalStudents" 
+                title="Peserta Didik (Aktif)" 
+                :value="$activeStudents . ' / ' . $totalStudents" 
                 variant="primary" 
                 icon="users"
             />
             <x-stat-card 
-                title="Tutor" 
-                :value="$totalTutors" 
+                title="Tutor (Aktif)" 
+                :value="$activeTutors . ' / ' . $totalTutors" 
                 variant="primary"
-                icon="user-check" 
+                icon="user-group" 
             />
             <x-stat-card 
                 title="Rombel" 
@@ -71,45 +71,22 @@
                 icon="layers"
             />
             <x-stat-card 
-                title="Program" 
-                :value="$totalPrograms" 
+                title="Rata-rata Kehadiran" 
+                :value="$attendanceRate . '%'" 
                 variant="primary" 
-                icon="book"
+                icon="check-circle"
             />
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <!-- Academic Overview -->
-            <div class="card p-6">
-                <h3 class="text-lg font-semibold text-navy mb-4">Ringkasan Akademik</h3>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div class="p-4 rounded-xl border border-border bg-surface text-center">
-                        <div class="text-2xl font-bold text-primary">{{ number_format($avgGrade, 1) }}</div>
-                        <div class="text-sm text-muted">Rata-rata Nilai</div>
-                    </div>
-                    <div class="p-4 rounded-xl border border-border bg-surface text-center">
-                        <div class="text-2xl font-bold text-primary">{{ $attendanceRate }}%</div>
-                        <div class="text-sm text-muted">Tingkat Kehadiran</div>
-                    </div>
-                    <div class="p-4 rounded-xl border border-border bg-surface text-center">
-                        <div class="text-2xl font-bold text-primary">{{ $ppdbStats['total'] }}</div>
-                        <div class="text-sm text-muted">Total PPDB</div>
-                    </div>
-                    <div class="p-4 rounded-xl border border-border bg-surface text-center">
-                        <div class="text-2xl font-bold text-primary">{{ $ppdbStats['diterima'] }}</div>
-                        <div class="text-sm text-muted">PPDB Diterima</div>
-                    </div>
-                </div>
-            </div>
-
             <!-- Program Breakdown -->
             <div class="card p-6">
-                <h3 class="text-lg font-semibold text-navy mb-4">Sebaran per Program</h3>
+                <h3 class="text-lg font-semibold text-text mb-4">Sebaran per Program</h3>
                 <div class="space-y-4">
                     @foreach($programStats as $program)
                     <div>
                         <div class="flex justify-between text-sm mb-1">
-                            <span class="font-medium text-navy">{{ $program->nama }}</span>
+                            <span class="font-medium text-text">{{ $program->nama }}</span>
                             <span class="text-muted">{{ $program->students_count }} Siswa</span>
                         </div>
                         <div class="w-full bg-gray-200 rounded-full h-2">
@@ -119,23 +96,42 @@
                     @endforeach
                 </div>
             </div>
+
+            <!-- PPDB Summary -->
+            <div class="card p-6">
+                <h3 class="text-lg font-semibold text-text mb-4">Ringkasan PPDB</h3>
+                <div class="grid grid-cols-3 gap-4">
+                    <div class="p-4 rounded-xl border border-gray-200 bg-surface text-center">
+                        <div class="text-2xl font-bold text-primary">{{ $ppdbStats['total'] }}</div>
+                        <div class="text-sm text-muted">Total Pendaftar</div>
+                    </div>
+                    <div class="p-4 rounded-xl border border-gray-200 bg-surface text-center">
+                        <div class="text-2xl font-bold text-primary">{{ $ppdbStats['diterima'] }}</div>
+                        <div class="text-sm text-muted">Diterima</div>
+                    </div>
+                    <div class="p-4 rounded-xl border border-gray-200 bg-surface text-center">
+                        <div class="text-2xl font-bold text-primary">{{ $ppdbStats['pending'] }}</div>
+                        <div class="text-sm text-muted">Menunggu Verifikasi</div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Monitoring Summary -->
         <div class="card p-6">
-            <h3 class="text-lg font-semibold text-navy mb-4">Ringkasan Monitoring</h3>
+            <h3 class="text-lg font-semibold text-text mb-4">Ringkasan Institusional</h3>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="p-4 rounded-xl border border-border bg-surface text-center">
-                    <div class="text-2xl font-bold text-primary">{{ $ppdbStats['pending'] }}</div>
-                    <div class="text-sm text-muted">PPDB Menunggu</div>
+                <div class="p-4 rounded-xl border border-gray-200 bg-surface text-center">
+                    <div class="text-2xl font-bold text-primary">{{ $totalStudents }}</div>
+                    <div class="text-sm text-muted">Total Peserta Didik</div>
                 </div>
-                <div class="p-4 rounded-xl border border-border bg-surface text-center">
-                    <div class="text-2xl font-bold text-primary">{{ number_format($avgGrade, 1) }}</div>
-                    <div class="text-sm text-muted">Rata-rata Nilai Global</div>
+                <div class="p-4 rounded-xl border border-gray-200 bg-surface text-center">
+                    <div class="text-2xl font-bold text-primary">{{ $totalTutors }}</div>
+                    <div class="text-sm text-muted">Total Tutor</div>
                 </div>
-                <div class="p-4 rounded-xl border border-border bg-surface text-center">
-                    <div class="text-2xl font-bold text-primary">{{ $attendanceRate }}%</div>
-                    <div class="text-sm text-muted">Kehadiran Global</div>
+                <div class="p-4 rounded-xl border border-gray-200 bg-surface text-center">
+                    <div class="text-2xl font-bold text-primary">{{ $totalClassrooms }}</div>
+                    <div class="text-sm text-muted">Total Rombel</div>
                 </div>
             </div>
         </div>

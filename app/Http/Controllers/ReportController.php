@@ -13,10 +13,23 @@ use App\Models\Quiz;
 use App\Models\Student;
 use App\Models\Tutor;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\View\View;
 
-class ReportController extends Controller
+class ReportController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware(function ($request, $next) {
+                abort_unless(auth()->user()->hasAnyRole(['operator', 'kepala-pkbm', 'ketua-yayasan']), 403, 'Anda tidak memiliki akses ke laporan institusi.');
+
+                return $next($request);
+            }),
+        ];
+    }
+
     public function index(Request $request): View
     {
         abort_unless(auth()->user()->can('reports.view'), 403);
@@ -105,7 +118,7 @@ class ReportController extends Controller
 
         $filters = $this->getFilters($request);
 
-        $query = Grade::with(['student.user', 'student.classroom', 'assignment.penugasanMengajar.subject'])
+        $query = Grade::with(['student.user', 'student.classroom', 'penugasanMengajar.subject'])
             ->latest('created_at');
 
         $this->applyFilters($query, $filters);
@@ -113,7 +126,7 @@ class ReportController extends Controller
         $grades = $query->paginate(50)->withQueryString();
 
         // Summary
-        $avg = $grades->avg('nilai') ?? 0;
+        $avg = $grades->avg('nilai_akhir') ?? 0;
         $count = $grades->total();
         $stats = compact('avg', 'count');
 
@@ -198,7 +211,7 @@ class ReportController extends Controller
             'total_kuis_diikuti' => $quizzes->sum('attempts_count'),
         ];
 
-        return view('reports.learning', compact('stats', 'filters'));
+        return view('reports.learning', compact('stats', 'filters', 'assignments', 'quizzes', 'materials'));
     }
 
     public function print(Request $request, string $type): View
@@ -327,12 +340,12 @@ class ReportController extends Controller
 
     private function printGrades(array $filters): View
     {
-        $query = Grade::with(['student.user', 'student.classroom', 'assignment.penugasanMengajar.subject'])
+        $query = Grade::with(['student.user', 'student.classroom', 'penugasanMengajar.subject'])
             ->latest('created_at');
         $this->applyPrintFilters($query, $filters);
         $grades = $query->get();
 
-        $avg = $grades->avg('nilai') ?? 0;
+        $avg = $grades->avg('nilai_akhir') ?? 0;
 
         return view('reports.print.grades', compact('grades', 'filters', 'avg'));
     }

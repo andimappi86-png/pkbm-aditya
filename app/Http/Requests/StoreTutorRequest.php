@@ -15,7 +15,7 @@ class StoreTutorRequest extends FormRequest
     {
         return [
             'nomor_induk' => ['required', 'string', 'max:50', 'unique:tutors,nomor_induk'],
-            'nik' => ['nullable', 'string', 'max:50', 'unique:tutors,nik'],
+            'nik' => ['required', 'digits:16'],
             'nama_lengkap' => ['required', 'string', 'max:150'],
             'nama_panggilan' => ['nullable', 'string', 'max:50'],
             'jenis_kelamin' => ['required', 'string', 'max:20'],
@@ -26,7 +26,7 @@ class StoreTutorRequest extends FormRequest
             'no_hp' => ['nullable', 'string', 'max:30'],
             'email' => ['nullable', 'email', 'max:100'],
             'pendidikan_terakhir' => ['nullable', 'string', 'max:100'],
-            'bidang_keahlian' => ['nullable', 'string', 'max:150'],
+            'bidang_keahlian' => ['required', 'string', 'max:150'],
             'status_tutor' => ['required', 'string', 'max:30'],
             'tanggal_mulai_mengajar' => ['nullable', 'date'],
             'foto' => ['nullable', 'image', 'max:2048'],

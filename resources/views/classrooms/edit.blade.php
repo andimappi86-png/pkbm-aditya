@@ -1,91 +1,84 @@
-<x-app-layout>
-    <x-slot name="title">Edit Rombel</x-slot>
-
-    <div class="max-w-2xl mx-auto">
+<x-app-layout title="Edit Rombel">
+    <div class="max-w-4xl mx-auto space-y-6">
         <x-breadcrumb :items="[
             ['label' => 'Rombel', 'href' => route('rombel.index')],
-            ['label' => $rombel->nama_rombel, 'href' => route('rombel.show', $rombel->id)],
-            ['label' => 'Edit Rombel']
+            ['label' => $classroom->nama_rombel, 'href' => route('rombel.show', ['classroom' => $classroom->id])],
+            ['label' => 'Edit']
         ]" />
 
-        <div class="card p-6">
-            <form method="POST" action="{{ route('rombel.update', $rombel->id) }}" class="space-y-6">
+        <div class="bg-white border border-[#D9E2E5] rounded-xl shadow-sm p-6">
+            <h2 class="text-xl font-bold text-[#172B3A] mb-6 border-b border-[#D9E2E5] pb-4">Edit Rombel</h2>
+            <form method="POST" action="{{ route('rombel.update', ['classroom' => $classroom]) }}" class="space-y-6">
                 @csrf
                 @method('PUT')
 
-                <input type="hidden" name="wali_kelas_id" value="{{ $rombel->wali_kelas_id ?? '' }}">
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Section 1: Informasi Rombel -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label class="label">Nama Rombel</label>
-                        <input type="text" name="nama_rombel" value="{{ old('nama_rombel', $rombel->nama_rombel) }}" placeholder="Misalnya: X IPA, VII B" class="input @error('nama_rombel') input-error @enderror">
-                        @error('nama_rombel')
-                        <p class="input-error">{{ $message }}</p>
-                        @enderror
+                        <label for="nama_rombel" class="block text-sm font-semibold text-[#172B3A] mb-1">Nama Rombel *</label>
+                        <input type="text" name="nama_rombel" id="nama_rombel" value="{{ old('nama_rombel', $classroom->nama_rombel) }}" placeholder="Misalnya: X IPA, VII B" class="w-full px-3 py-2 border {{ $errors->has('nama_rombel') ? 'border-[#C62828]' : 'border-[#D9E2E5]' }} rounded-lg focus:ring-[#167C80] focus:border-[#167C80]" required>
                     </div>
                     <div>
-                        <label class="label">Kode Rombel</label>
-                        <input type="text" name="kode_rombel" value="{{ old('kode_rombel', $rombel->kode_rombel) }}" placeholder="Misalnya: X-IPA, VII-B" class="input @error('kode_rombel') input-error @enderror">
-                        @error('kode_rombel')
-                        <p class="input-error">{{ $message }}</p>
-                        @enderror
+                        <label for="kode_rombel" class="block text-sm font-semibold text-[#172B3A] mb-1">Kode Rombel *</label>
+                        <input type="text" name="kode_rombel" id="kode_rombel" value="{{ old('kode_rombel', $classroom->kode_rombel) }}" placeholder="Misalnya: X-IPA, VII-B" class="w-full px-3 py-2 border {{ $errors->has('kode_rombel') ? 'border-[#C62828]' : 'border-[#D9E2E5]' }} rounded-lg focus:ring-[#167C80] focus:border-[#167C80]" required>
                     </div>
                 </div>
 
-                <div>
-                    <label class="label">Program</label>
-                    <select name="program_id" class="input @error('program_id') input-error @enderror">
-                        <option value="">-- Pilih Program --</option>
-                        @foreach($programs as $program)
-                            <option value="{{ $program->id }}" {{ old('program_id') == $program->id || ($rombel->program_id && $rombel->program_id == $program->id) ? 'selected' : '' }}>
-                                {{ $program->nama }}
+                <!-- Section 2: Akademik -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="program_id" class="block text-sm font-semibold text-[#172B3A] mb-1">Program *</label>
+                        <select name="program_id" id="program_id" class="w-full px-3 py-2 border border-[#D9E2E5] rounded-lg focus:ring-[#167C80] focus:border-[#167C80]" required>
+                            <option value="">-- Pilih Program --</option>
+                            @foreach($programs as $program)
+                                <option value="{{ $program->id }}" {{ old('program_id') == $program->id || ($classroom->program_id && $classroom->program_id == $program->id) ? 'selected' : '' }}>
+                                    {{ $program->nama }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label for="tahun_ajaran_id" class="block text-sm font-semibold text-[#172B3A] mb-1">Tahun Ajaran *</label>
+                        <select name="tahun_ajaran_id" id="tahun_ajaran_id" class="w-full px-3 py-2 border border-[#D9E2E5] rounded-lg focus:ring-[#167C80] focus:border-[#167C80]" required>
+                            <option value="">-- Pilih Tahun Ajaran --</option>
+                            @foreach($academicYears as $year)
+
+                                <option value="{{ $year->id }}" {{ old('tahun_ajaran_id') == $year->id || ($classroom->tahun_ajaran_id && $classroom->tahun_ajaran_id == $year->id) ? 'selected' : '' }}>
+                                    {{ $year->nama }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Section 3: Wali Kelas (Manual Input) -->
+                <div class="mt-6">
+                    <label for="wali_kelas_id" class="block text-sm font-semibold text-[#172B3A] mb-1">Wali Kelas (opsional)</label>
+                    <select name="wali_kelas_id" id="wali_kelas_id" class="w-full px-3 py-2 border {{ $errors->has('wali_kelas_id') ? 'border-[#C62828]' : 'border-[#D9E2E5]' }} rounded-lg focus:ring-[#167C80] focus:border-[#167C80]">
+                        <option value="">-- Pilih Wali Kelas --</option>
+                        @foreach($waliKelas as $user)
+                            <option value="{{ $user->id }}" {{ old('wali_kelas_id', $classroom->wali_kelas_id) == $user->id ? 'selected' : '' }}>
+                                {{ $user->name }}
                             </option>
                         @endforeach
                     </select>
-                    @error('program_id')
-                    <p class="input-error">{{ $message }}</p>
+                    @error('wali_kelas_id')
+                        <p class="text-[#C62828] text-sm mt-1">{{ $message }}</p>
                     @enderror
                 </div>
 
-                <div>
-                    <label class="label">Tahun Ajaran</label>
-                    <select name="tahun_ajaran_id" class="input @error('tahun_ajaran_id') input-error @enderror">
-                        <option value="">-- Pilih Tahun Ajaran --</option>
-                        @foreach($academicYears as $year)
-                            <option value="{{ $year->id }}" {{ old('tahun_ajaran_id') == $year->id || ($rombel->tahun_ajaran_id && $rombel->tahun_ajaran_id == $year->id) ? 'selected' : '' }}>
-                                {{ $year->nama_ajaran }}
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('tahun_ajaran_id')
-                    <p class="input-error">{{ $message }}</p>
-                    @enderror
+                <!-- Section 4: Status -->
+                <div class="mt-6">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" name="status_aktif" value="1" {{ old('status_aktif', $classroom->status_aktif ? true : false) ? 'checked' : '' }} class="w-4 h-4 text-[#167C80] rounded">
+                        <span class="text-sm font-semibold text-[#172B3A]">Aktif</span>
+                    </label>
                 </div>
 
-                <div>
-                    <label class="label">Wali Kelas</label>
-                    <select name="wali_kelas_id" class="input">
-                        <option value="">-- Pilih Wali Kelas (Opsional) --</option>
-                        @foreach(User::where('role', 'tutor')->get() as $tutor)
-                            <option value="{{ $tutor->id }}" {{ old('wali_kelas_id') == $tutor->id || ($rombel->wali_kelas_id && $rombel->wali_kelas_id == $tutor->id) ? 'selected' : '' }}>
-                                {{ $tutor->nama_lengkap }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div>
-                    <label class="label">Status Aktif</label>
-                    <div class="flex items-center">
-                        <input id="status_aktif" name="status_aktif" type="checkbox" {{ old('status_aktif', $rombel->status_aktif ? true : false) ? 'checked' : '' }} class="h-4 w-4 text-primary focus:ring-primary border-border rounded">
-                        <label for="status_aktif" class="label-text ml-3">Aktif</label>
-                    </div>
-                </div>
-
-                <div class="flex justify-end pt-4">
-                    <a href="{{ route('rombel.index') }}" class="btn-secondary mr-2">Batal</a>
-                    <button type="submit" class="btn-primary">
-                        <x-icon name="check" class="w-4 h-4 mr-2" />
+                <div class="flex justify-end pt-4 border-t border-[#D9E2E5]">
+                    <a href="{{ route('rombel.index') }}" class="px-6 py-2.5 border border-[#D9E2E5] text-[#172B3A] rounded-lg font-medium hover:bg-[#F5F7F8] transition-colors mr-3">Batal</a>
+                    <button type="submit" class="inline-flex items-center gap-2 px-6 py-2.5 bg-[#167C80] text-white rounded-lg font-medium hover:bg-[#0F5F63] transition-colors">
+                        <x-icon name="check" class="w-4 h-4" />
                         Simpan Perubahan
                     </button>
                 </div>

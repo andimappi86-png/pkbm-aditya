@@ -6,10 +6,20 @@
             <x-breadcrumb :items="[['label' => 'Peserta Didik']]" />
             
             @can('students.create')
-            <a href="{{ route('peserta-didik.create') }}" class="btn-primary">
-                <x-icon name="plus" class="w-4 h-4" />
-                Tambah Peserta Didik
-            </a>
+            <div class="flex flex-wrap items-center gap-2">
+                <a href="{{ route('peserta-didik.template') }}" class="btn-secondary">
+                    <x-icon name="download" class="w-4 h-4 mr-2" />
+                    Template
+                </a>
+                <a href="{{ route('peserta-didik.import') }}" class="btn-secondary">
+                    <x-icon name="upload" class="w-4 h-4 mr-2" />
+                    Import
+                </a>
+                <a href="{{ route('peserta-didik.create') }}" class="btn-primary">
+                    <x-icon name="plus" class="w-4 h-4 mr-2" />
+                    Tambah
+                </a>
+            </div>
             @endcan
         </div>
 

@@ -86,17 +86,17 @@
                             </td>
                             <td class="text-right space-x-2">
                                 @can('classrooms.view')
-                                <a href="{{ route('rombel.show', $classroom->id) }}" class="inline-flex p-2 text-muted hover:text-primary-dark transition-colors" title="Lihat">
+                                <a href="{{ route('rombel.show', ['classroom' => $classroom]) }}" class="inline-flex p-2 text-muted hover:text-primary-dark transition-colors" title="Lihat">
                                     <x-icon name="eye" class="w-5 h-5" />
                                 </a>
                                 @endcan
                                 @can('classrooms.update')
-                                <a href="{{ route('rombel.edit', $classroom->id) }}" class="inline-flex p-2 text-muted hover:text-primary-dark transition-colors" title="Edit">
+                                <a href="{{ route('rombel.edit', ['classroom' => $classroom]) }}" class="inline-flex p-2 text-muted hover:text-primary-dark transition-colors" title="Edit">
                                     <x-icon name="pencil" class="w-5 h-5" />
                                 </a>
                                 @endcan
                                 @can('classrooms.delete')
-                                <form action="{{ route('rombel.destroy', $classroom->id) }}" method="POST" class="inline-block" onsubmit="return confirm('Yakin ingin menghapus rombel ini?')">
+                                <form action="{{ route('rombel.destroy', ['classroom' => $classroom]) }}" method="POST" class="inline-block" onsubmit="return confirm('Yakin ingin menghapus rombel ini?')">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="inline-flex p-2 text-muted hover:text-accent transition-colors" title="Hapus">

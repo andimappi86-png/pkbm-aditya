@@ -10,7 +10,7 @@
                     <x-avatar :src="auth()->user()->avatarUrl" :alt="auth()->user()->name" size="xl" />
                 </div>
                 <div class="flex-1">
-                    <h1 class="text-2xl lg:text-3xl font-bold text-navy mb-2">
+                    <h1 class="text-2xl lg:text-3xl font-bold text-text mb-2">
                         Selamat datang, {{ auth()->user()->name }}
                     </h1>
                     <p class="text-muted mb-4">
@@ -38,7 +38,7 @@
                     </div>
                 </div>
                 <div class="flex-1">
-                    <h3 class="text-lg font-semibold text-navy mb-2">Dashboard Pengelolaan Kelas</h3>
+                    <h3 class="text-lg font-semibold text-text mb-2">Dashboard Pengelolaan Kelas</h3>
                     <p class="text-muted text-sm leading-relaxed mb-3">
                         Sebagai Wali Kelas, Anda dapat mengelola rombel yang ditugaskan kepada Anda. 
                         Anda dapat melihat dan memantau perkembangan siswa, absensi, dan perkembangan akademik kelas Anda.
@@ -57,62 +57,65 @@
                 title="Total Siswa" 
                 :value="$stats['total_siswa']" 
                 variant="primary" 
+                icon="users"
             />
             <x-stat-card 
                 title="Rombel" 
                 :value="$stats['total_rombel']" 
                 variant="primary" 
+                icon="layers"
             />
             <x-stat-card 
                 title="Materi" 
                 :value="$stats['total_materi']" 
                 variant="primary" 
+                icon="book-open"
             />
             <x-stat-card 
                 title="Tugas" 
                 :value="$stats['total_tugas']" 
                 variant="primary" 
+                icon="clipboard"
             />
             <x-stat-card 
                 title="Kuis" 
                 :value="$stats['total_kuis']" 
                 variant="primary" 
+                icon="lightning-bolt"
             />
             <x-stat-card 
                 title="Kehadiran Rata-rata" 
                 :value="$stats['kehadiran_rata'] . '%'" 
                 variant="primary" 
+                icon="calendar"
             />
         </div>
 
         <!-- Academic Performance -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div class="card p-6">
-                <h3 class="text-lg font-semibold text-navy mb-4">Performa Akademik Kelas</h3>
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="p-4 rounded-xl border border-border bg-surface text-center">
-                        <div class="text-3xl font-bold text-primary">{{ number_format($stats['rata_rata_nilai'], 1) }}</div>
-                        <div class="text-sm text-muted">Rata-rata Nilai</div>
-                    </div>
-                    <div class="p-4 rounded-xl border border-border bg-surface text-center">
-                        <div class="text-3xl font-bold text-primary">{{ $stats['kehadiran_rata'] }}%</div>
-                        <div class="text-sm text-muted">Kehadiran</div>
+                    <h3 class="text-lg font-semibold text-text mb-4">Performa Akademik Kelas</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        
+                        <div class="p-4 rounded-xl border border-gray-200 bg-surface text-center">
+                            <div class="text-3xl font-bold text-primary">{{ $stats['kehadiran_rata'] }}%</div>
+                            <div class="text-sm text-muted">Kehadiran</div>
+                        </div>
                     </div>
                 </div>
-            </div>
 
             <!-- Recent Announcements -->
             <div class="card p-6">
-                <h3 class="text-lg font-semibold text-navy mb-4 flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-text mb-4 flex items-center justify-between">
                     Pengumuman Terbaru
                     <a href="{{ route('announcements.index') }}" class="text-sm text-primary hover:underline">Lihat Semua</a>
                 </h3>
                 @if($recentAnnouncements->isNotEmpty())
                     <div class="space-y-3">
                         @foreach($recentAnnouncements as $announcement)
-                        <a href="{{ route('announcements.show', $announcement) }}" class="block p-3 rounded-lg border border-border hover:bg-primary-soft transition-colors">
+                        <a href="{{ route('announcements.show', $announcement) }}" class="block p-3 rounded-lg border border-gray-200 hover:bg-primary-soft transition-colors">
                             <div class="flex items-center justify-between">
-                                <span class="font-medium text-navy">{{ $announcement->judul }}</span>
+                                <span class="font-medium text-text">{{ $announcement->judul }}</span>
                                 <span class="text-xs px-2 py-1 bg-primary-soft text-primary-dark rounded">{{ $announcement->kategori }}</span>
                             </div>
                             <div class="text-sm text-muted mt-1">{{ $announcement->published_at->format('d M Y') }}</div>
@@ -127,7 +130,7 @@
 
         <!-- My Classrooms -->
         <div class="card p-6">
-            <h3 class="text-lg font-semibold text-navy mb-4 flex items-center gap-2">
+            <h3 class="text-lg font-semibold text-text mb-4 flex items-center gap-2">
                 <x-icon name="layers" class="w-5 h-5 text-primary" />
                 Rombel Saya
             </h3>
@@ -135,13 +138,13 @@
             @if(count($myClassrooms) > 0)
                 <div class="space-y-3">
                     @foreach($myClassrooms as $classroom)
-                    <div class="flex items-center justify-between p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-primary-soft transition-colors">
+                    <div class="flex items-center justify-between p-4 rounded-xl border border-gray-200 hover:border-primary/50 hover:bg-primary-soft transition-colors">
                         <div class="flex items-center gap-4">
                             <div class="w-12 h-12 rounded-xl bg-primary-soft text-primary-dark flex items-center justify-center">
                                 <x-icon name="users" class="w-6 h-6" />
                             </div>
                             <div>
-                                <div class="font-semibold text-navy">{{ $classroom->nama_rombel }}</div>
+                                <div class="font-semibold text-text">{{ $classroom->nama_rombel }}</div>
                                 <div class="text-sm text-muted">{{ $classroom->students_count }} Siswa</div>
                             </div>
                         </div>
@@ -152,11 +155,11 @@
                     @endforeach
                 </div>
             @else
-                <x-empty-state 
-                    icon="layers"
-                    title="Belum Ada Penugasan Kelas"
-                    description="Anda belum ditugaskan sebagai wali kelas untuk rombel mana pun. Penugasan akan dilakukan di Phase 3."
-                />
+                <div class="text-center py-8">
+                    <x-icon name="layers" class="w-12 h-12 text-muted mx-auto mb-4" />
+                    <h4 class="font-medium text-text mb-1">Belum Ada Penugasan Kelas</h4>
+                    <p class="text-muted text-sm">Anda belum ditugaskan sebagai wali kelas untuk rombel mana pun.</p>
+                </div>
             @endif
         </div>
     </div>

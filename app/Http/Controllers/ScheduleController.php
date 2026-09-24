@@ -54,6 +54,14 @@ class ScheduleController extends Controller
             });
         }
 
+        // Jika user adalah Wali Kelas (dan bukan Admin/Operator), hanya tampilkan jadwal rombel yang dipegangnya
+        if ($user->hasRole('wali-kelas') && ! $user->hasRole('kepala-pkbm') && ! $user->hasRole('operator')) {
+            $classroomIds = Classroom::where('wali_kelas_id', $user->id)->pluck('id');
+            $query->whereHas('penugasanMengajar', function ($q) use ($classroomIds) {
+                $q->whereIn('classroom_id', $classroomIds);
+            });
+        }
+
         $schedules = $query->orderBy('hari')
             ->orderBy('jam_mulai')
             ->paginate(15)
@@ -97,6 +105,8 @@ class ScheduleController extends Controller
     {
         Gate::authorize('schedules.view');
 
+        $this->authorizeScheduleAccess($schedule);
+
         $schedule->load([
             'penugasanMengajar.tutor',
             'penugasanMengajar.subject',
@@ -112,6 +122,7 @@ class ScheduleController extends Controller
     public function edit(Schedule $schedule): View
     {
         Gate::authorize('schedules.manage');
+        $this->authorizeScheduleAccess($schedule);
 
         $penugasanMengajars = PenugasanMengajar::with(['tutor', 'subject', 'classroom'])
             ->where('status_aktif', true)
@@ -125,6 +136,9 @@ class ScheduleController extends Controller
      */
     public function update(UpdateScheduleRequest $request, Schedule $schedule): RedirectResponse
     {
+        Gate::authorize('schedules.manage');
+        $this->authorizeScheduleAccess($schedule);
+
         $schedule->update($request->validated());
 
         return redirect()
@@ -138,11 +152,33 @@ class ScheduleController extends Controller
     public function destroy(Schedule $schedule): RedirectResponse
     {
         Gate::authorize('schedules.manage');
+        $this->authorizeScheduleAccess($schedule);
 
         $schedule->delete();
 
         return redirect()
             ->route('jadwal.index')
             ->with('success', 'Jadwal pelajaran berhasil dihapus.');
+    }
+
+    /**
+     * Authorize access to specific schedule based on user role
+     */
+    private function authorizeScheduleAccess(Schedule $schedule): void
+    {
+        $user = auth()->user();
+
+        if ($user->hasRole('tutor') && ! $user->hasRole('kepala-pkbm') && ! $user->hasRole('operator')) {
+            abort_if($schedule->penugasanMengajar->tutor_id !== $user->tutor?->id, 403);
+        }
+
+        if ($user->hasRole('peserta-didik')) {
+            abort_if($schedule->penugasanMengajar->classroom_id !== $user->student?->rombel_id, 403);
+        }
+
+        if ($user->hasRole('wali-kelas') && ! $user->hasRole('kepala-pkbm') && ! $user->hasRole('operator')) {
+            $classroomIds = Classroom::where('wali_kelas_id', $user->id)->pluck('id');
+            abort_if(! $classroomIds->contains($schedule->penugasanMengajar->classroom_id), 403);
+        }
     }
 }

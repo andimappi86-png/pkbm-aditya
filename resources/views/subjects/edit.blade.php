@@ -1,56 +1,82 @@
-<x-app-layout>
-    <x-slot name="title">Edit Mata Pelajaran</x-slot>
-
-    <div class="max-w-2xl mx-auto">
+<x-app-layout title="Edit Mata Pelajaran">
+    <div class="max-w-[800px] mx-auto space-y-6">
+        <!-- Breadcrumb -->
         <x-breadcrumb :items="[
             ['label' => 'Mata Pelajaran', 'href' => route('mata-pelajaran.index')],
             ['label' => $subject->nama, 'href' => route('mata-pelajaran.show', $subject->id)],
-            ['label' => 'Edit Mata Pelajaran']
+            ['label' => 'Edit']
         ]" />
 
-        <div class="card p-6">
-            <form method="POST" action="{{ route('mata-pelajaran.update', $subject->id) }}" class="space-y-6">
+        <!-- Header -->
+        <div>
+            <div class="flex items-center gap-3">
+                <h2 class="text-2xl font-bold text-[#172B3A]">Edit Mata Pelajaran</h2>
+                <span class="px-2.5 py-1 text-xs font-mono font-semibold bg-gray-100 text-[#172B3A] rounded border border-[#D9E2E5]">Kode: {{ $subject->kode }}</span>
+            </div>
+            <p class="text-[#64748B] mt-1">Perbarui data informasi mata pelajaran.</p>
+        </div>
+
+        <!-- Form -->
+        <div class="bg-white border border-[#D9E2E5] rounded-xl shadow-sm">
+            <form method="POST" action="{{ route('mata-pelajaran.update', $subject->id) }}" class="p-6 space-y-6" x-data="{ statusAktif: {{ old('status_aktif', $subject->status_aktif) ? 'true' : 'false' }} }">
                 @csrf
                 @method('PUT')
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Section 1: Informasi Mata Pelajaran -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label class="label">Kode Mata Pelajaran</label>
-                        <input type="text" name="kode" value="{{ old('kode', $subject->kode) }}" placeholder="Misalnya: MTK, BIND, IPA" class="input @error('kode') input-error @enderror">
+                        <label for="kode" class="block text-sm font-semibold text-[#172B3A] mb-1">Kode Mata Pelajaran *</label>
+                        <input type="text" name="kode" id="kode" value="{{ old('kode', $subject->kode) }}" placeholder="CTH: MTK-01" class="w-full px-3 py-2 border {{ $errors->has('kode') ? 'border-[#C62828] focus:ring-[#C62828]' : 'border-[#D9E2E5] focus:ring-[#167C80]' }} rounded-lg focus:outline-none focus:ring-2 focus:border-transparent text-[#172B3A]" required>
+                        <p class="text-xs text-[#64748B] mt-1">Gunakan kode singkat dan konsisten, misalnya MAT-01.</p>
                         @error('kode')
-                        <p class="input-error">{{ $message }}</p>
+                            <p class="text-sm text-[#C62828] mt-1">{{ $message }}</p>
                         @enderror
                     </div>
+                    
                     <div>
-                        <label class="label">Nama Mata Pelajaran</label>
-                        <input type="text" name="nama" value="{{ old('nama', $subject->nama) }}" placeholder="Nama lengkap mata pelajaran" class="input @error('nama') input-error @enderror">
+                        <label for="nama" class="block text-sm font-semibold text-[#172B3A] mb-1">Nama Mata Pelajaran *</label>
+                        <input type="text" name="nama" id="nama" value="{{ old('nama', $subject->nama) }}" placeholder="Contoh: Matematika" class="w-full px-3 py-2 border {{ $errors->has('nama') ? 'border-[#C62828] focus:ring-[#C62828]' : 'border-[#D9E2E5] focus:ring-[#167C80]' }} rounded-lg focus:outline-none focus:ring-2 focus:border-transparent text-[#172B3A]" required>
                         @error('nama')
-                        <p class="input-error">{{ $message }}</p>
+                            <p class="text-sm text-[#C62828] mt-1">{{ $message }}</p>
                         @enderror
                     </div>
                 </div>
 
+                <!-- Section 2: Deskripsi -->
                 <div>
-                    <label class="label">Deskripsi</label>
-                    <textarea name="deskripsi" rows="3" placeholder="Deskripsi singkat mata pelajaran" class="input @error('deskripsi') input-error @enderror">{{ old('deskripsi', $subject->deskripsi) }}</textarea>
+                    <label for="deskripsi" class="block text-sm font-semibold text-[#172B3A] mb-1">Deskripsi</label>
+                    <textarea name="deskripsi" id="deskripsi" rows="3" placeholder="Deskripsi singkat mengenai materi yang dipelajari" class="w-full px-3 py-2 border {{ $errors->has('deskripsi') ? 'border-[#C62828] focus:ring-[#C62828]' : 'border-[#D9E2E5] focus:ring-[#167C80]' }} rounded-lg focus:outline-none focus:ring-2 focus:border-transparent text-[#172B3A]">{{ old('deskripsi', $subject->deskripsi) }}</textarea>
+                    <p class="text-xs text-[#64748B] mt-1">Tambahkan gambaran singkat mata pelajaran bila diperlukan.</p>
                     @error('deskripsi')
-                    <p class="input-error">{{ $message }}</p>
+                        <p class="text-sm text-[#C62828] mt-1">{{ $message }}</p>
                     @enderror
                 </div>
 
-                <div class="flex items-start">
-                    <div class="flex items-center h-5">
-                        <input id="status_aktif" name="status_aktif" type="checkbox" {{ old('status_aktif', $subject->status_aktif ? true : false) ? 'checked' : '' }} class="h-4 w-4 text-primary focus:ring-primary border-border rounded">
-                    </div>
-                    <div class="ml-3">
-                        <label for="status_aktif" class="label-text">Aktif</label>
+                <!-- Section 3: Status -->
+                <div class="border-t border-[#D9E2E5] pt-6">
+                    <div class="flex items-start gap-4">
+                        <div class="flex-1">
+                            <h3 class="text-sm font-semibold text-[#172B3A]">Status Mata Pelajaran</h3>
+                            <p class="text-xs text-[#64748B] mt-1">Mata pelajaran aktif dapat digunakan pada proses akademik sesuai permission dan relationship yang tersedia.</p>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="hidden" name="status_aktif" :value="statusAktif ? '1' : '0'">
+                            <button type="button" @click="statusAktif = !statusAktif" :class="statusAktif ? 'bg-[#167C80]' : 'bg-gray-200'" class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#167C80] focus:ring-offset-2">
+                                <span class="sr-only">Gunakan status aktif</span>
+                                <span :class="statusAktif ? 'translate-x-5' : 'translate-x-0'" class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"></span>
+                            </button>
+                            <span class="ml-3 text-sm font-semibold" :class="statusAktif ? 'text-[#167C80]' : 'text-gray-500'" x-text="statusAktif ? 'Aktif' : 'Nonaktif'"></span>
+                        </div>
                     </div>
                 </div>
 
-                <div class="flex justify-end pt-4">
-                    <a href="{{ route('mata-pelajaran.index') }}" class="btn-secondary mr-2">Batal</a>
-                    <button type="submit" class="btn-primary">
-                        <x-icon name="check" class="w-4 h-4 mr-2" />
+                <!-- Bottom Action -->
+                <div class="border-t border-[#D9E2E5] pt-6 flex justify-end gap-3">
+                    <a href="{{ route('mata-pelajaran.index') }}" class="px-6 py-2.5 border border-[#D9E2E5] text-[#172B3A] rounded-lg font-medium hover:bg-[#F5F7F8] transition-colors">
+                        Batal
+                    </a>
+                    <button type="submit" class="inline-flex items-center gap-2 px-6 py-2.5 bg-[#167C80] text-white rounded-lg font-medium hover:bg-[#0F5F63] transition-colors shadow-sm">
+                        <x-icon name="check-circle" class="w-4 h-4" />
                         Simpan Perubahan
                     </button>
                 </div>

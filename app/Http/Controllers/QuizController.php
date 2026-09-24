@@ -36,6 +36,7 @@ class QuizController extends Controller
     {
         Gate::authorize('materials.manage');
         $penugasans = $this->getMyPenugasans($request->user());
+
         return view('quizzes.create', compact('penugasans'));
     }
 
@@ -49,7 +50,7 @@ class QuizController extends Controller
 
         Quiz::create($validated);
 
-        return redirect()->route('quizzes.index')->with('success', 'Quiz berhasil dibuat.');
+        return redirect()->route('quiz.index')->with('success', 'Quiz berhasil dibuat.');
     }
 
     public function show(Quiz $quiz)
@@ -58,6 +59,7 @@ class QuizController extends Controller
         $this->authorizeAccess($quiz, auth()->user());
 
         $quiz->load('questions.options');
+
         return view('quizzes.show', compact('quiz'));
     }
 
@@ -65,7 +67,9 @@ class QuizController extends Controller
     {
         Gate::authorize('materials.manage');
         $this->authorizeAccess($quiz, auth()->user());
-        return view('quizzes.edit', compact('quiz'));
+        $penugasans = $this->getMyPenugasans(auth()->user());
+
+        return view('quizzes.edit', compact('quiz', 'penugasans'));
     }
 
     public function update(UpdateQuizRequest $request, Quiz $quiz)
@@ -73,7 +77,8 @@ class QuizController extends Controller
         Gate::authorize('materials.manage');
         $this->authorizeAccess($quiz, $request->user());
         $quiz->update($request->validated());
-        return redirect()->route('quizzes.show', $quiz)->with('success', 'Quiz diperbarui.');
+
+        return redirect()->route('quiz.show', $quiz)->with('success', 'Quiz diperbarui.');
     }
 
     public function destroy(Quiz $quiz)
@@ -81,7 +86,8 @@ class QuizController extends Controller
         Gate::authorize('materials.manage');
         $this->authorizeAccess($quiz, auth()->user());
         $quiz->delete();
-        return redirect()->route('quizzes.index')->with('success', 'Quiz dihapus.');
+
+        return redirect()->route('quiz.index')->with('success', 'Quiz dihapus.');
     }
 
     private function getMyPenugasans($user)
@@ -91,6 +97,7 @@ class QuizController extends Controller
             $tutor = Tutor::where('user_id', $user->id)->first();
             $query->where('tutor_id', $tutor?->id);
         }
+
         return $query->where('status_aktif', true)->get();
     }
 
@@ -103,8 +110,7 @@ class QuizController extends Controller
             $tutor = Tutor::where('user_id', $user->id)->first();
             $query->whereHas('penugasanMengajar', fn ($q) => $q->where('tutor_id', $tutor?->id));
         } elseif ($user->hasRole('wali-kelas')) {
-            $tutor = Tutor::where('user_id', $user->id)->first();
-            $classroomIds = \App\Models\Classroom::where('wali_kelas_id', $tutor?->id)->pluck('id');
+            $classroomIds = Classroom::where('wali_kelas_id', $user->id)->pluck('id');
             $query->whereHas('penugasanMengajar', fn ($q) => $q->whereIn('classroom_id', $classroomIds));
         }
     }

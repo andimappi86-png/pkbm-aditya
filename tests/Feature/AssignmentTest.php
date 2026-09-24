@@ -129,7 +129,7 @@ class AssignmentTest extends TestCase
         ]);
 
         $response = $this->actingAs($studentUser)->get(route('tugas.show', $assignment));
-        $response->assertForbidden();
+        $response->assertRedirect()->assertSessionHas('error', 'Anda tidak memiliki akses ke fitur tersebut.');
     }
 
     public function test_student_can_submit_assignment(): void
@@ -230,7 +230,7 @@ class AssignmentTest extends TestCase
             'nilai' => 90,
         ]);
 
-        $response->assertForbidden();
+        $response->assertRedirect()->assertSessionHas('error', 'Anda tidak memiliki akses ke fitur tersebut.');
     }
 
     public function test_admin_can_update_assignment(): void

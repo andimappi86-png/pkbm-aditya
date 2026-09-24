@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\EncryptedAttribute;
 use Database\Factories\StudentFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -51,6 +52,15 @@ class Student extends Model
     {
         return [
             'tanggal_lahir' => 'date',
+            'nik' => EncryptedAttribute::class,
+            'alamat' => EncryptedAttribute::class,
+            'no_hp' => EncryptedAttribute::class,
+            'email' => EncryptedAttribute::class,
+            'nama_ayah' => EncryptedAttribute::class,
+            'nama_ibu' => EncryptedAttribute::class,
+            'nama_wali' => EncryptedAttribute::class,
+            'no_hp_wali' => EncryptedAttribute::class,
+            'alamat_wali' => EncryptedAttribute::class,
         ];
     }
 

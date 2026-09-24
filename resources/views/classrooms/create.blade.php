@@ -3,8 +3,8 @@
 
     <div class="max-w-2xl mx-auto">
         <x-breadcrumb :items="[
-            ['label' => 'Rombel', 'href' => route('rombel.index')],
-            ['label' => 'Buat Rombel Baru']
+            ['label' => 'Rombel', 'url' => route('rombel.index')],
+            ['label' => 'Tambah Rombel']
         ]" />
 
         <div class="card p-6">
@@ -48,10 +48,10 @@
                     <select name="tahun_ajaran_id" class="input @error('tahun_ajaran_id') input-error @enderror">
                         <option value="">-- Pilih Tahun Ajaran --</option>
                         @foreach($academicYears as $year)
-                            <option value="{{ $year->id }}" {{ old('tahun_ajaran_id') == $year->id ? 'selected' : '' }}>
-                                {{ $year->nama_ajaran }}
-                            </option>
-                        @endforeach
+                                                <option value="{{ $year->id }}" {{ old('tahun_ajaran_id') == $year->id ? 'selected' : '' }}>
+                                                    {{ $year->nama }}
+                                                </option>
+                                            @endforeach
                     </select>
                     @error('tahun_ajaran_id')
                     <p class="input-error">{{ $message }}</p>
@@ -60,14 +60,10 @@
 
                 <div>
                     <label class="label">Wali Kelas</label>
-                    <select name="wali_kelas_id" class="input">
-                        <option value="">-- Pilih Wali Kelas (Opsional) --</option>
-                        @foreach(User::where('role', 'tutor')->get() as $tutor)
-                            <option value="{{ $tutor->id }}" {{ old('wali_kelas_id') == $tutor->id ? 'selected' : '' }}>
-                                {{ $tutor->nama_lengkap }}
-                            </option>
-                        @endforeach>
-                    </select>
+                    <input type="text" name="wali_kelas_name" placeholder="Masukkan nama wali kelas..." class="input @error('wali_kelas_name') input-error @enderror" value="{{ old('wali_kelas_name') }}">
+                    @error('wali_kelas_name')
+                        <p class="input-error">{{ $message }}</p>
+                    @enderror
                 </div>
 
                 <div>

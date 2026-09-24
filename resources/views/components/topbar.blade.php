@@ -5,7 +5,10 @@
     <div class="flex items-center justify-between h-16 px-4 lg:px-6">
         <!-- Mobile menu button -->
         <button 
-            @click="$store.sidebar.toggle()" 
+            type="button"
+            @click="sidebarOpen = !sidebarOpen" 
+            :aria-expanded="sidebarOpen.toString()"
+            aria-label="Toggle sidebar"
             class="lg:hidden p-2 rounded-lg text-muted hover:text-primary-dark hover:bg-primary-soft transition-colors focus:outline-none focus:ring-2 focus:ring-primary/20"
         >
             <x-icon name="menu" />

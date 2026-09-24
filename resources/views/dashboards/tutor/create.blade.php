@@ -14,7 +14,7 @@
                 <h3 class="text-lg font-semibold text-navy border-b pb-2">Identitas Utama</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <x-input name="nomor_induk" label="Nomor Induk *" required />
-                    <x-input name="nik" label="NIK" />
+                    <x-input name="nik" label="NIK *" required />
                     <x-input name="nama_lengkap" label="Nama Lengkap *" required />
                     <x-input name="nama_panggilan" label="Nama Panggilan" />
                 </div>
@@ -27,14 +27,14 @@
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <x-textarea name="alamat" label="Alamat Lengkap *" required />
+                    <x-textarea name="alamat" label="Alamat" />
                     <x-input name="no_hp" label="No. Handphone" />
                     <x-input type="email" name="email" label="Email" />
                     <x-input name="pendidikan_terakhir" label="Pendidikan Terakhir" />
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <x-input name="bidang_keahlian" label="Bidang Keahlian" />
+                    <x-input name="bidang_keahlian" label="Bidang Keahlian *" required />
                     <x-select name="status_tutor" label="Status *" :options="['aktif'=>'Aktif','tidak_aktif'=>'Tidak Aktif']" required />
                     <x-input name="tanggal_mulai_mengajar" label="Tanggal Mulai Mengajar" />
                     <div class="md:col-span-2">

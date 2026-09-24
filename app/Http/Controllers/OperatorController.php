@@ -2,17 +2,20 @@
 
 namespace App\Http\Controllers;
 
+use App\Casts\EncryptedAttribute;
+use App\Imports\BulkImport;
+use App\Imports\TutorImport;
+use App\Models\AcademicYear;
 use App\Models\Announcement;
 use App\Models\Assignment;
 use App\Models\Attendance;
 use App\Models\Classroom;
 use App\Models\Document;
-use App\Models\EncryptedDummy;
 use App\Models\Grade;
 use App\Models\Letter;
 use App\Models\Material;
-use App\Models\PlaintextDummy;
 use App\Models\Ppdb;
+use App\Models\Program;
 use App\Models\Quiz;
 use App\Models\Schedule;
 use App\Models\Student;
@@ -21,6 +24,8 @@ use App\Models\Tutor;
 use App\Services\AesGcmService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Maatwebsite\Excel\Facades\Excel;
 
 class OperatorController extends Controller
 {
@@ -123,12 +128,44 @@ class OperatorController extends Controller
     {
         $keyLength = strlen(env('AES_256_GCM_KEY', '')) * 8; // in bits
 
-        $dummyStats = [
-            'encrypted' => EncryptedDummy::count(),
-            'plaintext' => PlaintextDummy::count(),
-        ];
+        $studentFields = 10; // NIK, alamat, tanggal_lahir, dll.
+        $tutorFields = 6;
 
-        return view('operator.security', compact('keyLength', 'dummyStats'));
+        $studentCount = Student::count();
+        $tutorCount = Tutor::count();
+
+        // Sample masked data for verification (3 students, 3 tutors)
+        $sampleStudents = Student::take(3)->get()->map(function ($student) {
+            $rawNik = $student->getRawOriginal('nik');
+            $nikIsEncrypted = EncryptedAttribute::isEncryptedPayload($rawNik);
+
+            return [
+                'type' => 'Student',
+                'name' => $student->nama_lengkap ?? 'Unknown',
+                'masked_nik' => '************'.substr((string) $student->nik, -4),
+                'status' => $nikIsEncrypted ? 'Encrypted ✅' : 'Plaintext ❌',
+                'raw_excerpt' => substr($rawNik ?? '', 0, 20).'...',
+            ];
+        });
+
+        $sampleTutors = Tutor::take(3)->get()->map(function ($tutor) {
+            $rawNik = $tutor->getRawOriginal('nik');
+            $nikIsEncrypted = EncryptedAttribute::isEncryptedPayload($rawNik);
+
+            return [
+                'type' => 'Tutor',
+                'name' => $tutor->nama_lengkap ?? 'Unknown',
+                'masked_nik' => '************'.substr((string) $tutor->nik, -4),
+                'status' => $nikIsEncrypted ? 'Encrypted ✅' : 'Plaintext ❌',
+                'raw_excerpt' => substr($rawNik ?? '', 0, 20).'...',
+            ];
+        });
+
+        $maskedRecords = $sampleStudents->merge($sampleTutors);
+
+        return view('operator.security', compact(
+            'keyLength', 'studentFields', 'tutorFields', 'studentCount', 'tutorCount', 'maskedRecords'
+        ));
     }
 
     public function encryptData(Request $request)
@@ -230,6 +267,181 @@ class OperatorController extends Controller
             'encryption_throughput' => round($count / max($encryptionTime, 0.0001), 0),
             'decryption_time_ms' => round($decryptionTime * 1000, 2),
             'decryption_throughput' => round($count / max($decryptionTime, 0.0001), 0),
+        ]);
+    }
+
+    public function importForm()
+    {
+        if (! auth()->user()->hasRole('operator')) {
+            abort(403, 'Akses khusus Operator.');
+        }
+
+        $defaultProgram = Program::where('status_aktif', true)->first();
+        $defaultAcademicYear = AcademicYear::where('status_aktif', true)->first();
+
+        return view('operator.import-data.index', compact('defaultProgram', 'defaultAcademicYear'));
+    }
+
+    public function importPreview(Request $request)
+    {
+        if (! auth()->user()->hasRole('operator')) {
+            abort(403, 'Akses khusus Operator.');
+        }
+
+        $request->validate([
+            'file' => ['required', 'file', 'mimes:csv,txt', 'max:10240'],
+        ], [
+            'file.required' => 'File CSV wajib diunggah.',
+            'file.mimes' => 'File harus berformat CSV (.csv).',
+            'file.max' => 'Ukuran file tidak boleh melebihi 10 MB.',
+        ]);
+
+        $file = $request->file('file');
+
+        if ($file->getSize() === 0) {
+            return back()->withErrors(['file' => 'File CSV tidak boleh kosong.'])->withInput();
+        }
+
+        $path = $file->storeAs('temp', 'import_bulk_'.auth()->id().'_'.time().'.csv');
+
+        try {
+            $import = new BulkImport(true);
+            Excel::import($import, $path);
+            $results = $import->getResults();
+        } catch (\Throwable $e) {
+            Storage::delete($path);
+
+            return back()->withErrors(['file' => 'Gagal membaca CSV: '.$e->getMessage()])->withInput();
+        }
+
+        $defaultProgram = Program::where('status_aktif', true)->first();
+        $defaultAcademicYear = AcademicYear::where('status_aktif', true)->first();
+
+        return view('operator.import-data.index', [
+            'step' => 'preview',
+            'results' => $results,
+            'path' => $path,
+            'defaultProgram' => $defaultProgram,
+            'defaultAcademicYear' => $defaultAcademicYear,
+        ]);
+    }
+
+
+    public function importTutorForm()
+    {
+        if (! auth()->user()->hasRole('operator')) {
+            abort(403, 'Akses khusus Operator.');
+        }
+
+        return view('operator.import-tutor.index');
+    }
+
+    public function importTutorPreview(Request $request)
+    {
+        if (! auth()->user()->hasRole('operator')) {
+            abort(403, 'Akses khusus Operator.');
+        }
+
+        $request->validate([
+            'file' => ['required', 'file', 'mimes:csv,txt', 'max:10240'],
+        ]);
+
+        $file = $request->file('file');
+        $path = $file->storeAs('temp', 'import_tutor_'.auth()->id().'_'.time().'.csv');
+
+        try {
+            $import = new TutorImport(true);
+            Excel::import($import, $path);
+            $results = $import->getResults();
+        } catch (\Throwable $e) {
+            Storage::delete($path);
+            return back()->withErrors(['file' => 'Gagal membaca CSV: '.$e->getMessage()])->withInput();
+        }
+
+        return view('operator.import-tutor.index', [
+            'step' => 'preview',
+            'results' => $results,
+            'path' => $path,
+        ]);
+    }
+
+    public function importTutorProcess(Request $request)
+    {
+        if (! auth()->user()->hasRole('operator')) {
+            abort(403, 'Akses khusus Operator.');
+        }
+
+        $request->validate([
+            'path' => ['required', 'string'],
+        ]);
+
+        $path = $request->input('path');
+        if (! Storage::exists($path)) {
+            return redirect()->route('operator.import-tutor.index')
+                ->with('error', 'File import tidak ditemukan atau sudah kadaluarsa.');
+        }
+
+        $import = new TutorImport(false);
+
+        try {
+            Excel::import($import, $path);
+            $results = $import->getResults();
+        } catch (\Throwable $e) {
+            Storage::delete($path);
+            return redirect()->route('operator.import-tutor.index')
+                ->with('error', 'Terjadi kesalahan sistem: '.$e->getMessage());
+        }
+
+        Storage::delete($path);
+
+        return view('operator.import-tutor.index', [
+            'step' => 'result',
+            'results' => $results,
+        ]);
+    }
+
+    public function importTutorTemplate()
+    {
+        $headers = [
+            'nama',
+            'jenis_kelamin',
+            'tempat_lahir_dummy',
+            'tanggal_lahir',
+            'nik_dummy',
+            'alamat_dummy',
+            'no_hp_dummy',
+            'email_dummy',
+            'pendidikan_terakhir',
+            'pekerjaan_jabatan',
+            'status'
+        ];
+
+        $callback = function() use ($headers) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, $headers);
+            // Add a dummy row
+            fputcsv($file, [
+                'Budi Santoso',
+                'Laki-laki',
+                'Mamuju',
+                '1985-05-20',
+                '1234567890123456',
+                'Jl. Raya No. 123',
+                '08123456789',
+                'budi@example.com',
+                'S1 Pendidikan',
+                'Matematika',
+                'aktif'
+            ]);
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, [
+            "Content-type"        => "text/csv",
+            "Content-Disposition" => "attachment; filename=template_import_tutor.csv",
+            "Pragma"              => "no-cache",
+            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+            "Expires"             => "0"
         ]);
     }
 }

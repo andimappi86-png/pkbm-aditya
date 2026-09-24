@@ -15,7 +15,7 @@
                 <h3 class="text-lg font-semibold text-navy border-b pb-2">Identitas Utama</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <x-input name="nomor_induk" label="Nomor Induk *" :value="$tutor->nomor_induk" required />
-                    <x-input name="nik" label="NIK" :value="$tutor->nik" />
+                    <x-input name="nik" label="NIK *" :value="$tutor->nik" required />
                     <x-input name="nama_lengkap" label="Nama Lengkap *" :value="$tutor->nama_lengkap" required />
                     <x-input name="nama_panggilan" label="Nama Panggilan" :value="$tutor->nama_panggilan" />
                 </div>
@@ -28,16 +28,16 @@
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <x-textarea name="alamat" label="Alamat Lengkap *" :value="$tutor->alamat" required />
+                    <x-textarea name="alamat" label="Alamat" :value="$tutor->alamat" />
                     <x-input name="no_hp" label="No. Handphone" :value="$tutor->no_hp" />
                     <x-input type="email" name="email" label="Email" :value="$tutor->email" />
                     <x-input name="pendidikan_terakhir" label="Pendidikan Terakhir" :value="$tutor->pendidikan_terakhir" />
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <x-input name="bidang_keahlian" label="Bidang Keahlian" :value="$tutor->bidang_keahlian" />
+                    <x-input name="bidang_keahlian" label="Bidang Keahlian *" :value="$tutor->bidang_keahlian" required />
                     <x-select name="status_tutor" label="Status *" :options="['aktif'=>'Aktif','tidak_aktif'=>'Tidak Aktif']" :selected="$tutor->status_tutor" required />
-                    <x-input name="tanggal_mulai_mengajar" label="Tanggal Mulai Mengajar" :value="$tutor->tanggal_mulai_mengahar?->format('Y-m-d')" />
+                    <x-input name="tanggal_mulai_mengajar" label="Tanggal Mulai Mengajar" :value="$tutor->tanggal_mulai_mengajar?->format('Y-m-d')" />
                     <div class="md:col-span-2">
                         <x-input name="foto" label="Foto Profil (Biarkan kosong jika tidak ingin mengubah)" type="file" accept="image/*" />
                     </div>

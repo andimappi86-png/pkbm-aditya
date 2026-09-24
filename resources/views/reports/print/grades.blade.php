@@ -45,9 +45,9 @@
                 <td class="text-center">{{ $index + 1 }}</td>
                 <td>{{ $grade->student->user->name ?? '-' }}</td>
                 <td>{{ $grade->student->classroom->nama_rombel ?? '-' }}</td>
-                <td>{{ $grade->assignment->penugasanMengajar->subject->nama ?? '-' }}</td>
-                <td>{{ $grade->type ?? 'Tugas' }}</td>
-                <td class="text-center">{{ $grade->nilai }}</td>
+                <td>{{ $grade->penugasanMengajar->subject->nama ?? '-' }}</td>
+                <td>Akhir</td>
+                <td class="text-center">{{ $grade->nilai_akhir }}</td>
             </tr>
             @endforeach
         </tbody>

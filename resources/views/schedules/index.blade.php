@@ -93,6 +93,9 @@
                                     @endif
                                 </td>
                                 <td class="py-3 px-4 text-right space-x-2">
+                                    <a href="{{ route('jadwal.show', $schedule) }}" class="text-primary hover:underline font-medium">
+                                        Lihat
+                                    </a>
                                     @can('schedules.manage')
                                     <a href="{{ route('jadwal.edit', $schedule) }}" class="text-primary hover:underline font-medium">
                                         Edit

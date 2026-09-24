@@ -14,7 +14,7 @@
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="font-sans antialiased bg-background" x-data="{ sidebarOpen: false }">
+    <body class="font-sans antialiased bg-background" x-data="{ sidebarOpen: false }" :class="sidebarOpen ? 'overflow-hidden lg:overflow-auto' : ''">
         <div class="min-h-screen">
             <!-- Sidebar -->
             <x-sidebar />

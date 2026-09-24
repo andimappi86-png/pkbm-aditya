@@ -178,7 +178,7 @@ class AttendanceTest extends TestCase
         $response = $this->actingAs($otherTutorUser)
             ->get(route('absensi.create', ['schedule_id' => $this->schedule->id]));
 
-        $response->assertForbidden();
+        $response->assertRedirect()->assertSessionHas('error', 'Anda tidak memiliki akses ke fitur tersebut.');
     }
 
     public function test_peserta_didik_can_only_view_own_attendance(): void
@@ -208,7 +208,7 @@ class AttendanceTest extends TestCase
             'tanggal' => '2026-09-18',
         ]);
         $response = $this->actingAs($studentUser)->get(route('absensi.show', $otherAttendance));
-        $response->assertForbidden();
+        $response->assertRedirect()->assertSessionHas('error', 'Anda tidak memiliki akses ke fitur tersebut.');
     }
 
     public function test_admin_can_update_attendance(): void

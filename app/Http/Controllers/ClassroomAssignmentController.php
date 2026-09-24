@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreSubjectClassroomRequest;
 use App\Http\Requests\StoreTutorClassroomRequest;
 use App\Http\Requests\StoreTutorSubjectRequest;
+use App\Models\AcademicYear;
 use App\Models\Classroom;
+use App\Models\Program;
 use App\Models\Subject;
 use App\Models\Tutor;
 use Illuminate\Http\RedirectResponse;
@@ -67,8 +69,10 @@ class ClassroomAssignmentController extends Controller
 
         $tutors = Tutor::with('user')->latest()->get();
         $classrooms = Classroom::with(['program', 'academicYear'])->latest()->get();
+        $programs = Program::where('status_aktif', true)->latest()->get();
+        $academicYears = AcademicYear::where('status_aktif', true)->latest('tanggal_mulai')->get();
 
-        return view('classroom-assignments.create-tutor-classroom', compact('tutors', 'classrooms'));
+        return view('classroom-assignments.create-tutor-classroom', compact('tutors', 'classrooms', 'programs', 'academicYears'));
     }
 
     public function storeTutorClassroom(StoreTutorClassroomRequest $request): RedirectResponse
@@ -95,8 +99,10 @@ class ClassroomAssignmentController extends Controller
 
         $subjects = Subject::latest()->get();
         $classrooms = Classroom::with(['program', 'academicYear'])->latest()->get();
+        $programs = Program::where('status_aktif', true)->latest()->get();
+        $academicYears = AcademicYear::where('status_aktif', true)->latest('tanggal_mulai')->get();
 
-        return view('classroom-assignments.create-subject-classroom', compact('subjects', 'classrooms'));
+        return view('classroom-assignments.create-subject-classroom', compact('subjects', 'classrooms', 'programs', 'academicYears'));
     }
 
     public function storeSubjectClassroom(StoreSubjectClassroomRequest $request): RedirectResponse

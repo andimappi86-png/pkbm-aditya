@@ -132,6 +132,9 @@ class RolePermissionSeeder extends Seeder
 
             // Audit
             'audit.view',
+
+            // Operator Specific
+            'operator.import',
         ];
 
         // Create permissions (idempotent)
@@ -183,6 +186,7 @@ class RolePermissionSeeder extends Seeder
             'admissions.view', 'admissions.manage',
             'settings.view', 'settings.manage',
             'audit.view',
+            'operator.import',
         ];
 
         $role->syncPermissions($permissions);
@@ -245,9 +249,6 @@ class RolePermissionSeeder extends Seeder
             'academic-years.view',
             'semesters.view',
             'subjects.view',
-            'subjects.create',
-            'subjects.update',
-            'subjects.delete',
             'schedules.view',
             'attendance.view',
             'grades.view',
@@ -323,7 +324,6 @@ class RolePermissionSeeder extends Seeder
         ];
 
         $role->syncPermissions($permissions);
-        $this->command->info('✅ Tutor role configured');
     }
 
     /**

@@ -10,7 +10,7 @@
 @php
 $iconWrapperClasses = match($variant) {
     'primary' => 'bg-primary-soft text-primary-dark',
-    'accent' => 'bg-accent-soft text-accent',
+    'accent' => 'bg-red-50 text-accent',
     'success' => 'bg-primary-soft text-primary-dark',
     'warning' => 'bg-muted/10 text-muted',
     default => 'bg-primary-soft text-primary-dark',
@@ -25,7 +25,11 @@ $iconWrapperClasses = match($variant) {
         @endif
         @if ($icon)
             <div class="w-10 h-10 rounded-xl flex items-center justify-center {{ $iconWrapperClasses }}">
-                {!! $icon !!}
+                @if(str_contains($icon, '<svg') || str_contains($icon, '<path'))
+                    {!! $icon !!}
+                @else
+                    <x-icon name="{{ $icon }}" class="w-6 h-6" />
+                @endif
             </div>
         @endif
     </div>

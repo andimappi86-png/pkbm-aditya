@@ -47,7 +47,7 @@
                     <label class="label">Program</label>
                     <select name="program_id" class="input @error('program_id') input-error @enderror">
                         <option value="">-- Pilih Program --</option>
-                        @foreach(Program::where('status_aktif', true)->get() as $program)
+                        @foreach($programs as $program)
                             <option value="{{ $program->id }}" {{ old('program_id') == $program->id ? 'selected' : '' }}>
                                 {{ $program->nama }}
                             </option>
@@ -62,7 +62,7 @@
                     <label class="label">Tahun Ajaran</label>
                     <select name="tahun_ajaran_id" class="input @error('tahun_ajaran_id') input-error @enderror">
                         <option value="">-- Pilih Tahun Ajaran --</option>
-                        @foreach(AcademicYear::where('status_aktif', true)->latest('tanggal_mulai')->get() as $year)
+                        @foreach($academicYears as $year)
                             <option value="{{ $year->id }}" {{ old('tahun_ajaran_id') == $year->id ? 'selected' : '' }}>
                                 {{ $year->nama_ajaran }}
                             </option>

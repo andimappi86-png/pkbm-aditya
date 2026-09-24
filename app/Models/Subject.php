@@ -28,6 +28,11 @@ class Subject extends Model
 
     public function tutors(): BelongsToMany
     {
-        return $this->belongsToMany(Tutor::class);
+        return $this->belongsToMany(Tutor::class, 'tutor_subject');
+    }
+
+    public function classrooms(): BelongsToMany
+    {
+        return $this->belongsToMany(Classroom::class, 'subject_classroom');
     }
 }

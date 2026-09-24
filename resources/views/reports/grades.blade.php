@@ -38,9 +38,9 @@
                     <tr class="hover:bg-surface/50">
                         <td class="p-4">{{ $grade->student->user->name ?? '-' }}</td>
                         <td class="p-4">{{ $grade->student->classroom->nama_rombel ?? '-' }}</td>
-                        <td class="p-4">{{ $grade->assignment->penugasanMengajar->subject->nama ?? '-' }}</td>
-                        <td class="p-4">{{ $grade->type ?? 'Tugas' }}</td>
-                        <td class="p-4 font-semibold">{{ $grade->nilai }}</td>
+                        <td class="p-4">{{ $grade->penugasanMengajar->subject->nama ?? '-' }}</td>
+                        <td class="p-4">Akhir</td>
+                        <td class="p-4 font-semibold">{{ $grade->nilai_akhir }}</td>
                     </tr>
                     @empty
                     <tr>
