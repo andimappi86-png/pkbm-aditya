@@ -12,6 +12,7 @@ use App\Models\Tutor;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Artisan;
 use Tests\TestCase;
 
 class AttendanceTest extends TestCase
@@ -44,6 +45,7 @@ class AttendanceTest extends TestCase
         $this->tutorUser = User::factory()->create();
         $this->tutorUser->assignRole('tutor');
         $this->tutor = Tutor::factory()->create(['user_id' => $this->tutorUser->id]);
+        Artisan::call('permission:cache-reset');
 
         $this->classroom = Classroom::factory()->create();
         $this->subject = Subject::factory()->create();

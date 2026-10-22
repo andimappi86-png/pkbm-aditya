@@ -37,8 +37,8 @@
                 <tbody class="divide-y divide-border">
                     @forelse($tutors as $tutor)
                     <tr class="hover:bg-surface/50">
-                        <td class="p-4">{{ $tutor->nip ?? '-' }}</td>
-                        <td class="p-4">{{ $tutor->user->name }}</td>
+                        <td class="p-4">{{ $tutor->nomor_induk ?? '-' }}</td>
+                        <td class="p-4">{{ $tutor->nama_lengkap }}</td>
                         <td class="p-4">
                             @foreach($tutor->subjects as $subject)
                                 <span class="bg-gray-100 px-2 py-1 rounded text-xs">{{ $subject->nama }}</span>

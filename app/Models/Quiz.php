@@ -23,16 +23,25 @@ class Quiz extends Model
         'status_aktif' => 'boolean',
     ];
 
+    /**
+     * @return BelongsTo<PenugasanMengajar, $this>
+     */
     public function penugasanMengajar(): BelongsTo
     {
         return $this->belongsTo(PenugasanMengajar::class, 'penugasan_mengajar_id');
     }
 
+    /**
+     * @return HasMany<Question, $this>
+     */
     public function questions(): HasMany
     {
         return $this->hasMany(Question::class);
     }
 
+    /**
+     * @return HasMany<QuizAttempt, $this>
+     */
     public function attempts(): HasMany
     {
         return $this->hasMany(QuizAttempt::class);

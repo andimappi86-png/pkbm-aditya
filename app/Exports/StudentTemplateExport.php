@@ -11,6 +11,7 @@ use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Events\AfterSheet;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
@@ -69,7 +70,7 @@ class StudentTemplateExport implements FromArray, WithColumnWidths, WithEvents, 
         ];
     }
 
-    public function styles(Worksheet $sheet)
+    public function styles(Worksheet $sheet): array
     {
         return [
             1 => ['font' => ['bold' => true, 'size' => 12], 'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4472C4'], 'font' => ['color' => ['rgb' => 'FFFFFF']]]],
@@ -150,15 +151,16 @@ class StudentTemplateExport implements FromArray, WithColumnWidths, WithEvents, 
                 ];
 
                 $sheet->insertNewRowBefore(2, 1);
-                $sheet->setCellValueByColumnAndRow(1, 2, $exampleRow[0]);
+                $sheet->setCellValue(Coordinate::stringFromColumnIndex(1).'2', $exampleRow[0]);
                 foreach ($exampleRow as $col => $value) {
-                    $sheet->setCellValueByColumnAndRow($col + 1, 2, $value);
+                    $sheet->setCellValue(Coordinate::stringFromColumnIndex($col + 1).'2', $value);
                 }
 
                 // Style example row
                 for ($col = 1; $col <= count($exampleRow); $col++) {
-                    $sheet->getStyleByColumnAndRow($col, 2)->getFont()->setItalic(true);
-                    $sheet->getStyleByColumnAndRow($col, 2)->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('E2EFDA');
+                    $style = $sheet->getStyle(Coordinate::stringFromColumnIndex($col).'2');
+                    $style->getFont()->setItalic(true);
+                    $style->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('E2EFDA');
                 }
 
                 // Add instructions sheet
@@ -201,13 +203,9 @@ class StudentTemplateExport implements FromArray, WithColumnWidths, WithEvents, 
 
                 $row = 1;
                 foreach ($instructions as $instruction) {
-                    if (is_array($instruction)) {
-                        $instructionSheet->setCellValue('A'.$row, $instruction[0]);
-                        if (isset($instruction[1])) {
-                            $instructionSheet->setCellValue('B'.$row, $instruction[1]);
-                        }
-                    } else {
-                        $instructionSheet->setCellValue('A'.$row, $instruction);
+                    $instructionSheet->setCellValue('A'.$row, $instruction[0]);
+                    if (isset($instruction[1])) {
+                        $instructionSheet->setCellValue('B'.$row, $instruction[1]);
                     }
                     $row++;
                 }

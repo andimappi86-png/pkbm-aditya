@@ -32,9 +32,12 @@ class Assignment extends Model
         ];
     }
 
+    /**
+     * @return BelongsTo<PenugasanMengajar, $this>
+     */
     public function penugasanMengajar(): BelongsTo
     {
-        return $this->belongsTo(PenugasanMengajar::class);
+        return $this->belongsTo(PenugasanMengajar::class, 'penugasan_mengajar_id');
     }
 
     public function submissions(): HasMany

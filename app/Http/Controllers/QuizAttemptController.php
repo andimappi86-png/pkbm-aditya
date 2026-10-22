@@ -6,48 +6,80 @@ use App\Models\Question;
 use App\Models\Quiz;
 use App\Models\QuizAnswer;
 use App\Models\QuizAttempt;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
 class QuizAttemptController extends Controller
 {
     public function start(Request $request, Quiz $quiz)
     {
-        Gate::authorize('materials.view');
+        Gate::authorize('create', [QuizAttempt::class, $quiz]);
 
         $user = $request->user();
-        abort_if(! $user->hasRole('peserta-didik'), 403);
-
         $student = $user->student;
-        abort_if(! $student, 403);
-        abort_if($quiz->penugasanMengajar->classroom_id !== $student->rombel_id, 403);
+        abort_if($student === null, 403);
         abort_if(! $quiz->status_aktif, 403);
 
-        // Cek apakah sudah pernah attempt
-        $existing = QuizAttempt::where('quiz_id', $quiz->id)
-            ->where('student_id', $student->id)
-            ->first();
+        try {
+            $attempt = DB::transaction(function () use ($quiz, $student) {
+                // Serialize concurrent start requests for the same quiz, then re-check.
+                Quiz::whereKey($quiz->id)->lockForUpdate()->first();
 
-        if ($existing) {
-            return redirect()->route('quiz.attempts.show', [$quiz, $existing]);
+                $existing = QuizAttempt::where('quiz_id', $quiz->id)
+                    ->where('student_id', $student->id)
+                    ->first();
+
+                if ($existing) {
+                    return $existing;
+                }
+
+                return QuizAttempt::create([
+                    'quiz_id' => $quiz->id,
+                    'student_id' => $student->id,
+                    'mulai_waktu' => now(),
+                    'selesai' => false,
+                ]);
+            });
+        } catch (QueryException $exception) {
+            if (! $this->isDuplicateQuizAttemptViolation($exception)) {
+                throw $exception;
+            }
+
+            $attempt = QuizAttempt::where('quiz_id', $quiz->id)
+                ->where('student_id', $student->id)
+                ->first();
+
+            if ($attempt === null) {
+                throw $exception;
+            }
         }
-
-        $attempt = QuizAttempt::create([
-            'quiz_id' => $quiz->id,
-            'student_id' => $student->id,
-            'mulai_waktu' => now(),
-            'selesai' => false,
-        ]);
 
         return redirect()->route('quiz.attempts.show', [$quiz, $attempt]);
     }
 
+    /**
+     * Detect only the unique-index violation for one attempt per quiz and student.
+     */
+    private function isDuplicateQuizAttemptViolation(QueryException $exception): bool
+    {
+        $sqlState = (string) ($exception->errorInfo[0] ?? $exception->getCode());
+
+        if (! in_array($sqlState, ['23000', '23505'], true)) {
+            return false;
+        }
+
+        $message = $exception->getMessage();
+
+        return str_contains($message, 'quiz_attempts_quiz_id_student_id_unique')
+            || str_contains($message, 'UNIQUE constraint failed: quiz_attempts.quiz_id, quiz_attempts.student_id');
+    }
+
     public function show(Request $request, Quiz $quiz, QuizAttempt $attempt)
     {
-        Gate::authorize('materials.view');
-
-        $user = $request->user();
-        abort_if($attempt->student->user_id !== $user->id, 403);
+        abort_if($attempt->quiz_id !== $quiz->id, 404);
+        Gate::authorize('view', $attempt);
 
         if ($attempt->selesai) {
             return view('quizzes.attempts.result', compact('quiz', 'attempt'));
@@ -66,11 +98,8 @@ class QuizAttemptController extends Controller
 
     public function answer(Request $request, Quiz $quiz, QuizAttempt $attempt)
     {
-        Gate::authorize('materials.view');
-
-        $user = $request->user();
-        abort_if($attempt->student->user_id !== $user->id, 403);
-        abort_if($attempt->selesai, 403);
+        abort_if($attempt->quiz_id !== $quiz->id, 404);
+        Gate::authorize('update', $attempt);
 
         $validated = $request->validate([
             'answers' => 'array',
@@ -93,11 +122,8 @@ class QuizAttemptController extends Controller
 
     public function submit(Request $request, Quiz $quiz, QuizAttempt $attempt)
     {
-        Gate::authorize('materials.view');
-
-        $user = $request->user();
-        abort_if($attempt->student->user_id !== $user->id, 403);
-        abort_if($attempt->selesai, 403);
+        abort_if($attempt->quiz_id !== $quiz->id, 404);
+        Gate::authorize('update', $attempt);
 
         return $this->processSubmit($attempt);
     }

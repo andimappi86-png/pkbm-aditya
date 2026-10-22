@@ -80,7 +80,8 @@
                                         <div class="text-navy font-medium">{{ $doc->ppdb->nama_lengkap }}</div>
                                         <div class="text-xs text-muted">Calon Peserta</div>
                                     @else
-                                        <span class="text-muted italic">Umum</span>
+                                        <div class="text-navy font-medium">{{ $doc->catatan ?: 'Dokumen Manual / Umum' }}</div>
+                                        <div class="text-xs text-muted">Umum / Tanpa Tautan</div>
                                     @endif
                                 </td>
                                 <td class="p-4">

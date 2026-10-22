@@ -53,11 +53,13 @@ class Tutor extends Model
         return $this->belongsTo(User::class);
     }
 
+    /** @return BelongsToMany<Subject, $this> */
     public function subjects(): BelongsToMany
     {
         return $this->belongsToMany(Subject::class, 'tutor_subject');
     }
 
+    /** @return BelongsToMany<Classroom, $this> */
     public function classrooms(): BelongsToMany
     {
         return $this->belongsToMany(Classroom::class, 'tutor_classroom');

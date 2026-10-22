@@ -35,6 +35,7 @@ class RolePermissionSeeder extends Seeder
             'students.update',
             'students.delete',
             'students.manage',
+            'students.sensitive.view',
 
             // Tutors
             'tutors.view',
@@ -122,10 +123,6 @@ class RolePermissionSeeder extends Seeder
             'reports.view',
             'reports.manage',
 
-            // PPDB / Admissions
-            'admissions.view',
-            'admissions.manage',
-
             // Settings
             'settings.view',
             'settings.manage',
@@ -165,7 +162,7 @@ class RolePermissionSeeder extends Seeder
         $permissions = [
             'dashboard.view',
             'users.view', 'users.create', 'users.update', 'users.delete', 'users.manage',
-            'students.view', 'students.create', 'students.update', 'students.delete', 'students.manage',
+            'students.view', 'students.create', 'students.update', 'students.delete', 'students.manage', 'students.sensitive.view',
             'tutors.view', 'tutors.create', 'tutors.update', 'tutors.delete', 'tutors.manage',
             'classrooms.view', 'classrooms.create', 'classrooms.update', 'classrooms.delete', 'classrooms.manage',
             'programs.view', 'programs.manage',
@@ -183,7 +180,6 @@ class RolePermissionSeeder extends Seeder
             'documents.view', 'documents.manage', 'documents.upload', 'documents.verify', 'documents.download', 'documents.delete',
             'letters.view', 'letters.manage', 'letters.create', 'letters.print',
             'reports.view', 'reports.manage',
-            'admissions.view', 'admissions.manage',
             'settings.view', 'settings.manage',
             'audit.view',
             'operator.import',
@@ -203,7 +199,7 @@ class RolePermissionSeeder extends Seeder
         $permissions = [
             'dashboard.view',
             'users.view', 'users.create', 'users.update', 'users.delete', 'users.manage',
-            'students.view', 'students.create', 'students.update', 'students.delete', 'students.manage',
+            'students.view', 'students.create', 'students.update', 'students.delete', 'students.manage', 'students.sensitive.view',
             'tutors.view', 'tutors.create', 'tutors.update', 'tutors.delete', 'tutors.manage',
             'classrooms.view', 'classrooms.create', 'classrooms.update', 'classrooms.delete', 'classrooms.manage',
             'programs.view', 'programs.manage',
@@ -224,7 +220,6 @@ class RolePermissionSeeder extends Seeder
             'documents.view', 'documents.manage', 'documents.upload', 'documents.verify', 'documents.download', 'documents.delete',
             'letters.view', 'letters.manage', 'letters.create', 'letters.print',
             'reports.view', 'reports.manage',
-            'admissions.view', 'admissions.manage',
             'settings.view', 'settings.manage',
             'audit.view',
         ];
@@ -260,7 +255,6 @@ class RolePermissionSeeder extends Seeder
             'documents.view',
             'letters.view',
             'reports.view',
-            'admissions.view',
             'audit.view',
         ];
 
@@ -278,7 +272,10 @@ class RolePermissionSeeder extends Seeder
         $permissions = [
             'dashboard.view',
             'students.view',
+            'students.create',
+            'students.update',
             'classrooms.view',
+            'classrooms.manage',
             'schedules.view',
             'attendance.view',
             'attendance.manage',
@@ -321,6 +318,7 @@ class RolePermissionSeeder extends Seeder
             'exams.view',
             'exams.manage',
             'announcements.view',
+            'announcements.manage',
         ];
 
         $role->syncPermissions($permissions);

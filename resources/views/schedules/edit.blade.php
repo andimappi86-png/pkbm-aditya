@@ -42,7 +42,7 @@
 
                     <div>
                         <label class="label">Jam Mulai <span class="text-accent">*</span></label>
-                        <input type="time" name="jam_mulai" value="{{ old('jam_mulai', \Carbon\Carbon::parse($schedule->jam_mulai)->format('H:i')) }}" class="input @error('jam_mulai') input-error @enderror" required />
+                        <input type="text" name="jam_mulai" pattern="([01]?[0-9]|2[0-3]):[0-5][0-9]" placeholder="HH:mm" value="{{ old('jam_mulai', \Carbon\Carbon::parse($schedule->jam_mulai)->format('H:i')) }}" class="input @error('jam_mulai') input-error @enderror" required />
                         @error('jam_mulai')
                             <p class="text-sm text-accent mt-1">{{ $message }}</p>
                         @enderror
@@ -50,7 +50,7 @@
 
                     <div>
                         <label class="label">Jam Selesai <span class="text-accent">*</span></label>
-                        <input type="time" name="jam_selesai" value="{{ old('jam_selesai', \Carbon\Carbon::parse($schedule->jam_selesai)->format('H:i')) }}" class="input @error('jam_selesai') input-error @enderror" required />
+                        <input type="text" name="jam_selesai" pattern="([01]?[0-9]|2[0-3]):[0-5][0-9]" placeholder="HH:mm" value="{{ old('jam_selesai', \Carbon\Carbon::parse($schedule->jam_selesai)->format('H:i')) }}" class="input @error('jam_selesai') input-error @enderror" required />
                         @error('jam_selesai')
                             <p class="text-sm text-accent mt-1">{{ $message }}</p>
                         @enderror

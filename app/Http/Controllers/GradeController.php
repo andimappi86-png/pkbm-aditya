@@ -57,13 +57,36 @@ class GradeController extends Controller
             $student = $user->student;
             abort_if(! $student, 403);
             $query->where('student_id', $student->id);
-        } elseif ($roles->contains('tutor')) {
-            $tutor = Tutor::where('user_id', $user->id)->first();
-            abort_if(! $tutor, 403);
-            $query->whereHas('penugasanMengajar', fn ($q) => $q->where('tutor_id', $tutor->id));
-        } elseif ($roles->contains('wali-kelas')) {
-            $classroomIds = Classroom::where('wali_kelas_id', $user->id)->pluck('id');
-            $query->whereHas('penugasanMengajar', fn ($q) => $q->whereIn('classroom_id', $classroomIds));
+        } else {
+            $isTutor = $roles->contains('tutor');
+            $isWali = $roles->contains('wali-kelas');
+
+            if ($isTutor && $isWali) {
+                $tutor = Tutor::where('user_id', $user->id)->first();
+                $tutorId = $tutor?->id;
+                $classroomIds = Classroom::where('wali_kelas_id', $user->id)->pluck('id');
+
+                $query->whereHas('penugasanMengajar', function ($q) use ($tutorId, $classroomIds) {
+                    $q->where(function ($sub) use ($tutorId, $classroomIds) {
+                        if ($tutorId) {
+                            $sub->where('tutor_id', $tutorId);
+                        }
+                        if ($classroomIds->isNotEmpty()) {
+                            $sub->orWhereIn('classroom_id', $classroomIds);
+                        }
+                        if (! $tutorId && $classroomIds->isEmpty()) {
+                            $sub->whereRaw('1 = 0');
+                        }
+                    });
+                });
+            } elseif ($isTutor) {
+                $tutor = Tutor::where('user_id', $user->id)->first();
+                abort_if(! $tutor, 403);
+                $query->whereHas('penugasanMengajar', fn ($q) => $q->where('tutor_id', $tutor->id));
+            } elseif ($isWali) {
+                $classroomIds = Classroom::where('wali_kelas_id', $user->id)->pluck('id');
+                $query->whereHas('penugasanMengajar', fn ($q) => $q->whereIn('classroom_id', $classroomIds));
+            }
         }
 
         $grades = $query->latest()->paginate(15)->withQueryString();
@@ -98,7 +121,7 @@ class GradeController extends Controller
 
             $this->authorizePenugasan($selectedPenugasan, $user);
 
-            $students = $selectedPenugasan->classroom?->students ?? collect();
+            $students = $selectedPenugasan->classroom->students ?? collect();
         }
 
         return view('grades.create', compact('penugasans', 'selectedPenugasan', 'students'));
@@ -190,8 +213,7 @@ class GradeController extends Controller
             $tutor = Tutor::where('user_id', $user->id)->first();
             abort_if(! $tutor || $grade->penugasanMengajar->tutor_id !== $tutor->id, 403);
         } elseif ($user->hasRole('wali-kelas')) {
-            $wali = Tutor::where('user_id', $user->id)->first();
-            $classroomIds = Classroom::where('wali_kelas_id', $wali?->id)->pluck('id');
+            $classroomIds = Classroom::where('wali_kelas_id', $user->id)->pluck('id');
             abort_if(! $classroomIds->contains($grade->penugasanMengajar->classroom_id), 403);
         }
     }

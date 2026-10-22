@@ -27,11 +27,6 @@
                         <span class="font-medium text-navy">Rombel</span>
                     </a>
                     
-                    <a href="{{ route('reports.ppdb') }}" class="p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-primary-soft transition-colors cursor-pointer text-center">
-                        <x-icon name="document-text" class="w-8 h-8 mx-auto text-primary mb-2" />
-                        <span class="font-medium text-navy">PPDB</span>
-                    </a>
-                    
                     <a href="{{ route('reports.attendance') }}" class="p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-primary-soft transition-colors cursor-pointer text-center">
                         <x-icon name="calendar" class="w-8 h-8 mx-auto text-primary mb-2" />
                         <span class="font-medium text-navy">Kehadiran</span>

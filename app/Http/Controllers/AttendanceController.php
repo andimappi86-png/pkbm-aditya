@@ -32,8 +32,9 @@ class AttendanceController extends Controller
         ]);
 
         // Scoping berdasarkan role
-        if ($user->hasRole('peserta-didik') && $user->student) {
-            $query->where('student_id', $user->student->id);
+        if ($user->hasRole('peserta-didik') && ! $user->hasRole('operator') && ! $user->hasRole('kepala-pkbm')) {
+            // Wajib dibatasi ke siswa milik akun ini. Tanpa profil siswa, hasil harus kosong.
+            $query->whereIn('student_id', Student::where('user_id', $user->id)->pluck('id'));
         } elseif ($user->hasRole('tutor') && $user->tutor) {
             $query->whereHas('schedule.penugasanMengajar', function ($q) use ($user) {
                 $q->where('tutor_id', $user->tutor->id);
@@ -230,6 +231,16 @@ class AttendanceController extends Controller
         // Scope access
         if ($user->hasRole('peserta-didik') && $user->student && $attendance->student_id !== $user->student->id) {
             abort(403, 'Anda tidak memiliki akses.');
+        } elseif ($user->hasRole('wali-kelas')) {
+            $classroomIds = Classroom::where('wali_kelas_id', $user->id)->pluck('id');
+            $attendanceClassroomId = $attendance->schedule->penugasanMengajar->classroom_id;
+            if (! $classroomIds->contains($attendanceClassroomId)) {
+                abort(403, 'Anda tidak memiliki akses ke data absensi ini.');
+            }
+        } elseif ($user->hasRole('tutor') && $user->tutor) {
+            if ($attendance->schedule->penugasanMengajar->tutor_id !== $user->tutor->id) {
+                abort(403, 'Anda tidak berhak melihat absensi ini.');
+            }
         }
 
         $attendance->load([

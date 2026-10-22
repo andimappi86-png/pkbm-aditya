@@ -30,11 +30,17 @@ class Document extends Model
         ];
     }
 
+    /**
+     * @return BelongsTo<Student, $this>
+     */
     public function student(): BelongsTo
     {
         return $this->belongsTo(Student::class);
     }
 
+    /**
+     * @return BelongsTo<Ppdb, $this>
+     */
     public function ppdb(): BelongsTo
     {
         return $this->belongsTo(Ppdb::class);
@@ -68,7 +74,6 @@ class Document extends Model
             'pending' => 'bg-yellow-100 text-yellow-800',
             'diverifikasi' => 'bg-green-100 text-green-800',
             'ditolak' => 'bg-red-100 text-red-800',
-            default => 'bg-gray-100 text-gray-800',
         };
     }
 

@@ -19,15 +19,11 @@ class RoleCalonPesertaSeeder extends Seeder
 
         // Create new permissions
         Permission::firstOrCreate(['name' => 'dashboard.view', 'guard_name' => 'web']);
-        Permission::firstOrCreate(['name' => 'admissions.apply', 'guard_name' => 'web']);
-        Permission::firstOrCreate(['name' => 'admissions.view_own', 'guard_name' => 'web']);
 
         $role = Role::firstOrCreate(['name' => 'calon-peserta', 'guard_name' => 'web']);
 
         $role->syncPermissions([
             'dashboard.view',
-            'admissions.apply',
-            'admissions.view_own',
         ]);
     }
 }

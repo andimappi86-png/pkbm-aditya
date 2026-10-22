@@ -123,6 +123,6 @@ class RaporTest extends TestCase
         ]);
 
         $response = $this->actingAs($studentUser)->get(route('rapor.show', $this->student));
-        $response->assertRedirect()->assertSessionHas('error', 'Anda tidak memiliki akses ke fitur tersebut.');
+        $response->assertForbidden();
     }
 }

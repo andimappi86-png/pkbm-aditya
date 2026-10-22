@@ -36,7 +36,7 @@
                         <option value="">Semua Tahun Ajaran</option>
                         @foreach($academicYears as $year)
                             <option value="{{ $year->id }}" {{ request('tahun_ajaran_id') == $year->id ? 'selected' : '' }}>
-                                {{ $year->nama_ajaran }}
+                                {{ $year->nama }}
                             </option>
                         @endforeach
                     </select>
@@ -73,10 +73,10 @@
                             <td>{{ $classroom->kode_rombel }}</td>
                             <td>{{ $classroom->nama_rombel }}</td>
                             <td>{{ $classroom->program->nama ?? '-' }}</td>
-                            <td>{{ $classroom->academicYear->nama_ajaran ?? '-' }}</td>
+                            <td>{{ $classroom->academicYear?->nama ?? '-' }}</td>
                             <td>
                                 @if($classroom->wali_kelas_id)
-                                    {{ $classroom->homeroomTeacher->nama_lengkap ?? 'Tidak diketahui' }}
+                                    {{ $classroom->waliKelas?->name ?? 'Tidak diketahui' }}
                                 @else
                                     <span class="text-xs text-muted">Belum ada wali kelas</span>
                                 @endif

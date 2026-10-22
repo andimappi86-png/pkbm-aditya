@@ -61,7 +61,6 @@ class DatabaseSeeder extends Seeder
             AssignmentSeeder::class,
             MaterialSeeder::class,
             ForumSeeder::class,
-            PpdbSeeder::class,
             DocumentLetterSeeder::class,
             AnnouncementSeeder::class,
         ]);

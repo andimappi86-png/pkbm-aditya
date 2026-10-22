@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AcademicYear;
 use App\Models\Announcement;
 use App\Models\Assignment;
 use App\Models\Attendance;
@@ -12,12 +13,13 @@ use App\Models\Grade;
 use App\Models\Letter;
 use App\Models\Material;
 use App\Models\PenugasanMengajar;
-use App\Models\Ppdb;
 use App\Models\Program;
 use App\Models\Quiz;
 use App\Models\QuizAttempt;
 use App\Models\Schedule;
+use App\Models\Semester;
 use App\Models\Student;
+use App\Models\Subject;
 use App\Models\Submission;
 use App\Models\Tutor;
 use Illuminate\Http\RedirectResponse;
@@ -57,20 +59,30 @@ class DashboardController extends Controller
         $hadirCount = Attendance::whereIn('status', ['hadir', 'izin'])->count();
         $attendanceRate = $totalAttendance > 0 ? round(($hadirCount / $totalAttendance) * 100) : 0;
 
-        // PPDB Ringkasan
-        $ppdbStats = [
-            'total' => Ppdb::count(),
-            'diterima' => Ppdb::where('status', 'diterima')->count(),
-            'pending' => Ppdb::where('status', 'pending')->count(),
-        ];
-
         // Program breakdown
-        $programStats = Program::withCount('students')->get();
+        $programStats = Program::withCount(['students', 'classrooms'])->get();
+
+        // Metric Kinerja PKBM Agregat
+        $averageGrade = Grade::avg('nilai_akhir') ?? 0;
+        $totalSubmissions = Submission::count();
+        $gradedSubmissions = Submission::where('status', 'graded')->orWhereNotNull('nilai')->count();
+
+        $activeTeachingAssignments = PenugasanMengajar::where('status_aktif', true)->count();
+        $tutorToStudentRatio = $totalTutors > 0 ? round($totalStudents / $totalTutors, 1) : 0;
+
+        $kinerja = [
+            'average_grade' => round($averageGrade, 1),
+            'attendance_rate' => $attendanceRate,
+            'total_submissions' => $totalSubmissions,
+            'graded_submissions' => $gradedSubmissions,
+            'active_assignments' => $activeTeachingAssignments,
+            'tutor_student_ratio' => $tutorToStudentRatio,
+        ];
 
         return view('dashboards.yayasan', compact(
             'totalStudents', 'activeStudents', 'totalTutors', 'activeTutors',
             'totalClassrooms', 'totalPrograms', 'attendanceRate',
-            'ppdbStats', 'programStats'
+            'programStats', 'kinerja'
         ));
     }
 
@@ -88,13 +100,6 @@ class DashboardController extends Controller
         $totalClassrooms = Classroom::count();
         $totalPrograms = Program::count();
 
-        // PPDB
-        $ppdbStats = [
-            'total' => Ppdb::count(),
-            'diterima' => Ppdb::where('status', 'diterima')->count(),
-            'pending' => Ppdb::where('status', 'pending')->count(),
-        ];
-
         // Attendance overview
         $totalSchedule = Attendance::count();
         $hadirCount = Attendance::whereIn('status', ['hadir', 'izin'])->count();
@@ -105,16 +110,22 @@ class DashboardController extends Controller
         $pendingDocuments = Document::where('status_verifikasi', 'pending')->count();
         $lettersCount = Letter::count();
 
+        // Program breakdown (sebaran per program)
+        $programStats = Program::withCount(['students', 'classrooms'])->get();
+
         // Announcements
         $activeAnnouncements = Announcement::where('status_aktif', true)->count();
 
-        // Program breakdown
-        $programStats = Program::withCount('students')->get();
+        // Tahun Ajaran & Semester
+        $academicYear = AcademicYear::where('status_aktif', true)->first();
+        $semester = Semester::where('status_aktif', true)->first();
+        $totalSubjects = Subject::where('status_aktif', true)->count();
 
         return view('dashboards.kepala', compact(
             'totalStudents', 'totalTutors', 'totalClassrooms', 'totalPrograms',
-            'ppdbStats', 'attendanceRate', 'documentsCount',
-            'pendingDocuments', 'lettersCount', 'activeAnnouncements', 'programStats'
+            'attendanceRate', 'documentsCount',
+            'pendingDocuments', 'lettersCount', 'activeAnnouncements', 'programStats',
+            'academicYear', 'semester', 'totalSubjects'
         ));
     }
 
@@ -242,6 +253,99 @@ class DashboardController extends Controller
             'mySubjects' => $mySubjects,
             'myClasses' => $myClasses,
             'stats' => $stats,
+            'recentAnnouncements' => $recentAnnouncements,
+        ]);
+    }
+
+    /**
+     * Dashboard Gabungan Tutor & Wali Kelas
+     * Fokus: ringkasan kegiatan mengajar tutor sekaligus tanggung jawab rombel wali kelas
+     */
+    public function combined(): View
+    {
+        abort_unless(auth()->user()->can('dashboard.view'), 403);
+        $user = auth()->user();
+        abort_unless($user->hasRole('tutor') && $user->hasRole('wali-kelas'), 403);
+
+        $tutor = $user->tutor;
+
+        // Data Mengajar (Tutor)
+        $mySubjects = collect();
+        $myClasses = collect();
+        $tutorStats = [
+            'total_siswa_ajar' => 0,
+            'total_materi' => 0,
+            'total_tugas' => 0,
+            'total_kuis' => 0,
+            'submission_belum_dinilai' => 0,
+        ];
+
+        if ($tutor) {
+            $mySubjects = $tutor->subjects;
+            $myClasses = Classroom::whereHas('penugasanMengajar', function ($q) use ($tutor) {
+                $q->where('tutor_id', $tutor->id);
+            })->withCount('students')->get();
+
+            $penugasanTutorIds = PenugasanMengajar::where('tutor_id', $tutor->id)->pluck('id');
+
+            $tutorStats['total_siswa_ajar'] = $myClasses->sum('students_count');
+            $tutorStats['total_materi'] = Material::whereIn('penugasan_mengajar_id', $penugasanTutorIds)->count();
+
+            $assignments = Assignment::whereIn('penugasan_mengajar_id', $penugasanTutorIds)->get();
+            $tutorStats['total_tugas'] = $assignments->count();
+
+            $tutorStats['submission_belum_dinilai'] = Submission::whereIn('assignment_id', $assignments->pluck('id'))
+                ->whereNull('nilai')
+                ->count();
+
+            $tutorStats['total_kuis'] = Quiz::whereIn('penugasan_mengajar_id', $penugasanTutorIds)->count();
+        }
+
+        // Data Rombel Binaan (Wali Kelas)
+        $myClassrooms = Classroom::where('wali_kelas_id', $user->id)
+            ->withCount('students')
+            ->get();
+
+        $classroomIds = $myClassrooms->pluck('id');
+
+        $waliStats = [
+            'total_siswa_binaan' => $myClassrooms->sum('students_count'),
+            'total_rombel_binaan' => $myClassrooms->count(),
+            'kehadiran_rata' => 0,
+        ];
+
+        if ($classroomIds->count() > 0) {
+            $studentIds = Student::whereIn('rombel_id', $classroomIds)->pluck('id');
+            if ($studentIds->count() > 0) {
+                $hadirCount = Attendance::whereIn('student_id', $studentIds)
+                    ->whereIn('status', ['hadir', 'izin'])->count();
+                $totalSchedule = Attendance::whereIn('student_id', $studentIds)->count();
+
+                $waliStats['kehadiran_rata'] = $totalSchedule > 0 ? round(($hadirCount / $totalSchedule) * 100) : 0;
+            }
+        }
+
+        // Pengumuman relevan (target tutor OR target wali-kelas OR target rombel binaan OR target umum)
+        $recentAnnouncements = Announcement::where('status_aktif', true)
+            ->whereNotNull('published_at')
+            ->where('published_at', '<=', now())
+            ->where(function ($q) use ($classroomIds) {
+                $q->where(function ($q2) {
+                    $q2->whereNull('target_role')->whereNull('target_rombel');
+                })
+                    ->orWhereIn('target_role', ['tutor', 'wali-kelas'])
+                    ->orWhereIn('target_rombel', $classroomIds);
+            })
+            ->latest('published_at')
+            ->take(5)
+            ->get();
+
+        return view('dashboards.combined', [
+            'mySubjects' => $mySubjects,
+            'myClasses' => $myClasses,
+            'myClassrooms' => $myClassrooms,
+            'tutorStats' => $tutorStats,
+            'waliStats' => $waliStats,
             'recentAnnouncements' => $recentAnnouncements,
         ]);
     }
@@ -418,7 +522,7 @@ class DashboardController extends Controller
             $upcomingSchedules = Schedule::with(['penugasanMengajar.subject', 'penugasanMengajar.tutor.user'])
                 ->whereIn('penugasan_mengajar_id', $penugasanIds)
                 ->where('status_aktif', true)
-                ->orderByRaw("FIELD(hari, 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu')")
+                ->orderByRaw("CASE hari WHEN 'Senin' THEN 1 WHEN 'Selasa' THEN 2 WHEN 'Rabu' THEN 3 WHEN 'Kamis' THEN 4 WHEN 'Jumat' THEN 5 WHEN 'Sabtu' THEN 6 WHEN 'Minggu' THEN 7 ELSE 8 END")
                 ->orderBy('jam_mulai', 'asc')
                 ->take(3)
                 ->get();
@@ -473,6 +577,8 @@ class DashboardController extends Controller
 
         return view('dashboards.siswa', [
             'myClassroom' => $myClassroom,
+            'studentProfileMissing' => ! $student,
+            'studentWithoutClassroom' => $student !== null && $myClassroom === null,
             'stats' => $stats,
             'recentAnnouncements' => $recentAnnouncements,
             'upcomingAssignments' => $upcomingAssignments,

@@ -19,16 +19,25 @@ class QuizAttempt extends Model
         'selesai' => 'boolean',
     ];
 
+    /**
+     * @return BelongsTo<Quiz, $this>
+     */
     public function quiz(): BelongsTo
     {
         return $this->belongsTo(Quiz::class);
     }
 
+    /**
+     * @return BelongsTo<Student, $this>
+     */
     public function student(): BelongsTo
     {
         return $this->belongsTo(Student::class);
     }
 
+    /**
+     * @return HasMany<QuizAnswer, $this>
+     */
     public function answers(): HasMany
     {
         return $this->hasMany(QuizAnswer::class);

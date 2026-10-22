@@ -28,6 +28,11 @@ class AcademicYear extends Model
         ];
     }
 
+    public function getNamaAjaranAttribute(): ?string
+    {
+        return $this->nama;
+    }
+
     public function semesters(): HasMany
     {
         return $this->hasMany(Semester::class, 'tahun_ajaran_id');

@@ -34,9 +34,9 @@
                     </x-badge>
                 </div>
 
+                <!-- Identitas -->
                 <div class="card p-6 space-y-4">
                     <h3 class="text-sm font-semibold text-navy uppercase tracking-wider mb-2 border-b pb-2">Identitas</h3>
-                    
                     <div>
                         <div class="text-xs text-muted">Jenis Kelamin</div>
                         <div class="text-sm font-medium text-navy">{{ $tutor->jenis_kelamin }}</div>
@@ -44,8 +44,7 @@
                     <div>
                         <div class="text-xs text-muted">Tempat, Tanggal Lahir</div>
                         <div class="text-sm font-medium text-navy">
-                            {{ $tutor->tempat_lahir ?? '-' }}, 
-                            {{ $tutor->tanggal_lahir ? $tutor->tanggal_lahir->format('d M Y') : '-' }}
+                            {{ $tutor->tempat_lahir ?? '-' }}, {{ $tutor->tanggal_lahir ? $tutor->tanggal_lahir->format('d M Y') : '-' }}
                         </div>
                     </div>
                     <div>
@@ -54,9 +53,9 @@
                     </div>
                 </div>
 
+                <!-- Kontak -->
                 <div class="card p-6 space-y-4">
                     <h3 class="text-sm font-semibold text-navy uppercase tracking-wider mb-2 border-b pb-2">Kontak</h3>
-                    
                     <div>
                         <div class="text-xs text-muted">No. Handphone</div>
                         <div class="text-sm font-medium text-navy">{{ $tutor->no_hp ?? '-' }}</div>
@@ -71,9 +70,9 @@
                     </div>
                 </div>
 
+                <!-- Profesional -->
                 <div class="card p-6 space-y-4">
                     <h3 class="text-sm font-semibold text-navy uppercase tracking-wider mb-2 border-b pb-2">Profesional</h3>
-                    
                     <div>
                         <div class="text-xs text-muted">Bidang Keahlian</div>
                         <div class="text-sm font-medium text-navy">{{ $tutor->bidang_keahlian ?? '-' }}</div>
@@ -84,13 +83,101 @@
                     </div>
                     <div>
                         <div class="text-xs text-muted">Tanggal Mulai Mengajar</div>
-                        <div class="text-sm font-medium text-navy">{{ $tutor->tanggal_mulai_mengahar ? $tutor->tanggal_mulai_mengahar->format('d M Y') : '-' }}</div>
+                        <div class="text-sm font-medium text-navy">{{ $tutor->tanggal_mulai_mengajar ? $tutor->tanggal_mulai_mengajar->format('d M Y') : '-' }}</div>
                     </div>
                 </div>
+
+                <!-- Rombel yang diampu -->
+                <div class="card p-6">
+                    <h3 class="text-sm font-semibold text-navy uppercase tracking-wider mb-2 border-b pb-2">Rombel yang diampu</h3>
+                    @if($tutor->classrooms->isNotEmpty())
+                        <ul class="list-disc pl-5 space-y-1">
+                            @foreach($tutor->classrooms as $classroom)
+                                <li>
+                                    {{ $classroom->nama_rombel }}
+                                    @if($classroom->program)
+                                        – {{ $classroom->program->nama_program ?? $classroom->program->name ?? '' }}
+                                    @endif
+                                    @if($classroom->academicYear)
+                                        ({{ $classroom->academicYear->tahun_ajaran ?? '' }})
+                                    @endif
+                                </li>
+                            @endforeach
+                        </ul>
+                    @else
+                        <p class="text-muted">Tidak ada rombel yang diampu.</p>
+                    @endif
+                </div>
+
+                <!-- Mata Pelajaran yang diampu -->
+                <div class="card p-6">
+                    <h3 class="text-sm font-semibold text-navy uppercase tracking-wider mb-2 border-b pb-2">Mata Pelajaran yang diampu</h3>
+                    @if($tutor->subjects->isNotEmpty())
+                        <ul class="list-disc pl-5 space-y-1">
+                            @foreach($tutor->subjects as $subject)
+                                <li>{{ $subject->nama_mata_pelajaran ?? $subject->name ?? $subject->title ?? '' }}</li>
+                            @endforeach
+                        </ul>
+                    @else
+                        <p class="text-muted">Tidak ada mata pelajaran yang diampu.</p>
+                    @endif
+                </div>
+
             </div>
 
-            <!-- Main Content -->
-            <div class="md:col-span-2 space-y-6">
+            <!-- Main Content - Jadwal & Ringkasan -->
+            <div class="md:col-span-1 space-y-6">
+                <!-- Jadwal Mengajar -->
+                <div class="card p-6">
+                    <h3 class="text-sm font-semibold text-navy uppercase tracking-wider mb-2 border-b pb-2">Jadwal Mengajar</h3>
+                    @if($schedules->isNotEmpty())
+                        <div class="table-shell overflow-x-auto">
+                            <table class="min-w-full divide-y divide-border">
+                                <thead>
+                                    <tr>
+                                        <th>Hari</th>
+                                        <th>Jam</th>
+                                        <th>Rombel</th>
+                                        <th>Mata Pelajaran</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-border">
+                                    @foreach($schedules as $schedule)
+                                        <tr>
+                                            <td>{{ $schedule->hari }}</td>
+                                            <td>{{ $schedule->jam_mulai->format('H:i') }} - {{ $schedule->jam_selesai->format('H:i') }}</td>
+                                            <td>{{ optional($schedule->penugasanMengajar->classroom)->nama_rombel ?? '-' }}</td>
+                                            <td>{{ optional($schedule->penugasanMengajar->subject)->nama_mata_pelajaran ?? optional($schedule->penugasanMengajar->subject)->name ?? '-' }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @else
+                        <p class="text-muted">Tidak ada jadwal mengajar.</p>
+                    @endif
+                </div>
+
+                <!-- Ringkasan Penugasan -->
+                <div class="card p-6">
+                    <h3 class="text-sm font-semibold text-navy uppercase tracking-wider mb-2 border-b pb-2">Ringkasan Penugasan</h3>
+                    <div class="grid grid-cols-3 gap-4 text-center">
+                        <div>
+                            <div class="text-xs text-muted">Rombel</div>
+                            <div class="text-lg font-bold text-navy">{{ $stats['total_rombel'] }}</div>
+                        </div>
+                        <div>
+                            <div class="text-xs text-muted">Mata Pelajaran</div>
+                            <div class="text-lg font-bold text-navy">{{ $stats['total_mapel'] }}</div>
+                        </div>
+                        <div>
+                            <div class="text-xs text-muted">Penugasan Aktif</div>
+                            <div class="text-lg font-bold text-navy">{{ $stats['total_penugasan'] }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Catatan -->
                 <div class="card p-6">
                     <h3 class="text-lg font-semibold text-navy border-b pb-2 mb-4">Catatan</h3>
                     <p class="text-sm text-navy">{{ $tutor->catatan ?? '-' }}</p>

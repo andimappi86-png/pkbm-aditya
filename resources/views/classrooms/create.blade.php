@@ -58,9 +58,41 @@
                     @enderror
                 </div>
 
-                <div>
-                    <label class="label">Wali Kelas</label>
-                    <input type="text" name="wali_kelas_name" placeholder="Masukkan nama wali kelas..." class="input @error('wali_kelas_name') input-error @enderror" value="{{ old('wali_kelas_name') }}">
+                <div class="mt-6 relative" x-data="{
+                    query: '{{ old('wali_kelas_name') }}',
+                    results: [],
+                    open: false,
+                    loading: false,
+                    async search() {
+                        if (this.query.length < 1) { this.results = []; this.open = false; return; }
+                        this.loading = true;
+                        try {
+                            const res = await fetch(`{{ route('rombel.search-wali-kelas') }}?q=${encodeURIComponent(this.query)}`);
+                            this.results = await res.json();
+                            this.open = true;
+                        } finally {
+                            this.loading = false;
+                        }
+                    },
+                    select(user) {
+                        this.query = user.name;
+                        document.getElementById('wali_kelas_id').value = user.id;
+                        this.open = false;
+                    }
+                }">
+                    <label class="label" for="wali_kelas_name">Wali Kelas</label>
+                    <input type="text" x-model="query" @input.debounce.300ms="search()" name="wali_kelas_name" id="wali_kelas_name" placeholder="Ketik nama wali kelas..." class="input @error('wali_kelas_name') input-error @enderror" autocomplete="off">
+                    <input type="hidden" name="wali_kelas_id" id="wali_kelas_id" value="{{ old('wali_kelas_id') }}">
+
+                    <ul x-show="open" @click.outside="open = false" class="absolute z-10 w-full bg-white border border-[#D9E2E5] rounded-lg shadow-lg mt-1 max-h-60 overflow-y-auto" style="display: none;">
+                        <template x-for="user in results" :key="user.id">
+                            <li @click="select(user)" class="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm">
+                                <span x-text="user.name"></span>
+                            </li>
+                        </template>
+                        <li x-show="results.length === 0 && !loading" class="px-4 py-2 text-sm text-muted">Tidak ada wali kelas yang cocok</li>
+                    </ul>
+
                     @error('wali_kelas_name')
                         <p class="input-error">{{ $message }}</p>
                     @enderror
@@ -69,7 +101,7 @@
                 <div>
                     <label class="label">Status Aktif</label>
                     <div class="flex items-center">
-                        <input id="status_aktif" name="status_aktif" type="checkbox" {{ old('status_aktif') ? 'checked' : '' }} class="h-4 w-4 text-primary focus:ring-primary border-border rounded">
+                        <input id="status_aktif" name="status_aktif" type="checkbox" value="1" {{ old('status_aktif', true) ? 'checked' : '' }} class="h-4 w-4 text-primary focus:ring-primary border-border rounded">
                         <label for="status_aktif" class="label-text ml-3">Aktif</label>
                     </div>
                 </div>

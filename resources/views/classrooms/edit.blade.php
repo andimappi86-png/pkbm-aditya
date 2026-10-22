@@ -52,17 +52,41 @@
                 </div>
 
                 <!-- Section 3: Wali Kelas (Manual Input) -->
-                <div class="mt-6">
-                    <label for="wali_kelas_id" class="block text-sm font-semibold text-[#172B3A] mb-1">Wali Kelas (opsional)</label>
-                    <select name="wali_kelas_id" id="wali_kelas_id" class="w-full px-3 py-2 border {{ $errors->has('wali_kelas_id') ? 'border-[#C62828]' : 'border-[#D9E2E5]' }} rounded-lg focus:ring-[#167C80] focus:border-[#167C80]">
-                        <option value="">-- Pilih Wali Kelas --</option>
-                        @foreach($waliKelas as $user)
-                            <option value="{{ $user->id }}" {{ old('wali_kelas_id', $classroom->wali_kelas_id) == $user->id ? 'selected' : '' }}>
-                                {{ $user->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('wali_kelas_id')
+                <div class="mt-6 relative" x-data="{
+                    query: '{{ old('wali_kelas_name', $classroom->waliKelas?->name ?? '') }}',
+                    results: [],
+                    open: false,
+                    loading: false,
+                    async search() {
+                        if (this.query.length < 1) { this.results = []; this.open = false; return; }
+                        this.loading = true;
+                        try {
+                            const res = await fetch(`{{ route('rombel.search-wali-kelas') }}?q=${encodeURIComponent(this.query)}`);
+                            this.results = await res.json();
+                            this.open = true;
+                        } finally {
+                            this.loading = false;
+                        }
+                    },
+                    select(user) {
+                        this.query = user.name;
+                        document.getElementById('wali_kelas_id').value = user.id;
+                        this.open = false;
+                    }
+                }">
+                    <label for="wali_kelas_name" class="block text-sm font-semibold text-[#172B3A] mb-1">Wali Kelas (opsional)</label>
+                    <input type="text" x-model="query" @input.debounce.300ms="search()" id="wali_kelas_name" name="wali_kelas_name" placeholder="Ketik nama wali kelas..." class="w-full px-3 py-2 border {{ $errors->has('wali_kelas_name') ? 'border-[#C62828]' : 'border-[#D9E2E5]' }} rounded-lg focus:ring-[#167C80] focus:border-[#167C80]" autocomplete="off">
+                    <input type="hidden" name="wali_kelas_id" id="wali_kelas_id" value="{{ old('wali_kelas_id', $classroom->wali_kelas_id) }}">
+
+                    <ul x-show="open" @click.outside="open = false" class="absolute z-10 w-full bg-white border border-[#D9E2E5] rounded-lg shadow-lg mt-1 max-h-60 overflow-y-auto" style="display: none;">
+                        <template x-for="user in results" :key="user.id">
+                            <li @click="select(user)" class="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm">
+                                <span x-text="user.name"></span>
+                            </li>
+                        </template>
+                        <li x-show="results.length === 0 && !loading" class="px-4 py-2 text-sm text-muted">Tidak ada wali kelas yang cocok</li>
+                    </ul>
+                    @error('wali_kelas_name')
                         <p class="text-[#C62828] text-sm mt-1">{{ $message }}</p>
                     @enderror
                 </div>

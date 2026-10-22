@@ -42,9 +42,12 @@ return Application::configure(basePath: dirname(__DIR__))
                 }
 
                 if (auth()->check()) {
-                    $route = auth()->user()->dashboardRoute();
+                    if ($request->routeIs('reports.*', 'announcements.show', 'ppdb.show', 'rapor.show', 'rekap.show', 'materi.show', 'forum.show')) {
+                        return response('Anda tidak memiliki akses ke fitur tersebut.', 403);
+                    }
 
-                    return redirect()->route($route)->with('error', 'Anda tidak memiliki akses ke fitur tersebut.');
+                    return redirect()->route(auth()->user()->dashboardRoute())
+                        ->with('error', 'Anda tidak memiliki akses ke fitur tersebut.');
                 }
 
                 return redirect()->route('login')->with('error', 'Anda tidak memiliki akses ke fitur tersebut.');

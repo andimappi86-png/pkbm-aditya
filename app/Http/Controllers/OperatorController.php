@@ -14,18 +14,20 @@ use App\Models\Document;
 use App\Models\Grade;
 use App\Models\Letter;
 use App\Models\Material;
-use App\Models\Ppdb;
 use App\Models\Program;
 use App\Models\Quiz;
 use App\Models\Schedule;
 use App\Models\Student;
 use App\Models\Subject;
 use App\Models\Tutor;
+use App\Models\User;
 use App\Services\AesGcmService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Facades\Excel;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 class OperatorController extends Controller
 {
@@ -73,35 +75,6 @@ class OperatorController extends Controller
         ])->onlyInput('email');
     }
 
-    public function profile()
-    {
-        return view('operator.profile');
-    }
-
-    public function updateProfile(Request $request)
-    {
-        $user = Auth::user();
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email,'.$user->id,
-            'phone' => 'nullable|string|max:20',
-            'current_password' => 'nullable|required_with:password|current_password',
-            'password' => 'nullable|min:8|confirmed',
-        ]);
-
-        $user->name = $request->name;
-        $user->email = $request->email;
-        $user->phone = $request->phone;
-
-        if ($request->filled('password')) {
-            $user->password = IlluminateSupportFacadesHash::make($request->password);
-        }
-
-        $user->save();
-
-        return back()->with('status', 'Profil berhasil diperbarui.');
-    }
-
     public function dashboard()
     {
         $stats = [
@@ -115,18 +88,40 @@ class OperatorController extends Controller
             'assignments' => Assignment::count(),
             'quizzes' => Quiz::count(),
             'materials' => Material::count(),
-            'ppdb' => Ppdb::count(),
             'documents' => Document::count(),
             'letters' => Letter::count(),
             'announcements' => Announcement::count(),
         ];
 
-        return view('operator.dashboard', compact('stats'));
+        // Indikator operasional (bukan angka statis)
+        $ops = [
+            'total_users' => User::count(),
+            'inactive_accounts' => User::where('status', '!=', 'active')->orWhereNull('status')->count(),
+            'unlinked_student_accounts' => User::role('peserta-didik')->whereDoesntHave('student')->count(),
+            'students_without_account' => Student::whereNull('user_id')->count(),
+            'total_permissions' => Permission::count(),
+        ];
+
+        $rolesCount = Role::count();
+
+        $recentAnnouncements = Announcement::query()
+            ->where('status_aktif', true)
+            ->latest('published_at')
+            ->latest('id')
+            ->take(4)
+            ->get(['id', 'judul', 'created_at', 'published_at']);
+
+        return view('operator.dashboard', compact(
+            'stats',
+            'ops',
+            'rolesCount',
+            'recentAnnouncements',
+        ));
     }
 
     public function security()
     {
-        $keyLength = strlen(env('AES_256_GCM_KEY', '')) * 8; // in bits
+        $keyLength = strlen((string) config('services.aes_gcm.key', '')) * 8; // in bits
 
         $studentFields = 10; // NIK, alamat, tanggal_lahir, dll.
         $tutorFields = 6;
@@ -228,11 +223,11 @@ class OperatorController extends Controller
         $dummies = [];
         for ($i = 0; $i < $count; $i++) {
             $dummies[] = [
-                'nik' => '327'.str_pad($i, 13, '0', STR_PAD_LEFT),
+                'nik' => '327'.str_pad((string) $i, 13, '0', STR_PAD_LEFT),
                 'nama' => 'Dummy Name '.$i,
                 'email' => 'dummy'.$i.'@example.com',
                 'alamat' => 'Jalan Dummy No '.$i,
-                'telepon' => '0812'.str_pad($i, 8, '0', STR_PAD_LEFT),
+                'telepon' => '0812'.str_pad((string) $i, 8, '0', STR_PAD_LEFT),
             ];
         }
 
@@ -326,7 +321,6 @@ class OperatorController extends Controller
         ]);
     }
 
-
     public function importTutorForm()
     {
         if (! auth()->user()->hasRole('operator')) {
@@ -355,6 +349,7 @@ class OperatorController extends Controller
             $results = $import->getResults();
         } catch (\Throwable $e) {
             Storage::delete($path);
+
             return back()->withErrors(['file' => 'Gagal membaca CSV: '.$e->getMessage()])->withInput();
         }
 
@@ -388,6 +383,7 @@ class OperatorController extends Controller
             $results = $import->getResults();
         } catch (\Throwable $e) {
             Storage::delete($path);
+
             return redirect()->route('operator.import-tutor.index')
                 ->with('error', 'Terjadi kesalahan sistem: '.$e->getMessage());
         }
@@ -413,10 +409,10 @@ class OperatorController extends Controller
             'email_dummy',
             'pendidikan_terakhir',
             'pekerjaan_jabatan',
-            'status'
+            'status',
         ];
 
-        $callback = function() use ($headers) {
+        $callback = function () use ($headers) {
             $file = fopen('php://output', 'w');
             fputcsv($file, $headers);
             // Add a dummy row
@@ -431,17 +427,17 @@ class OperatorController extends Controller
                 'budi@example.com',
                 'S1 Pendidikan',
                 'Matematika',
-                'aktif'
+                'aktif',
             ]);
             fclose($file);
         };
 
         return response()->stream($callback, 200, [
-            "Content-type"        => "text/csv",
-            "Content-Disposition" => "attachment; filename=template_import_tutor.csv",
-            "Pragma"              => "no-cache",
-            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
-            "Expires"             => "0"
+            'Content-type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename=template_import_tutor.csv',
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0',
         ]);
     }
 }

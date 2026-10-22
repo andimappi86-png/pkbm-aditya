@@ -23,8 +23,8 @@ class ReportAccessTest extends TestCase
 
         Permission::firstOrCreate(['name' => 'reports.view']);
 
-        foreach ($roles as $role) {
-            Role::findByName($role)->givePermissionTo('reports.view'); // Wali kelas, ketua, kepala have it
+        foreach (['ketua-yayasan', 'kepala-pkbm'] as $role) {
+            Role::findByName($role)->givePermissionTo('reports.view');
         }
     }
 

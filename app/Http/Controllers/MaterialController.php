@@ -41,13 +41,36 @@ class MaterialController extends Controller
             $student = $user->student;
             $penugasanIds = ($student && $student->classroom) ? $student->classroom->penugasanMengajar()->where('status_aktif', true)->pluck('id') : [];
             $query->whereIn('penugasan_mengajar_id', $penugasanIds);
-        } elseif ($roles->contains('tutor')) {
-            $tutor = Tutor::where('user_id', $user->id)->first();
-            abort_if(! $tutor, 403);
-            $query->whereHas('penugasanMengajar', fn ($q) => $q->where('tutor_id', $tutor->id));
-        } elseif ($roles->contains('wali-kelas')) {
-            $classroomIds = Classroom::where('wali_kelas_id', $user->id)->pluck('id');
-            $query->whereHas('penugasanMengajar', fn ($q) => $q->whereIn('classroom_id', $classroomIds));
+        } else {
+            $isTutor = $roles->contains('tutor');
+            $isWali = $roles->contains('wali-kelas');
+
+            if ($isTutor && $isWali) {
+                $tutor = Tutor::where('user_id', $user->id)->first();
+                $tutorId = $tutor?->id;
+                $classroomIds = Classroom::where('wali_kelas_id', $user->id)->pluck('id');
+
+                $query->whereHas('penugasanMengajar', function ($q) use ($tutorId, $classroomIds) {
+                    $q->where(function ($sub) use ($tutorId, $classroomIds) {
+                        if ($tutorId) {
+                            $sub->where('tutor_id', $tutorId);
+                        }
+                        if ($classroomIds->isNotEmpty()) {
+                            $sub->orWhereIn('classroom_id', $classroomIds);
+                        }
+                        if (! $tutorId && $classroomIds->isEmpty()) {
+                            $sub->whereRaw('1 = 0');
+                        }
+                    });
+                });
+            } elseif ($isTutor) {
+                $tutor = Tutor::where('user_id', $user->id)->first();
+                abort_if(! $tutor, 403);
+                $query->whereHas('penugasanMengajar', fn ($q) => $q->where('tutor_id', $tutor->id));
+            } elseif ($isWali) {
+                $classroomIds = Classroom::where('wali_kelas_id', $user->id)->pluck('id');
+                $query->whereHas('penugasanMengajar', fn ($q) => $q->whereIn('classroom_id', $classroomIds));
+            }
         }
 
         $materials = $query->orderBy('urutan')->latest()->paginate(15)->withQueryString();
@@ -166,16 +189,33 @@ class MaterialController extends Controller
 
     private function authorizeMaterial(Material $material, $user): void
     {
+        $material->loadMissing('penugasanMengajar');
+
         if ($user->hasRole('peserta-didik')) {
             $student = $user->student;
             abort_if(! $student || ! $student->classroom || $material->penugasanMengajar->classroom_id !== $student->classroom->id, 403);
-        } elseif ($user->hasRole('tutor')) {
-            $tutor = Tutor::where('user_id', $user->id)->first();
-            abort_if(! $tutor || $material->penugasanMengajar->tutor_id !== $tutor->id, 403);
-        } elseif ($user->hasRole('wali-kelas')) {
-            $wali = Tutor::where('user_id', $user->id)->first();
-            $classroomIds = Classroom::where('wali_kelas_id', $wali?->id)->pluck('id');
-            abort_if(! $classroomIds->contains($material->penugasanMengajar->classroom_id), 403);
+
+            return;
+        }
+
+        $isTutor = $user->hasRole('tutor');
+        $isWali = $user->hasRole('wali-kelas');
+
+        if ($isTutor || $isWali) {
+            $canAccessAsTutor = false;
+            $canAccessAsWali = false;
+
+            if ($isTutor) {
+                $tutor = Tutor::where('user_id', $user->id)->first();
+                $canAccessAsTutor = $tutor && $material->penugasanMengajar->tutor_id === $tutor->id;
+            }
+
+            if ($isWali) {
+                $classroomIds = Classroom::where('wali_kelas_id', $user->id)->pluck('id');
+                $canAccessAsWali = $classroomIds->contains($material->penugasanMengajar->classroom_id);
+            }
+
+            abort_if(! $canAccessAsTutor && ! $canAccessAsWali, 403);
         }
     }
 }

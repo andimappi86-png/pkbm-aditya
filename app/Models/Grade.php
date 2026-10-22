@@ -32,11 +32,17 @@ class Grade extends Model
         ];
     }
 
+    /**
+     * @return BelongsTo<PenugasanMengajar, $this>
+     */
     public function penugasanMengajar(): BelongsTo
     {
         return $this->belongsTo(PenugasanMengajar::class);
     }
 
+    /**
+     * @return BelongsTo<Student, $this>
+     */
     public function student(): BelongsTo
     {
         return $this->belongsTo(Student::class);
