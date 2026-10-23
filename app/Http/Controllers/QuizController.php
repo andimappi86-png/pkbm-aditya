@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreQuizRequest;
 use App\Http\Requests\UpdateQuizRequest;
+use App\Models\Classroom;
 use App\Models\PenugasanMengajar;
 use App\Models\Quiz;
 use App\Models\Tutor;
@@ -14,7 +15,7 @@ class QuizController extends Controller
 {
     public function index(Request $request)
     {
-        Gate::authorize('materials.view');
+        Gate::authorize('quizzes.view');
 
         $user = $request->user();
         $query = Quiz::with(['penugasanMengajar.subject', 'penugasanMengajar.classroom'])
@@ -34,7 +35,7 @@ class QuizController extends Controller
 
     public function create(Request $request)
     {
-        Gate::authorize('materials.manage');
+        Gate::authorize('create', Quiz::class);
         $penugasans = $this->getMyPenugasans($request->user());
 
         return view('quizzes.create', compact('penugasans'));
@@ -42,7 +43,7 @@ class QuizController extends Controller
 
     public function store(StoreQuizRequest $request)
     {
-        Gate::authorize('materials.manage');
+        Gate::authorize('create', Quiz::class);
         $validated = $request->validated();
 
         $penugasan = PenugasanMengajar::findOrFail($validated['penugasan_mengajar_id']);
@@ -55,8 +56,7 @@ class QuizController extends Controller
 
     public function show(Quiz $quiz)
     {
-        Gate::authorize('materials.view');
-        $this->authorizeAccess($quiz, auth()->user());
+        Gate::authorize('view', $quiz);
 
         $quiz->load('questions.options');
 
@@ -65,8 +65,7 @@ class QuizController extends Controller
 
     public function edit(Quiz $quiz)
     {
-        Gate::authorize('materials.manage');
-        $this->authorizeAccess($quiz, auth()->user());
+        Gate::authorize('update', $quiz);
         $penugasans = $this->getMyPenugasans(auth()->user());
 
         return view('quizzes.edit', compact('quiz', 'penugasans'));
@@ -74,8 +73,7 @@ class QuizController extends Controller
 
     public function update(UpdateQuizRequest $request, Quiz $quiz)
     {
-        Gate::authorize('materials.manage');
-        $this->authorizeAccess($quiz, $request->user());
+        Gate::authorize('update', $quiz);
         $quiz->update($request->validated());
 
         return redirect()->route('quiz.show', $quiz)->with('success', 'Quiz diperbarui.');
@@ -83,8 +81,7 @@ class QuizController extends Controller
 
     public function destroy(Quiz $quiz)
     {
-        Gate::authorize('materials.manage');
-        $this->authorizeAccess($quiz, auth()->user());
+        Gate::authorize('delete', $quiz);
         $quiz->delete();
 
         return redirect()->route('quiz.index')->with('success', 'Quiz dihapus.');
@@ -112,18 +109,6 @@ class QuizController extends Controller
         } elseif ($user->hasRole('wali-kelas')) {
             $classroomIds = Classroom::where('wali_kelas_id', $user->id)->pluck('id');
             $query->whereHas('penugasanMengajar', fn ($q) => $q->whereIn('classroom_id', $classroomIds));
-        }
-    }
-
-    private function authorizeAccess($quiz, $user)
-    {
-        $penugasan = $quiz->penugasanMengajar;
-        if ($user->hasRole('tutor')) {
-            $tutor = Tutor::where('user_id', $user->id)->first();
-            abort_if($penugasan->tutor_id !== $tutor?->id, 403);
-        } elseif ($user->hasRole('peserta-didik')) {
-            $student = $user->student;
-            abort_if($penugasan->classroom_id !== $student?->rombel_id, 403);
         }
     }
 

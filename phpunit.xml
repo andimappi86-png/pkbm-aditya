@@ -32,5 +32,12 @@
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
+        <!-- Demo passwords for testing (all 'password' to match existing tests) -->
+        <env name="DEMO_PASSWORD_OPERATOR" value="password"/>
+        <env name="DEMO_PASSWORD_KEPALA" value="password"/>
+        <env name="DEMO_PASSWORD_WALI" value="password"/>
+        <env name="DEMO_PASSWORD_TUTOR" value="password"/>
+        <env name="DEMO_PASSWORD_PESERTA" value="password"/>
+        <env name="DEMO_PASSWORD_YAYASAN" value="password"/>
     </php>
 </phpunit>

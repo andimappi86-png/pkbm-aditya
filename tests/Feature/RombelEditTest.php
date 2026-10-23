@@ -7,6 +7,7 @@ use App\Models\Classroom;
 use App\Models\Program;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Artisan;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -23,7 +24,9 @@ class RombelEditTest extends TestCase
         Role::firstOrCreate(['name' => 'wali-kelas']);
         $p_create = Permission::firstOrCreate(['name' => 'classrooms.create']);
         $p_update = Permission::firstOrCreate(['name' => 'classrooms.update']);
-        $role->givePermissionTo([$p_create, $p_update]);
+        $p_manage = Permission::firstOrCreate(['name' => 'classrooms.manage']);
+        $role->givePermissionTo([$p_create, $p_update, $p_manage]);
+        Artisan::call('permission:cache-reset');
 
         $this->user = User::factory()->create();
         $this->user->assignRole('kepala-pkbm');

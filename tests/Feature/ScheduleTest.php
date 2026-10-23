@@ -35,6 +35,70 @@ class ScheduleTest extends TestCase
         $response->assertViewIs('schedules.index');
     }
 
+    public function test_operator_can_access_schedule_index(): void
+    {
+        $operator = User::factory()->create();
+        $operator->assignRole('operator');
+
+        $response = $this->actingAs($operator)->get(route('jadwal.index'));
+
+        $response->assertOk();
+        $response->assertViewIs('schedules.index');
+    }
+
+    public function test_operator_can_access_penugasan_mengajar_index(): void
+    {
+        $operator = User::factory()->create();
+        $operator->assignRole('operator');
+
+        $response = $this->actingAs($operator)->get(route('penugasan-mengajar.index'));
+
+        $response->assertOk();
+        $response->assertViewIs('penugasan-mengajar.index');
+    }
+
+    public function test_operator_can_access_nilai_create(): void
+    {
+        $operator = User::factory()->create();
+        $operator->assignRole('operator');
+
+        $response = $this->actingAs($operator)->get(route('nilai.create'));
+
+        $response->assertOk();
+    }
+
+    public function test_operator_can_access_quiz_create(): void
+    {
+        $operator = User::factory()->create();
+        $operator->assignRole('operator');
+
+        $response = $this->actingAs($operator)->get(route('quiz.create'));
+
+        $response->assertOk();
+    }
+
+    public function test_operator_can_access_materi_create(): void
+    {
+        $operator = User::factory()->create();
+        $operator->assignRole('operator');
+
+        $response = $this->actingAs($operator)->get(route('materi.create'));
+
+        $response->assertOk();
+    }
+
+    public function test_user_with_schedules_view_but_no_classrooms_manage_cannot_access_penugasan_mengajar(): void
+    {
+        $user = User::factory()->create();
+        // Give only schedules.view, not classrooms.manage
+        $user->givePermissionTo('schedules.view');
+
+        $response = $this->actingAs($user)->get(route('penugasan-mengajar.index'));
+
+        // Should get forbidden (403) or redirect to dashboard with error
+        $this->assertTrue($response->isForbidden() || $response->isRedirect());
+    }
+
     public function test_can_create_a_schedule(): void
     {
         $tutor = Tutor::factory()->create();

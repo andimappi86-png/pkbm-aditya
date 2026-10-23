@@ -2,17 +2,12 @@
 
 namespace App\Models;
 
-use Database\Factories\PpdbFactory;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Ppdb extends Model
 {
-    /** @use HasFactory<PpdbFactory> */
-    use HasFactory;
-
     protected $fillable = [
         'user_id',
         'nomor_pendaftaran',
@@ -118,7 +113,6 @@ class Ppdb extends Model
             self::STATUS_DIVERIFIKASI => 'bg-blue-100 text-blue-800',
             self::STATUS_DITERIMA => 'bg-green-100 text-green-800',
             self::STATUS_DITOLAK => 'bg-red-100 text-red-800',
-            default => 'bg-gray-100 text-gray-800',
         };
     }
 

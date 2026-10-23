@@ -69,6 +69,21 @@
                                 <dt class="text-muted">Tahun Ajaran:</dt>
                                 <dd class="font-medium text-navy">{{ $document->ppdb->academicYear->nama }}</dd>
                             </div>
+                        @else
+                            <div class="flex justify-between">
+                                <dt class="text-muted">Tipe:</dt>
+                                <dd class="font-medium text-navy">Dokumen Manual / Umum</dd>
+                            </div>
+                            @if($document->catatan)
+                            <div class="flex justify-between">
+                                <dt class="text-muted">Keterangan:</dt>
+                                <dd class="font-medium text-navy">{{ $document->catatan }}</dd>
+                            </div>
+                            @endif
+                            <div class="flex justify-between">
+                                <dt class="text-muted">Penautan:</dt>
+                                <dd class="text-muted">Tidak dikaitkan ke siswa</dd>
+                            </div>
                         @endif
                     </dl>
                 </div>

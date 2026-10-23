@@ -18,7 +18,7 @@ class RekapAkademikController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-        abort_if(! $user->can('reports.view') && ! $user->hasAnyRole(['tutor', 'peserta-didik']), 403);
+        abort_if(! $user->can('reports.view') && ! $user->hasAnyRole(['tutor', 'peserta-didik', 'ketua-yayasan']), 403);
 
         $roles = $user->getRoleNames();
 
@@ -39,11 +39,21 @@ class RekapAkademikController extends Controller
         ];
 
         // Role-based restrictions
-        if ($roles->contains('wali-kelas')) {
-            $wali = Tutor::where('user_id', $user->id)->first();
-            $classroomIds = Classroom::where('wali_kelas_id', $wali?->id)->pluck('id');
+        $isTutor = $roles->contains('tutor');
+        $isWali = $roles->contains('wali-kelas');
+
+        if ($isTutor && $isWali) {
+            $tutor = Tutor::where('user_id', $user->id)->first();
+            $tutorClassroomIds = $tutor
+                ? PenugasanMengajar::where('tutor_id', $tutor->id)->pluck('classroom_id')->unique()
+                : collect();
+            $waliClassroomIds = Classroom::where('wali_kelas_id', $user->id)->pluck('id');
+            $classroomIds = $tutorClassroomIds->merge($waliClassroomIds)->unique();
             $query->whereIn('rombel_id', $classroomIds);
-        } elseif ($roles->contains('tutor')) {
+        } elseif ($isWali) {
+            $classroomIds = Classroom::where('wali_kelas_id', $user->id)->pluck('id');
+            $query->whereIn('rombel_id', $classroomIds);
+        } elseif ($isTutor) {
             $tutor = Tutor::where('user_id', $user->id)->first();
             $classroomIds = PenugasanMengajar::where('tutor_id', $tutor?->id)->pluck('classroom_id')->unique();
             $query->whereIn('rombel_id', $classroomIds);
@@ -73,7 +83,16 @@ class RekapAkademikController extends Controller
 
         $academicYears = AcademicYear::latest()->get();
         $programs = Program::all();
-        $classrooms = Classroom::all();
+
+        // Filter classrooms based on selected academic year and program for relevance
+        $classroomsQuery = Classroom::query();
+        if ($filters['academic_year_id']) {
+            $classroomsQuery->where('tahun_ajaran_id', $filters['academic_year_id']);
+        }
+        if ($filters['program_id']) {
+            $classroomsQuery->where('program_id', $filters['program_id']);
+        }
+        $classrooms = $classroomsQuery->get();
 
         return view('rekap.index', compact('students', 'filters', 'academicYears', 'programs', 'classrooms'));
     }
@@ -81,21 +100,33 @@ class RekapAkademikController extends Controller
     public function show(Student $student)
     {
         $user = auth()->user();
-        abort_if(! $user->can('reports.view') && ! $user->hasAnyRole(['tutor', 'peserta-didik']), 403);
+        abort_if(! $user->can('reports.view') && ! $user->hasAnyRole(['tutor', 'peserta-didik', 'ketua-yayasan']), 403);
 
         $roles = $user->getRoleNames();
 
+        // Admin/operator roles with reports.view permission have full access
+        if ($user->hasAnyRole(['operator', 'kepala-pkbm', 'ketua-yayasan'])) {
+            return $this->showStudentDetail($student);
+        }
+
+        $canAccess = false;
+
         if ($roles->contains('peserta-didik')) {
-            abort_if($user->student?->id !== $student->id, 403);
-        } elseif ($roles->contains('wali-kelas')) {
-            $wali = Tutor::where('user_id', $user->id)->first();
-            $classroomIds = Classroom::where('wali_kelas_id', $wali?->id)->pluck('id');
-            abort_if(! $classroomIds->contains($student->rombel_id), 403);
-        } elseif ($roles->contains('tutor')) {
+            $canAccess = $user->student?->id === $student->id;
+        }
+
+        if ($roles->contains('wali-kelas')) {
+            $classroomIds = Classroom::where('wali_kelas_id', $user->id)->pluck('id');
+            $canAccess = $canAccess || $classroomIds->contains($student->rombel_id);
+        }
+
+        if ($roles->contains('tutor')) {
             $tutor = Tutor::where('user_id', $user->id)->first();
             $classroomIds = PenugasanMengajar::where('tutor_id', $tutor?->id)->pluck('classroom_id');
-            abort_if(! $classroomIds->contains($student->rombel_id), 403);
+            $canAccess = $canAccess || $classroomIds->contains($student->rombel_id);
         }
+
+        abort_if(! $canAccess, 403);
 
         return $this->showStudentDetail($student);
     }

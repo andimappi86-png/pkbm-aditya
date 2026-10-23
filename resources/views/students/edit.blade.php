@@ -28,10 +28,16 @@
 
                 <h3 class="text-lg font-semibold text-navy border-b pb-2 mt-6">Data Pendidikan</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    @php
+                        $isRombelScoped = app(\App\Policies\StudentPolicy::class)->isScopedToOwnClassrooms(auth()->user());
+                        $statusOptions = $isRombelScoped
+                            ? ['aktif' => 'Aktif', 'nonaktif' => 'Nonaktif']
+                            : ['aktif' => 'Aktif', 'lulus' => 'Lulus', 'keluar' => 'Keluar', 'pindah' => 'Pindah', 'nonaktif' => 'Nonaktif'];
+                    @endphp
                     <x-select name="program_id" label="Program *" :options="$programs->pluck('nama', 'id')->toArray()" :selected="$peserta_didik->program_id" required />
                     <x-select name="tahun_ajaran_id" label="Tahun Ajaran Masuk *" :options="$academicYears->pluck('nama', 'id')->toArray()" :selected="$peserta_didik->tahun_ajaran_id" required />
-                    <x-select name="rombel_id" label="Rombel / Kelas" :options="$classrooms->pluck('nama_rombel', 'id')->toArray()" :selected="$peserta_didik->rombel_id" />
-                    <x-select name="status" label="Status *" :options="['aktif'=>'Aktif','lulus'=>'Lulus','keluar'=>'Keluar','pindah'=>'Pindah','nonaktif'=>'Nonaktif']" :selected="$peserta_didik->status" required />
+                    <x-select name="rombel_id" label="Rombel / Kelas" :options="$classrooms->pluck('nama_rombel', 'id')->toArray()" :selected="$peserta_didik->rombel_id" :required="$isRombelScoped" />
+                    <x-select name="status" label="Status *" :options="$statusOptions" :selected="$peserta_didik->status" required />
                 </div>
 
                 <h3 class="text-lg font-semibold text-navy border-b pb-2 mt-6">Kontak & Alamat</h3>

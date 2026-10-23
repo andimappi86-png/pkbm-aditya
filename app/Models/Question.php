@@ -13,11 +13,17 @@ class Question extends Model
 
     protected $fillable = ['quiz_id', 'pertanyaan', 'tipe', 'bobot'];
 
+    /**
+     * @return BelongsTo<Quiz, $this>
+     */
     public function quiz(): BelongsTo
     {
         return $this->belongsTo(Quiz::class);
     }
 
+    /**
+     * @return HasMany<Option, $this>
+     */
     public function options(): HasMany
     {
         return $this->hasMany(Option::class);

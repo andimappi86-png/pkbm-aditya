@@ -3,7 +3,6 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class StoreTutorSubjectRequest extends FormRequest
 {
@@ -15,9 +14,9 @@ class StoreTutorSubjectRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'tutor_id' => ['required', 'exists:tutors,user_id'],
-            'subject_kode' => ['required', 'string', 'max:30', Rule::unique('subjects', 'kode')],
-            'subject_nama' => ['required', 'string', 'max:150'],
+            'tutor_id' => ['required', 'exists:tutors,id'],
+            'subjects' => ['required', 'array', 'min:1'],
+            'subjects.*' => ['required', 'exists:subjects,id'],
         ];
     }
 }

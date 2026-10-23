@@ -81,7 +81,7 @@ class BulkImport implements ToCollection, WithHeadingRow
 
             if ($isValid) {
                 $this->importResults['valid']++;
-                $data = $this->prepareData($row, $tipeRaw, $defaultProgram?->id ?? 1, $defaultAcademicYear?->id ?? 1);
+                $data = $this->prepareData($row, $tipeRaw, $defaultProgram->id ?? 1, $defaultAcademicYear->id ?? 1);
                 $validRowsToInsert[] = [
                     'row' => $rowNumber,
                     'type' => $tipeRaw,

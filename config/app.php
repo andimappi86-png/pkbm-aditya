@@ -56,6 +56,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Force HTTPS Redirection
+    |--------------------------------------------------------------------------
+    |
+    | When enabled, all non-secure requests in production will be redirected
+    | to HTTPS and generated asset/route URLs will use the HTTPS scheme.
+    |
+    */
+
+    'force_https' => (bool) env('FORCE_HTTPS', false),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |

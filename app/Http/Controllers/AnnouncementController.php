@@ -6,11 +6,14 @@ use App\Http\Requests\AnnouncementRequest;
 use App\Models\Announcement;
 use App\Models\Classroom;
 use App\Models\Program;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Spatie\Permission\Models\Role;
 
 class AnnouncementController extends Controller
 {
+    use AuthorizesRequests;
+
     public function index(Request $request)
     {
         $user = $request->user();

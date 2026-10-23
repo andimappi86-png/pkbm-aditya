@@ -35,8 +35,8 @@
             @foreach($tutors as $index => $tutor)
             <tr>
                 <td class="text-center">{{ $index + 1 }}</td>
-                <td>{{ $tutor->nip ?? '-' }}</td>
-                <td>{{ $tutor->user->name }}</td>
+                <td>{{ $tutor->nomor_induk ?? '-' }}</td>
+                <td>{{ $tutor->nama_lengkap }}</td>
                 <td>
                     @foreach($tutor->subjects as $subject)
                         {{ $subject->nama }} {{ $loop->last ? '' : ', ' }}

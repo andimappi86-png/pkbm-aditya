@@ -57,3 +57,11 @@ Cross-cutting changes often need more than one rule file.
 - Prefer framework features and existing application abstractions over new helpers or dependencies.
 - Avoid speculative abstractions. Extract code when it creates a clear domain boundary, removes meaningful duplication, or makes behavior independently testable.
 - Keep database access out of Blade views and prevent hidden N+1 queries across controllers, resources, jobs, and serialization.
+
+## Route Definitions — Literal Before Parameter
+
+**Rule:** Always register literal sub-route paths (`/create`, `/edit`) BEFORE dynamic parameter routes (`/{id}`, `/{slug}`) within the same controller route group. Laravel matches routes in definition order; a wildcard route defined earlier will capture literal segments like `create` as an ID parameter, causing a failed model binding and an HTTP 404.
+
+**Why:** `/nilai/{grade}` defined above `/nilai/create` matches `create` as `{grade}`, then `Grade::find('create')` returns null and Laravel aborts with 404.
+
+**Pitfall:** Fixing by moving `create` into a separate route group placed later does not fix it — order within the whole file is what matters. Reordering inside one `Route::group` while a parent group earlier contains the wildcard still leaves the wildcard first in matching order.

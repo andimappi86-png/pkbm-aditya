@@ -26,11 +26,13 @@ class Subject extends Model
         ];
     }
 
+    /** @return BelongsToMany<Tutor, $this> */
     public function tutors(): BelongsToMany
     {
         return $this->belongsToMany(Tutor::class, 'tutor_subject');
     }
 
+    /** @return BelongsToMany<Classroom, $this> */
     public function classrooms(): BelongsToMany
     {
         return $this->belongsToMany(Classroom::class, 'subject_classroom');

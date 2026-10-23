@@ -1,541 +1,510 @@
 @php
-    $kegiatans = \App\Models\Announcement::where('status_aktif', true)->latest('published_at')->take(3)->get();
+    /** Program kesetaraan yang aktif beserta jumlah rombel aktifnya (satu query agregat, tanpa N+1). */
+    $programs = \App\Models\Program::query()
+        ->where('status_aktif', true)
+        ->orderBy('id')
+        ->get(['id', 'kode', 'nama', 'deskripsi']);
+
+    $rombelPerProgram = \App\Models\Classroom::query()
+        ->where('status_aktif', true)
+        ->selectRaw('program_id, count(*) as total')
+        ->groupBy('program_id')
+        ->pluck('total', 'program_id');
+
+    $jumlahPesertaDidik = \App\Models\Student::query()->where('status', 'aktif')->count();
+    $jumlahTutor = \App\Models\Tutor::query()->count();
+    $jumlahRombel = \App\Models\Classroom::query()->where('status_aktif', true)->count();
+
+    /** Hanya pengumuman umum yang boleh tampil di halaman publik. */
+    $informasi = \App\Models\Announcement::query()
+        ->where('status_aktif', true)
+        ->whereNull('target_role')
+        ->whereNull('target_program')
+        ->whereNull('target_rombel')
+        ->where(function ($query) {
+            $query->whereNull('published_at')->orWhere('published_at', '<=', now());
+        })
+        ->orderByDesc('published_at')
+        ->orderByDesc('id')
+        ->take(3)
+        ->get(['judul', 'isi', 'kategori', 'published_at', 'created_at']);
+
+    $jenjang = [
+        'PA' => 'Setara SD/MI',
+        'PB' => 'Setara SMP/MTs',
+        'PC' => 'Setara SMA/MA',
+    ];
+
+    $icons = [
+        'arrow-right' => '<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',
+        'book' => '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/>',
+        'layers' => '<path d="m12 2 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/>',
+        'clipboard' => '<rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/>',
+        'chart' => '<path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-3"/>',
+        'bell' => '<path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/><path d="M4 17h16a8 8 0 0 0-3-6.2V8a5 5 0 0 0-10 0v2.8A8 8 0 0 0 4 17Z"/>',
+        'users' => '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>',
+        'laptop' => '<path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9"/><path d="M2 16h20"/><path d="M12 16v4"/>',
+        'map-pin' => '<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>',
+        'menu' => '<path d="M4 6h16M4 12h16M4 18h16"/>',
+        'close' => '<path d="M18 6 6 18M6 6l12 12"/>',
+        'check' => '<path d="M20 6 9 17l-5-5"/>',
+        'lock' => '<rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+    ];
 @endphp
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="scroll-smooth">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>PKBM Aditya - Kabupaten Mamuju</title>
-    <link rel="icon" type="image/png" href="{{ asset('images/logo-pkbm-aditya.png') }}">
-    
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    
+    <title>PKBM Aditya — Pendidikan Kesetaraan Kabupaten Mamuju</title>
+    <meta name="description" content="PKBM Aditya menyelenggarakan program pendidikan kesetaraan Paket A, B, dan C di Kabupaten Mamuju, Sulawesi Barat, didukung sistem informasi pembelajaran digital.">
+    <meta name="theme-color" content="#167C80">
+    <link rel="icon" type="image/png" sizes="96x96" href="{{ asset('images/logo-pkbm-aditya-96.png') }}">
+    <link rel="apple-touch-icon" sizes="192x192" href="{{ asset('images/logo-pkbm-aditya-192.png') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    
-    <!-- Alpine & Lucide -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    
-    <style>
-        body { font-family: 'Inter', sans-serif; }
-        .hero-pattern {
-            background-color: #F5F7F8;
-            background-image: radial-gradient(#D9E2E5 1px, transparent 1px);
-            background-size: 32px 32px;
-        }
-        .text-balance { text-wrap: balance; }
-    </style>
+
+    {{-- Penanda dini agar animasi reveal hanya aktif bila JavaScript berjalan. --}}
+    <script>document.documentElement.classList.add('js-reveal');</script>
 </head>
-<body class="antialiased bg-background text-navy selection:bg-primary selection:text-white" x-data="{ mobileMenuOpen: false, scrolled: false }" @scroll.window="scrolled = (window.pageYOffset > 20)">
+<body class="lp-page bg-background text-navy antialiased"
+      x-data="{ menuOpen: false, scrolled: false }"
+      @scroll.window.passive="scrolled = window.pageYOffset > 16"
+      @keydown.escape.window="menuOpen = false">
 
-    <!-- NAVBAR -->
-    <nav 
-        class="fixed top-0 inset-x-0 z-50 transition-all duration-300 border-b"
-        :class="scrolled ? 'bg-surface/90 backdrop-blur-lg border-border shadow-sm py-3' : 'bg-surface border-transparent py-5'"
-    >
-        <div class="max-w-[1280px] mx-auto px-6 lg:px-8">
-            <div class="flex items-center justify-between">
-                <!-- Logo -->
-                <a href="#" class="flex items-center gap-3.5 group">
-                    <img src="{{ asset('images/logo-pkbm-aditya.png') }}" alt="Logo PKBM Aditya" class="h-10 w-auto group-hover:opacity-90 transition-opacity">
-                    <div class="flex flex-col">
-                        <span class="font-extrabold text-lg leading-none tracking-tight text-primary-dark">PKBM ADITYA</span>
-                        <span class="text-[11px] font-semibold text-muted tracking-wider uppercase mt-0.5">Kabupaten Mamuju</span>
-                    </div>
-                </a>
+    <a href="#konten-utama" class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-xl focus:bg-navy focus:px-4 focus:py-2.5 focus:text-sm focus:font-semibold focus:text-white">
+        Lompat ke konten utama
+    </a>
 
-                <!-- Desktop Menu -->
-                <div class="hidden lg:flex items-center gap-8">
-                    <a href="#" class="text-sm font-medium text-navy hover:text-primary transition-colors">Beranda</a>
-                    <a href="#tentang" class="text-sm font-medium text-muted hover:text-primary transition-colors">Profil</a>
-                    <a href="#program" class="text-sm font-medium text-muted hover:text-primary transition-colors">Program</a>
-                    <a href="#lms" class="text-sm font-medium text-muted hover:text-primary transition-colors">Pembelajaran</a>
-                    <a href="#kegiatan" class="text-sm font-medium text-muted hover:text-primary transition-colors">Informasi</a>
-                </div>
+    {{-- ================= NAVBAR ================= --}}
+    <header class="fixed inset-x-0 top-0 z-50 transition-all duration-300"
+            :class="scrolled || menuOpen ? 'border-b border-border bg-surface/95 backdrop-blur supports-[backdrop-filter]:bg-surface/80' : 'border-b border-transparent bg-surface/0'">
+        <div class="mx-auto flex h-16 w-full max-w-[1200px] items-center justify-between gap-6 px-6 lg:h-[74px] lg:px-8">
+            <a href="{{ route('landing') }}" class="group flex items-center gap-3 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2">
+                <img src="{{ asset('images/logo-pkbm-aditya-96.png') }}"
+                     srcset="{{ asset('images/logo-pkbm-aditya-96.png') }} 96w, {{ asset('images/logo-pkbm-aditya-192.png') }} 192w"
+                     sizes="40px" alt="Logo PKBM Aditya" width="96" height="96" class="h-10 w-auto">
+                <span class="flex flex-col leading-none">
+                    <span class="text-[15px] font-extrabold tracking-tight text-navy">PKBM ADITYA</span>
+                    <span class="mt-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">Kabupaten Mamuju</span>
+                </span>
+            </a>
 
-                <!-- CTA & Hamburger -->
-                <div class="flex items-center gap-4">
+            <nav class="hidden items-center gap-1 lg:flex" aria-label="Navigasi utama">
+                <a href="#profil" class="rounded-lg px-3 py-2 text-sm font-medium text-muted transition-colors hover:bg-primary-soft/60 hover:text-primary-dark focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40">Profil</a>
+                <a href="#program" class="rounded-lg px-3 py-2 text-sm font-medium text-muted transition-colors hover:bg-primary-soft/60 hover:text-primary-dark focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40">Program</a>
+                <a href="#sistem" class="rounded-lg px-3 py-2 text-sm font-medium text-muted transition-colors hover:bg-primary-soft/60 hover:text-primary-dark focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40">Sistem</a>
+                <a href="#informasi" class="rounded-lg px-3 py-2 text-sm font-medium text-muted transition-colors hover:bg-primary-soft/60 hover:text-primary-dark focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40">Informasi</a>
+            </nav>
+
+            <div class="flex items-center gap-2">
+                @auth
+                    <a href="{{ route('dashboard') }}" class="hidden items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-dark focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 lg:inline-flex">
+                        Ke Dashboard
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{!! $icons['arrow-right'] !!}</svg>
+                    </a>
+                @else
+                    <a href="{{ route('login') }}" class="hidden items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-dark focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 lg:inline-flex">
+                        Masuk Sistem
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{!! $icons['arrow-right'] !!}</svg>
+                    </a>
+                @endauth
+
+                <button type="button"
+                        class="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-border bg-surface text-navy transition-colors hover:bg-primary-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 lg:hidden"
+                        @click="menuOpen = !menuOpen"
+                        :aria-expanded="menuOpen.toString()"
+                        aria-controls="menu-mobile"
+                        aria-label="Buka menu navigasi">
+                    <svg x-show="!menuOpen" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true">{!! $icons['menu'] !!}</svg>
+                    <svg x-show="menuOpen" x-cloak class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true">{!! $icons['close'] !!}</svg>
+                </button>
+            </div>
+        </div>
+
+        <div id="menu-mobile" x-show="menuOpen" x-cloak x-transition.opacity.duration.150ms class="border-t border-border bg-surface lg:hidden">
+            <nav class="mx-auto grid w-full max-w-[1200px] gap-1 px-6 py-4" aria-label="Navigasi seluler">
+                <a href="#profil" @click="menuOpen = false" class="rounded-lg px-3 py-3 text-[15px] font-medium text-navy hover:bg-primary-soft/60">Profil</a>
+                <a href="#program" @click="menuOpen = false" class="rounded-lg px-3 py-3 text-[15px] font-medium text-navy hover:bg-primary-soft/60">Program</a>
+                <a href="#sistem" @click="menuOpen = false" class="rounded-lg px-3 py-3 text-[15px] font-medium text-navy hover:bg-primary-soft/60">Sistem</a>
+                <a href="#informasi" @click="menuOpen = false" class="rounded-lg px-3 py-3 text-[15px] font-medium text-navy hover:bg-primary-soft/60">Informasi</a>
+                <div class="mt-2 border-t border-border pt-3">
                     @auth
-                        <a href="{{ route('dashboard') }}" class="hidden lg:inline-flex items-center justify-center px-6 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-primary-dark transition-all shadow-soft hover:shadow-soft-md">
-                            Ke Dashboard
-                        </a>
+                        <a href="{{ route('dashboard') }}" @click="menuOpen = false" class="flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-[15px] font-semibold text-white">Ke Dashboard</a>
                     @else
-                        <a href="{{ route('login') }}" class="hidden lg:inline-flex items-center justify-center px-6 py-2.5 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-primary-dark transition-all shadow-soft hover:shadow-soft-md group">
-                            Masuk Sistem
-                        </a>
+                        <a href="{{ route('login') }}" @click="menuOpen = false" class="flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-[15px] font-semibold text-white">Masuk Sistem</a>
                     @endauth
-                    
-                    <button @click="mobileMenuOpen = !mobileMenuOpen" class="lg:hidden p-2 -mr-2 text-navy hover:bg-primary-soft rounded-lg transition-colors">
-                        <i data-lucide="menu" class="w-6 h-6" x-show="!mobileMenuOpen"></i>
-                        <i data-lucide="x" class="w-6 h-6" x-show="mobileMenuOpen" x-cloak></i>
-                    </button>
                 </div>
-            </div>
+            </nav>
         </div>
-        
-        <!-- Mobile Menu -->
-        <div x-show="mobileMenuOpen" x-collapse class="lg:hidden bg-surface border-t border-border absolute top-full left-0 w-full shadow-lg">
-            <div class="flex flex-col px-6 py-4 space-y-4">
-                <a href="#" class="text-base font-medium text-navy">Beranda</a>
-                <a href="#tentang" class="text-base font-medium text-muted">Profil</a>
-                <a href="#program" class="text-base font-medium text-muted">Program</a>
-                <a href="#lms" class="text-base font-medium text-muted">Pembelajaran</a>
-                <a href="#kegiatan" class="text-base font-medium text-muted">Informasi</a>
-                <div class="pt-4 border-t border-border">
-                    <a href="{{ route('login') }}" class="w-full inline-flex items-center justify-center px-6 py-3 bg-primary text-white text-base font-semibold rounded-xl text-center">Masuk Sistem</a>
-                </div>
-            </div>
-        </div>
-    </nav>
+    </header>
 
-    <!-- HERO SECTION -->
-    <section class="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden hero-pattern">
-        <div class="max-w-[1280px] mx-auto px-6 lg:px-8 relative z-10">
-            <div class="grid lg:grid-cols-2 gap-12 lg:gap-8 items-center">
-                <!-- Left: Typography -->
-                <div class="max-w-2xl">
-                    <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-soft border border-primary/20 text-primary-dark text-xs font-bold uppercase tracking-wider mb-6">
-                        <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
-                        PKBM Aditya • Kab. Mamuju
-                    </div>
-                    
-                    <h1 class="text-4xl lg:text-6xl font-extrabold text-navy leading-[1.1] mb-6 tracking-tight text-balance">
-                        Belajar, Berkembang, dan Berkarya Bersama <span class="text-primary relative inline-block">PKBM Aditya<svg class="absolute -bottom-2 left-0 w-full text-accent/30" viewBox="0 0 100 20" preserveAspectRatio="none"><path d="M0 10 Q 50 20 100 10" stroke="currentColor" stroke-width="4" fill="none"/></svg></span>
+    <main id="konten-utama">
+        {{-- ================= HERO ================= --}}
+        <section class="relative overflow-hidden border-b border-border bg-surface pt-28 lg:pt-32">
+            <div class="lp-dot-field pointer-events-none absolute inset-0" aria-hidden="true"></div>
+
+            <div class="relative mx-auto grid w-full max-w-[1200px] items-center gap-12 px-6 pb-16 lg:grid-cols-12 lg:gap-10 lg:px-8 lg:pb-20">
+                <div class="lp-hero-copy lg:col-span-6">
+                    <p class="lp-eyebrow">
+                        <span class="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true"></span>
+                        Pendidikan Nonformal · Sulawesi Barat
+                    </p>
+
+                    <h1 class="mt-6 text-balance text-[2.15rem] font-extrabold leading-[1.1] tracking-[-0.02em] text-navy sm:text-[2.6rem] lg:text-[3.15rem]">
+                        Pendidikan kesetaraan yang terjangkau untuk masyarakat Mamuju.
                     </h1>
-                    
-                    <p class="text-lg text-muted leading-relaxed mb-8 max-w-xl">
-                        PKBM Aditya hadir sebagai lembaga pendidikan nonformal yang mendukung masyarakat memperoleh kesempatan belajar melalui program pendidikan kesetaraan dan pembelajaran digital yang inovatif.
+
+                    <p class="mt-5 max-w-xl text-[15px] leading-relaxed text-muted sm:text-base">
+                        PKBM Aditya menyelenggarakan program Paket A, B, dan C dengan pendampingan tutor serta sistem pembelajaran digital, sehingga warga belajar dapat menempuh pendidikan tanpa meninggalkan pekerjaan dan keluarganya.
                     </p>
-                    
-                    <div class="flex flex-col sm:flex-row items-center gap-4">
-                        <a href="{{ route('login') }}" class="w-full sm:w-auto inline-flex items-center justify-center px-8 py-3.5 bg-primary text-white text-base font-semibold rounded-xl hover:bg-primary-dark transition-all shadow-soft hover:shadow-soft-lg group">
+
+                    <div class="mt-8 flex flex-col gap-4 sm:flex-row">
+                        <a href="{{ route('login') }}" class="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3.5 text-[15px] font-semibold text-white transition-colors hover:bg-primary-dark focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2">
                             Masuk Sistem
-                            <i data-lucide="arrow-right" class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform"></i>
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{!! $icons['arrow-right'] !!}</svg>
                         </a>
-                        <a href="#tentang" class="w-full sm:w-auto inline-flex items-center justify-center px-8 py-3.5 bg-surface text-navy border border-border text-base font-semibold rounded-xl hover:bg-background transition-all">
-                            Kenal PKBM
-                        </a>
-                    </div>
-                </div>
-                
-                <!-- Right: Visual -->
-                <div class="relative lg:ml-auto w-full max-w-lg aspect-[4/3] rounded-3xl overflow-hidden shadow-soft-lg border border-white/50 group">
-                    <div class="absolute inset-0 bg-navy/10 group-hover:bg-transparent transition-colors z-10"></div>
-                    <img src="https://images.unsplash.com/photo-1524178232363-1fb2b075b655?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80" alt="Suasana Belajar Edukatif" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
-                    
-                    <!-- Floating Badge -->
-                    <div class="absolute bottom-6 left-6 z-20 bg-surface/95 backdrop-blur px-5 py-3 rounded-2xl shadow-soft border border-border flex items-center gap-4">
-                        <div class="w-12 h-12 rounded-full bg-primary-soft text-primary flex items-center justify-center">
-                            <i data-lucide="monitor-play" class="w-6 h-6"></i>
-                        </div>
-                        <div>
-                            <p class="text-xs font-bold text-muted uppercase tracking-wider">Metode Modern</p>
-                            <p class="font-bold text-navy">Pembelajaran Digital</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- QUICK STATISTICS -->
-    <section class="border-y border-border bg-surface relative z-20">
-        <div class="max-w-[1280px] mx-auto px-6 lg:px-8">
-            <div class="grid grid-cols-2 md:grid-cols-4 divide-x divide-border py-8 lg:py-10">
-                <div class="px-4 text-center">
-                    <h3 class="text-xl lg:text-2xl font-extrabold text-navy">Paket A</h3>
-                    <p class="text-sm font-medium text-muted mt-1">Setara SD/MI</p>
-                </div>
-                <div class="px-4 text-center">
-                    <h3 class="text-xl lg:text-2xl font-extrabold text-navy">Paket B</h3>
-                    <p class="text-sm font-medium text-muted mt-1">Setara SMP/MTs</p>
-                </div>
-                <div class="px-4 text-center">
-                    <h3 class="text-xl lg:text-2xl font-extrabold text-navy">Paket C</h3>
-                    <p class="text-sm font-medium text-muted mt-1">Setara SMA/MA</p>
-                </div>
-                <div class="px-4 text-center">
-                    <h3 class="text-xl lg:text-2xl font-extrabold text-primary">Sistem LMS</h3>
-                    <p class="text-sm font-medium text-muted mt-1">Terintegrasi Digital</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- TENTANG PKBM -->
-    <section id="tentang" class="py-24 bg-background">
-        <div class="max-w-[1280px] mx-auto px-6 lg:px-8">
-            <div class="grid lg:grid-cols-2 gap-16 items-center">
-                <div class="order-2 lg:order-1 relative rounded-3xl overflow-hidden aspect-square max-w-md mx-auto lg:mx-0 shadow-soft-lg">
-                    <img src="https://images.unsplash.com/photo-1577896851231-70ef18881754?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Tentang PKBM Aditya" class="w-full h-full object-cover">
-                    <div class="absolute inset-0 border-4 border-white/20 rounded-3xl pointer-events-none"></div>
-                </div>
-                
-                <div class="order-1 lg:order-2">
-                    <div class="inline-block px-3 py-1 bg-primary-soft text-primary-dark text-xs font-bold uppercase tracking-wider rounded-lg mb-4">Tentang PKBM Aditya</div>
-                    <h2 class="text-3xl lg:text-4xl font-bold text-navy mb-6 leading-tight">Membangun Generasi Cerdas dan Mandiri di Mamuju</h2>
-                    <p class="text-muted leading-relaxed mb-8 text-lg">
-                        Lembaga kami berkomitmen menyelenggarakan program pendidikan masyarakat yang berkualitas. Kami memadukan pendekatan humanis dan pemanfaatan teknologi untuk memastikan setiap individu memiliki akses belajar yang layak dan terstruktur.
-                    </p>
-                    
-                    <div class="space-y-6 mb-10">
-                        <div class="flex gap-4">
-                            <div class="w-12 h-12 rounded-xl bg-surface border border-border flex items-center justify-center shrink-0 shadow-sm">
-                                <i data-lucide="book-open" class="w-6 h-6 text-primary"></i>
-                            </div>
-                            <div>
-                                <h4 class="font-bold text-navy text-lg">Pendidikan Kesetaraan</h4>
-                                <p class="text-sm text-muted mt-1">Layanan program Paket A, B, dan C bersertifikat resmi berstandar nasional.</p>
-                            </div>
-                        </div>
-                        <div class="flex gap-4">
-                            <div class="w-12 h-12 rounded-xl bg-surface border border-border flex items-center justify-center shrink-0 shadow-sm">
-                                <i data-lucide="laptop" class="w-6 h-6 text-primary"></i>
-                            </div>
-                            <div>
-                                <h4 class="font-bold text-navy text-lg">Pembelajaran Berbasis Teknologi</h4>
-                                <p class="text-sm text-muted mt-1">Menggunakan platform e-learning modern yang mudah diakses di mana saja.</p>
-                            </div>
-                        </div>
-                        <div class="flex gap-4">
-                            <div class="w-12 h-12 rounded-xl bg-surface border border-border flex items-center justify-center shrink-0 shadow-sm">
-                                <i data-lucide="users" class="w-6 h-6 text-primary"></i>
-                            </div>
-                            <div>
-                                <h4 class="font-bold text-navy text-lg">Pendampingan Tutor</h4>
-                                <p class="text-sm text-muted mt-1">Dibimbing oleh tutor berpengalaman yang berdedikasi tinggi secara luring maupun daring.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- SECTION UTAMA LMS -->
-    <section id="lms" class="py-24 bg-surface border-y border-border overflow-hidden">
-        <div class="max-w-[1280px] mx-auto px-6 lg:px-8">
-            <div class="text-center max-w-3xl mx-auto mb-16">
-                <h2 class="text-3xl lg:text-4xl font-bold text-navy mb-4">Pembelajaran Digital yang Terintegrasi</h2>
-                <p class="text-lg text-muted">Belajar tidak berhenti di ruang kelas. PKBM Aditya menghadirkan sistem pembelajaran digital untuk membantu peserta didik dan tutor menjalankan proses pembelajaran secara lebih terarah.</p>
-            </div>
-
-            <div class="grid lg:grid-cols-2 gap-16 items-center">
-                <!-- Left: Abstract LMS Visual -->
-                <div class="relative bg-background rounded-[2rem] p-8 border border-border/60 shadow-inner">
-                    <!-- Decorative mock UI elements -->
-                    <div class="space-y-4">
-                        <div class="h-12 bg-white rounded-xl shadow-sm border border-border/50 flex items-center px-4 w-3/4">
-                            <div class="w-6 h-6 rounded bg-primary/10 mr-3"></div>
-                            <div class="h-3 bg-gray-200 rounded w-1/2"></div>
-                        </div>
-                        <div class="flex gap-4">
-                            <div class="flex-1 h-32 bg-white rounded-xl shadow-sm border border-border/50 p-4 flex flex-col justify-between">
-                                <div class="w-8 h-8 rounded-full bg-emerald-50"></div>
-                                <div class="space-y-2">
-                                    <div class="h-2 bg-gray-200 rounded w-3/4"></div>
-                                    <div class="h-2 bg-gray-100 rounded w-1/2"></div>
-                                </div>
-                            </div>
-                            <div class="flex-1 h-32 bg-white rounded-xl shadow-sm border border-border/50 p-4 flex flex-col justify-between">
-                                <div class="w-8 h-8 rounded-full bg-blue-50"></div>
-                                <div class="space-y-2">
-                                    <div class="h-2 bg-gray-200 rounded w-3/4"></div>
-                                    <div class="h-2 bg-gray-100 rounded w-1/2"></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="h-24 bg-white rounded-xl shadow-sm border border-border/50 p-4">
-                            <div class="h-3 bg-gray-200 rounded w-1/4 mb-4"></div>
-                            <div class="w-full h-2 bg-background rounded-full overflow-hidden">
-                                <div class="w-2/3 h-full bg-primary rounded-full"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Right: Editorial Features -->
-                <div>
-                    <div class="grid sm:grid-cols-2 gap-x-8 gap-y-10">
-                        <!-- Feature 1 -->
-                        <div>
-                            <div class="text-sm font-extrabold text-primary/30 mb-1">01</div>
-                            <h4 class="text-lg font-bold text-navy mb-2 flex items-center gap-2">
-                                <i data-lucide="book-open" class="w-4 h-4 text-primary"></i> Materi Belajar
-                            </h4>
-                            <p class="text-sm text-muted">Akses modul pembelajaran dan literatur kapan pun dibutuhkan.</p>
-                        </div>
-                        <!-- Feature 2 -->
-                        <div>
-                            <div class="text-sm font-extrabold text-primary/30 mb-1">02</div>
-                            <h4 class="text-lg font-bold text-navy mb-2 flex items-center gap-2">
-                                <i data-lucide="clipboard-list" class="w-4 h-4 text-primary"></i> Tugas Evaluasi
-                            </h4>
-                            <p class="text-sm text-muted">Pengumpulan tugas terpusat dengan sistem tenggat waktu.</p>
-                        </div>
-                        <!-- Feature 3 -->
-                        <div>
-                            <div class="text-sm font-extrabold text-primary/30 mb-1">03</div>
-                            <h4 class="text-lg font-bold text-navy mb-2 flex items-center gap-2">
-                                <i data-lucide="help-circle" class="w-4 h-4 text-primary"></i> Kuis & Ujian
-                            </h4>
-                            <p class="text-sm text-muted">Evaluasi pemahaman secara interaktif langsung dari platform.</p>
-                        </div>
-                        <!-- Feature 4 -->
-                        <div>
-                            <div class="text-sm font-extrabold text-primary/30 mb-1">04</div>
-                            <h4 class="text-lg font-bold text-navy mb-2 flex items-center gap-2">
-                                <i data-lucide="calendar" class="w-4 h-4 text-primary"></i> Jadwal & Absensi
-                            </h4>
-                            <p class="text-sm text-muted">Pemantauan kehadiran dan transparansi jadwal kelas online/offline.</p>
-                        </div>
-                        <!-- Feature 5 -->
-                        <div>
-                            <div class="text-sm font-extrabold text-primary/30 mb-1">05</div>
-                            <h4 class="text-lg font-bold text-navy mb-2 flex items-center gap-2">
-                                <i data-lucide="award" class="w-4 h-4 text-primary"></i> Nilai & Rapor
-                            </h4>
-                            <p class="text-sm text-muted">Rekapitulasi pencapaian akademik secara transparan.</p>
-                        </div>
-                        <!-- Feature 6 -->
-                        <div>
-                            <div class="text-sm font-extrabold text-primary/30 mb-1">06</div>
-                            <h4 class="text-lg font-bold text-navy mb-2 flex items-center gap-2">
-                                <i data-lucide="trending-up" class="w-4 h-4 text-primary"></i> Progress Belajar
-                            </h4>
-                            <p class="text-sm text-muted">Pantau perkembangan kompetensi peserta didik tiap semester.</p>
-                        </div>
-                    </div>
-                    
-                    <div class="mt-10 pt-8 border-t border-border">
-                        <a href="{{ route('login') }}" class="inline-flex items-center text-primary font-bold hover:text-primary-dark group">
-                            Jelajahi Sistem 
-                            <i data-lucide="arrow-right" class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform"></i>
+                        <a href="#program" class="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-surface px-6 py-3.5 text-[15px] font-semibold text-navy transition-colors hover:border-primary/40 hover:bg-primary-soft/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2">
+                            Lihat program
                         </a>
                     </div>
-                </div>
-            </div>
-        </div>
-    </section>
 
-    <!-- PROGRAM KESETARAAN -->
-    <section id="program" class="py-24 bg-background">
-        <div class="max-w-[1280px] mx-auto px-6 lg:px-8">
-            <div class="text-center max-w-2xl mx-auto mb-16">
-                <h2 class="text-3xl lg:text-4xl font-bold text-navy mb-4">Program Pendidikan Kesetaraan</h2>
-                <p class="text-lg text-muted">Pilihan program pendidikan formal untuk mendukung kesempatan belajar masyarakat sesuai dengan jenjang masing-masing.</p>
-            </div>
-
-            <div class="grid md:grid-cols-3 gap-8">
-                <!-- Paket A -->
-                <div class="bg-surface border border-border rounded-2xl p-8 hover:shadow-soft transition-all duration-300">
-                    <div class="w-14 h-14 rounded-2xl bg-primary-soft text-primary flex items-center justify-center mb-6">
-                        <span class="text-2xl font-extrabold">A</span>
-                    </div>
-                    <h3 class="text-xl font-bold text-navy mb-2">Program Paket A</h3>
-                    <div class="inline-block px-2.5 py-1 bg-gray-100 text-gray-700 text-xs font-semibold rounded-md mb-4">Setara SD/MI</div>
-                    <p class="text-muted text-sm leading-relaxed mb-8">
-                        Program pendidikan kesetaraan untuk jenjang sekolah dasar. Memfokuskan pada penguasaan dasar membaca, menulis, berhitung, dan budi pekerti.
-                    </p>
+                    <dl class="mt-10 grid max-w-lg grid-cols-3 gap-4 border-t border-border pt-6">
+                        <div>
+                            <dt class="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted">Peserta didik</dt>
+                            <dd class="mt-1 text-xl font-bold tabular-nums text-navy" data-count-to="{{ $jumlahPesertaDidik }}">{{ number_format($jumlahPesertaDidik, 0, ',', '.') }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted">Tutor</dt>
+                            <dd class="mt-1 text-xl font-bold tabular-nums text-navy" data-count-to="{{ $jumlahTutor }}">{{ number_format($jumlahTutor, 0, ',', '.') }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted">Program</dt>
+                            <dd class="mt-1 text-xl font-bold tabular-nums text-navy" data-count-to="{{ $programs->count() }}">{{ $programs->count() }}</dd>
+                        </div>
+                    </dl>
                 </div>
 
-                <!-- Paket B -->
-                <div class="bg-surface border border-border rounded-2xl p-8 hover:shadow-soft transition-all duration-300">
-                    <div class="w-14 h-14 rounded-2xl bg-primary-soft text-primary flex items-center justify-center mb-6">
-                        <span class="text-2xl font-extrabold">B</span>
-                    </div>
-                    <h3 class="text-xl font-bold text-navy mb-2">Program Paket B</h3>
-                    <div class="inline-block px-2.5 py-1 bg-gray-100 text-gray-700 text-xs font-semibold rounded-md mb-4">Setara SMP/MTs</div>
-                    <p class="text-muted text-sm leading-relaxed mb-8">
-                        Program kelanjutan untuk jenjang sekolah menengah pertama. Mengembangkan kompetensi akademik lanjutan dan keterampilan pra-vokasional.
-                    </p>
-                </div>
-
-                <!-- Paket C -->
-                <div class="bg-surface border border-border rounded-2xl p-8 hover:shadow-soft transition-all duration-300">
-                    <div class="w-14 h-14 rounded-2xl bg-primary-soft text-primary flex items-center justify-center mb-6">
-                        <span class="text-2xl font-extrabold">C</span>
-                    </div>
-                    <h3 class="text-xl font-bold text-navy mb-2">Program Paket C</h3>
-                    <div class="inline-block px-2.5 py-1 bg-gray-100 text-gray-700 text-xs font-semibold rounded-md mb-4">Setara SMA/MA</div>
-                    <p class="text-muted text-sm leading-relaxed mb-8">
-                        Program setingkat sekolah menengah atas. Menyiapkan peserta didik dengan kompetensi akademik matang untuk memasuki dunia kerja atau perguruan tinggi.
-                    </p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- EKOSISTEM SISTEM -->
-    <section class="py-24 bg-surface border-y border-border">
-        <div class="max-w-[1280px] mx-auto px-6 lg:px-8">
-            <div class="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-16">
-                <div class="max-w-xl">
-                    <h2 class="text-3xl lg:text-4xl font-bold text-navy mb-4">Ekosistem Informasi & Pembelajaran</h2>
-                    <p class="text-lg text-muted">Satu pintu untuk semua kebutuhan akademik dan administrasi peserta didik dan pendidik.</p>
-                </div>
-                <a href="{{ route('login') }}" class="inline-flex items-center justify-center px-6 py-3 bg-white border border-border text-navy text-sm font-semibold rounded-xl hover:bg-background transition-colors shadow-sm">
-                    Coba Sistem
-                </a>
-            </div>
-
-            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
-                <div class="p-6 border border-border rounded-2xl text-center hover:border-primary/50 transition-colors">
-                    <i data-lucide="layout-dashboard" class="w-8 h-8 text-primary mx-auto mb-4"></i>
-                    <h4 class="font-bold text-navy text-sm">Akademik</h4>
-                </div>
-                <div class="p-6 border border-border rounded-2xl text-center hover:border-primary/50 transition-colors">
-                    <i data-lucide="calendar-check" class="w-8 h-8 text-primary mx-auto mb-4"></i>
-                    <h4 class="font-bold text-navy text-sm">Jadwal & Absensi</h4>
-                </div>
-                <div class="p-6 border border-border rounded-2xl text-center hover:border-primary/50 transition-colors">
-                    <i data-lucide="book-open" class="w-8 h-8 text-primary mx-auto mb-4"></i>
-                    <h4 class="font-bold text-navy text-sm">Materi</h4>
-                </div>
-                <div class="p-6 border border-border rounded-2xl text-center hover:border-primary/50 transition-colors">
-                    <i data-lucide="clipboard-edit" class="w-8 h-8 text-primary mx-auto mb-4"></i>
-                    <h4 class="font-bold text-navy text-sm">Tugas & Kuis</h4>
-                </div>
-                <div class="p-6 border border-border rounded-2xl text-center hover:border-primary/50 transition-colors">
-                    <i data-lucide="bar-chart-2" class="w-8 h-8 text-primary mx-auto mb-4"></i>
-                    <h4 class="font-bold text-navy text-sm">Nilai & Rapor</h4>
-                </div>
-                <div class="p-6 border border-border rounded-2xl text-center hover:border-primary/50 transition-colors">
-                    <i data-lucide="bell" class="w-8 h-8 text-primary mx-auto mb-4"></i>
-                    <h4 class="font-bold text-navy text-sm">Pengumuman</h4>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- KEGIATAN & INFORMASI -->
-    <section id="kegiatan" class="py-24 bg-background">
-        <div class="max-w-[1280px] mx-auto px-6 lg:px-8">
-            <div class="flex items-center justify-between mb-12">
-                <h2 class="text-3xl font-bold text-navy">Kegiatan & Informasi Terbaru</h2>
-            </div>
-
-            @if($kegiatans->count() > 0)
-                <div class="grid md:grid-cols-3 gap-8">
-                    @foreach($kegiatans as $kegiatan)
-                        <article class="bg-surface rounded-2xl overflow-hidden border border-border flex flex-col hover:shadow-soft transition-all">
-                            <div class="p-6 flex-1 flex flex-col">
-                                <div class="flex items-center justify-between mb-4">
-                                    <span class="text-[10px] font-bold uppercase tracking-wider text-primary">{{ $kegiatan->kategori ?? 'Informasi' }}</span>
-                                    <span class="text-[11px] font-medium text-muted">{{ $kegiatan->published_at ? $kegiatan->published_at->format('d M Y') : $kegiatan->created_at->format('d M Y') }}</span>
+                <aside class="lg:col-span-6" aria-label="Identitas PKBM Aditya">
+                    <div class="relative overflow-hidden rounded-2xl border border-border bg-surface p-6 sm:p-8">
+                        <div class="absolute inset-x-0 top-0 h-1 bg-primary"></div>
+                        <div class="flex min-h-[300px] flex-col justify-between gap-10">
+                            <div class="flex items-start justify-between gap-6">
+                                <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary-soft">
+                                    <img src="{{ asset('images/logo-pkbm-aditya-192.png') }}"
+                                         alt="Logo PKBM Aditya"
+                                         width="192" height="192"
+                                         fetchpriority="high" decoding="async"
+                                         class="h-10 w-10 object-contain">
                                 </div>
-                                <h3 class="text-lg font-bold text-navy line-clamp-2 mb-3">{{ $kegiatan->judul }}</h3>
-                                <p class="text-sm text-muted line-clamp-3 mb-6 flex-1">{{ strip_tags($kegiatan->konten) }}</p>
-                                
-                                <div class="mt-auto border-t border-border pt-4">
-                                    <span class="text-sm font-semibold text-primary hover:text-primary-dark transition-colors inline-flex items-center">
-                                        Selengkapnya <i data-lucide="arrow-right" class="w-4 h-4 ml-1"></i>
-                                    </span>
-                                </div>
+                                <span class="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-semibold text-primary-dark">
+                                    <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{!! $icons['check'] !!}</svg>
+                                    Sistem informasi pendidikan
+                                </span>
                             </div>
-                        </article>
+
+                            <div>
+                                <p class="text-sm font-semibold text-primary-dark">PKBM Aditya</p>
+                                <p class="mt-3 max-w-md text-2xl font-bold leading-tight tracking-[-0.02em] text-navy sm:text-3xl">
+                                    Pendidikan kesetaraan yang tertata, terhubung, dan terukur.
+                                </p>
+                            </div>
+
+                            <dl class="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-3">
+                                <div class="bg-surface px-4 py-3">
+                                    <dt class="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted">Wilayah</dt>
+                                    <dd class="mt-1 text-sm font-semibold text-navy">Kab. Mamuju</dd>
+                                </div>
+                                <div class="bg-surface px-4 py-3">
+                                    <dt class="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted">Rombel</dt>
+                                    <dd class="mt-1 text-sm font-semibold tabular-nums text-navy">{{ $jumlahRombel }} aktif</dd>
+                                </div>
+                                <div class="col-span-2 bg-surface px-4 py-3 sm:col-span-1">
+                                    <dt class="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted">Program</dt>
+                                    <dd class="mt-1 text-sm font-semibold tabular-nums text-navy">{{ $programs->count() }} tersedia</dd>
+                                </div>
+                            </dl>
+                        </div>
+                    </div>
+                    <p class="mt-3 text-xs text-muted">Informasi layanan dan pembelajaran dikelola melalui sistem PKBM Aditya.</p>
+                </aside>
+            </div>
+        </section>
+
+        {{-- ================= PROFIL ================= --}}
+        <section id="profil" class="scroll-mt-20 border-b border-border bg-surface py-16 lg:py-24">
+            <div class="mx-auto grid w-full max-w-[1200px] gap-10 px-6 lg:grid-cols-12 lg:gap-14 lg:px-8">
+                <div class="lp-reveal lg:col-span-5">
+                    <p class="lp-label">01 — Profil Lembaga</p>
+                    <h2 class="mt-4 text-[1.7rem] font-bold leading-tight tracking-[-0.01em] text-navy lg:text-[2rem]">
+                        Pusat kegiatan belajar masyarakat yang menempatkan warga belajar sebagai prioritas.
+                    </h2>
+                    <p class="mt-4 text-[15px] leading-relaxed text-muted">
+                        PKBM Aditya berkedudukan di Kabupaten Mamuju, Sulawesi Barat. Kegiatan belajar dirancang mengikuti ritme warga belajar dewasa: jadwal yang dapat disepakati, materi yang aplikatif, dan pendampingan tutor.
+                    </p>
+
+                    <div class="mt-8 flex flex-wrap gap-2">
+                        <span class="lp-chip">Paket A</span>
+                        <span class="lp-chip">Paket B</span>
+                        <span class="lp-chip">Paket C</span>
+                        <span class="lp-chip">Pembelajaran daring</span>
+                        <span class="lp-chip">Pendampingan tutor</span>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-7">
+                    <ol class="lp-reveal divide-y divide-border border-y border-border">
+                        <li class="flex gap-4 py-5">
+                            <span class="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-background text-primary-dark">
+                                <svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{!! $icons['book'] !!}</svg>
+                            </span>
+                            <div>
+                                <h3 class="text-[15px] font-semibold text-navy">Pendidikan kesetaraan</h3>
+                                <p class="mt-1 text-sm leading-relaxed text-muted">Tiga jenjang program kesetaraan sebagai jalur menyelesaikan pendidikan dasar dan menengah.</p>
+                            </div>
+                        </li>
+                        <li class="flex gap-4 py-5">
+                            <span class="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-background text-primary-dark">
+                                <svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{!! $icons['laptop'] !!}</svg>
+                            </span>
+                            <div>
+                                <h3 class="text-[15px] font-semibold text-navy">Pembelajaran berbasis sistem</h3>
+                                <p class="mt-1 text-sm leading-relaxed text-muted">Materi, tugas, kuis, jadwal, dan nilai dikelola dalam satu sistem informasi, baik diakses dari komputer maupun ponsel.</p>
+                            </div>
+                        </li>
+                        <li class="flex gap-4 py-5">
+                            <span class="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-background text-primary-dark">
+                                <svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{!! $icons['users'] !!}</svg>
+                            </span>
+                            <div>
+                                <h3 class="text-[15px] font-semibold text-navy">Pendampingan tutor</h3>
+                                <p class="mt-1 text-sm leading-relaxed text-muted">{{ $jumlahTutor }} tutor terdaftar mendampingi rombel belajar, dari penyusunan materi hingga penilaian hasil belajar.</p>
+                            </div>
+                        </li>
+                    </ol>
+                </div>
+            </div>
+        </section>
+
+        {{-- ================= PROGRAM ================= --}}
+        <section id="program" class="scroll-mt-20 border-b border-border bg-background py-16 lg:py-24">
+            <div class="lp-reveal mx-auto w-full max-w-[1200px] px-6 lg:px-8">
+                <div class="flex flex-col gap-4 border-b border-border pb-8 lg:flex-row lg:items-end lg:justify-between">
+                    <div class="max-w-2xl">
+                        <p class="lp-label">02 — Program</p>
+                        <h2 class="mt-4 text-[1.7rem] font-bold leading-tight tracking-[-0.01em] text-navy lg:text-[2rem]">Program pendidikan kesetaraan</h2>
+                        <p class="mt-3 text-[15px] leading-relaxed text-muted">Jenjang program yang sedang dibuka, beserta jumlah rombel aktif pada sistem.</p>
+                    </div>
+                    <p class="flex items-start gap-2 text-sm text-muted lg:max-w-xs">
+                        <svg class="mt-0.5 h-4 w-4 shrink-0 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{!! $icons['lock'] !!}</svg>
+                        Data program dan rombel bersifat internal; perubahan hanya dapat dilakukan setelah masuk dengan akun.
+                    </p>
+                </div>
+
+                @if($programs->isNotEmpty())
+                    <div class="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                        @foreach($programs as $program)
+                            <article class="group flex flex-col rounded-2xl border border-border bg-surface p-6 transition-colors hover:border-primary/40">
+                                <div class="flex items-center justify-between">
+                                    <span class="inline-flex h-9 min-w-9 items-center justify-center rounded-lg border border-primary/20 bg-primary-soft px-2 text-sm font-extrabold tracking-wide text-primary-dark">{{ $program->kode }}</span>
+                                    <span class="text-xs font-medium text-muted tabular-nums">{{ $rombelPerProgram[$program->id] ?? 0 }} rombel</span>
+                                </div>
+                                <h3 class="mt-5 text-lg font-bold text-navy">{{ $program->nama }}</h3>
+                                <p class="mt-1 text-xs font-semibold uppercase tracking-[0.1em] text-primary">{{ $jenjang[$program->kode] ?? 'Program kesetaraan' }}</p>
+                                <p class="mt-3 flex-1 text-sm leading-relaxed text-muted">{{ $program->deskripsi }}</p>
+                                <a href="{{ route('login') }}" class="mt-6 inline-flex items-center gap-1.5 border-t border-border pt-4 text-sm font-semibold text-primary-dark transition-colors hover:text-primary">
+                                    Masuk untuk mendaftar
+                                    <svg class="h-4 w-4 transition-transform group-hover:translate-x-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{!! $icons['arrow-right'] !!}</svg>
+                                </a>
+                            </article>
+                        @endforeach
+                    </div>
+                @else
+                    <p class="mt-10 rounded-2xl border border-border bg-surface p-6 text-sm text-muted">Belum ada program yang dipublikasikan.</p>
+                @endif
+            </div>
+        </section>
+
+        {{-- ================= SISTEM (BENTO) ================= --}}
+        <section id="sistem" class="scroll-mt-20 border-b border-border bg-surface py-16 lg:py-24">
+            <div class="lp-reveal mx-auto w-full max-w-[1200px] px-6 lg:px-8">
+                <div class="max-w-2xl">
+                    <p class="lp-label">03 — Sistem Informasi</p>
+                    <h2 class="mt-4 text-[1.7rem] font-bold leading-tight tracking-[-0.01em] text-navy lg:text-[2rem]">Satu sistem untuk kegiatan belajar dan administrasi</h2>
+                    <p class="mt-3 text-[15px] leading-relaxed text-muted">Peserta didik, tutor, wali kelas, dan pengelola lembaga bekerja pada data yang sama — tanpa pencatatan ganda.</p>
+                </div>
+
+                <div class="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
+                    <div class="rounded-2xl border border-border bg-background p-6 sm:col-span-2 lg:col-span-4">
+                        <div class="flex items-start gap-4">
+                            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border bg-surface text-primary-dark">
+                                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{!! $icons['layers'] !!}</svg>
+                            </span>
+                            <div>
+                                <h3 class="text-base font-semibold text-navy">Akademik terpadu</h3>
+                                <p class="mt-1.5 text-sm leading-relaxed text-muted">Data rombel, mata pelajaran, penugasan tutor, dan tahun ajaran tersimpan dalam satu alur kerja.</p>
+                            </div>
+                        </div>
+                        <div class="mt-5 grid gap-2 border-t border-border pt-5 sm:grid-cols-3">
+                            <p class="flex items-center gap-2 text-sm text-navy"><span class="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true"></span>Rombel &amp; kelas</p>
+                            <p class="flex items-center gap-2 text-sm text-navy"><span class="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true"></span>Jadwal pelajaran</p>
+                            <p class="flex items-center gap-2 text-sm text-navy"><span class="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true"></span>Rekap akademik</p>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col justify-between rounded-2xl border border-primary-dark/20 bg-primary p-6 text-white sm:col-span-2 lg:col-span-2">
+                        <div>
+                            <h3 class="text-base font-semibold">Masuk ke sistem</h3>
+                            <p class="mt-1.5 text-sm leading-relaxed text-white">Gunakan akun yang diberikan lembaga untuk mengakses dashboard sesuai peran Anda.</p>
+                        </div>
+                        <a href="{{ route('login') }}" class="mt-6 inline-flex items-center justify-between gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-primary-dark transition-colors hover:bg-primary-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-primary">
+                            Masuk Sistem
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{!! $icons['arrow-right'] !!}</svg>
+                        </a>
+                    </div>
+
+                    @php
+                        $fitur = [
+                            ['icon' => 'clipboard', 'judul' => 'Tugas & kuis', 'teks' => 'Pengumpulan tugas dan evaluasi daring dengan tenggat yang jelas.'],
+                            ['icon' => 'chart', 'judul' => 'Nilai & rapor', 'teks' => 'Rekapitulasi nilai per mata pelajaran dan rapor peserta didik.'],
+                            ['icon' => 'bell', 'judul' => 'Pengumuman', 'teks' => 'Informasi lembaga tersampaikan ke peran yang tepat.'],
+                        ];
+                    @endphp
+
+                    @foreach($fitur as $item)
+                        <div class="rounded-2xl border border-border bg-background p-6 sm:col-span-1 lg:col-span-2">
+                            <span class="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-surface text-primary-dark">
+                                <svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{!! $icons[$item['icon']] !!}</svg>
+                            </span>
+                            <h3 class="mt-4 text-[15px] font-semibold text-navy">{{ $item['judul'] }}</h3>
+                            <p class="mt-1.5 text-sm leading-relaxed text-muted">{{ $item['teks'] }}</p>
+                        </div>
                     @endforeach
                 </div>
-            @else
-                <div class="text-center py-12 bg-surface rounded-2xl border border-border">
-                    <i data-lucide="newspaper" class="mx-auto w-12 h-12 text-muted/50 mb-4"></i>
-                    <p class="text-muted font-medium">Belum ada informasi terbaru.</p>
-                </div>
-            @endif
-        </div>
-    </section>
+            </div>
+        </section>
 
-    <!-- FINAL CTA -->
-    <section class="py-24 relative overflow-hidden bg-primary">
-        <!-- Subtle Pattern -->
-        <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(#ffffff 1.5px, transparent 1.5px); background-size: 24px 24px;"></div>
-        
-        <div class="max-w-[1280px] mx-auto px-6 lg:px-8 relative z-10 text-center">
-            <h2 class="text-3xl lg:text-5xl font-extrabold text-white mb-6 leading-tight">
-                Mulai Perjalanan Belajarmu<br/>Bersama PKBM Aditya
-            </h2>
-            <p class="text-primary-soft text-lg mb-10 max-w-2xl mx-auto">
-                Akses fasilitas pembelajaran digital dan sistem informasi PKBM terpadu melalui satu platform pintar.
-            </p>
-            <a href="{{ route('login') }}" class="inline-flex items-center justify-center px-10 py-4 bg-white text-primary-dark text-lg font-bold rounded-2xl hover:bg-surface transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5">
-                Masuk Sistem
-            </a>
-        </div>
-    </section>
-
-    <!-- FOOTER -->
-    <footer class="bg-navy pt-20 pb-10 text-white/80">
-        <div class="max-w-[1280px] mx-auto px-6 lg:px-8">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
-                <!-- Col 1 -->
-                <div>
-                    <div class="flex items-center gap-3 mb-6">
-                        <img src="{{ asset('images/logo-pkbm-aditya.png') }}" alt="Logo PKBM Aditya" class="h-10 w-auto brightness-0 invert">
-                        <div class="flex flex-col">
-                            <span class="font-extrabold text-lg leading-none tracking-tight text-white">PKBM ADITYA</span>
-                            <span class="text-[11px] font-semibold text-white/60 tracking-wider uppercase mt-0.5">Kabupaten Mamuju</span>
-                        </div>
+        {{-- ================= INFORMASI ================= --}}
+        <section id="informasi" class="scroll-mt-20 border-b border-border bg-background py-16 lg:py-24">
+            <div class="lp-reveal mx-auto w-full max-w-[1200px] px-6 lg:px-8">
+                <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                    <div class="max-w-2xl">
+                        <p class="lp-label">04 — Informasi</p>
+                        <h2 class="mt-4 text-[1.7rem] font-bold leading-tight tracking-[-0.01em] text-navy lg:text-[2rem]">Pengumuman lembaga</h2>
                     </div>
-                    <p class="text-sm leading-relaxed mb-6">
-                        Lembaga Pendidikan Nonformal yang berdedikasi membangun generasi cerdas, mandiri, dan berkarakter melalui pendidikan kesetaraan berstandar nasional.
-                    </p>
+                    <p class="text-sm text-muted">Informasi untuk publik, diperbarui oleh pengelola PKBM.</p>
                 </div>
 
-                <!-- Col 2 -->
+                @if($informasi->isNotEmpty())
+                    <div class="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                        @foreach($informasi as $item)
+                            <article class="flex flex-col rounded-2xl border border-border bg-surface p-6">
+                                <div class="flex items-center justify-between gap-3">
+                                    <span class="lp-chip">{{ $item->kategori ?: 'Umum' }}</span>
+                                    <time class="text-xs text-muted tabular-nums" datetime="{{ ($item->published_at ?? $item->created_at)->toDateString() }}">
+                                        {{ ($item->published_at ?? $item->created_at)->translatedFormat('d M Y') }}
+                                    </time>
+                                </div>
+                                <h3 class="mt-4 text-base font-semibold leading-snug text-navy">{{ $item->judul }}</h3>
+                                <p class="mt-2 line-clamp-3 flex-1 text-sm leading-relaxed text-muted">{{ Str::limit(strip_tags($item->isi), 180) }}</p>
+                                <details class="group mt-4 border-t border-border pt-4">
+                                    <summary class="cursor-pointer list-none text-sm font-semibold text-primary-dark marker:content-none focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2">
+                                        <span class="group-open:hidden">Baca selengkapnya</span>
+                                        <span class="hidden group-open:inline">Tutup</span>
+                                    </summary>
+                                    <p class="mt-3 whitespace-pre-line text-sm leading-relaxed text-muted">{{ Str::limit(strip_tags($item->isi), 900) }}</p>
+                                </details>
+                            </article>
+                        @endforeach
+                    </div>
+                @else
+                    <div class="mt-10 flex flex-col items-start gap-4 rounded-2xl border border-dashed border-border bg-surface p-8 sm:flex-row sm:items-center">
+                        <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border bg-background text-primary-dark">
+                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{!! $icons['bell'] !!}</svg>
+                        </span>
+                        <div class="flex-1">
+                            <h3 class="text-[15px] font-semibold text-navy">Belum ada pengumuman publik</h3>
+                            <p class="mt-1 text-sm leading-relaxed text-muted">Pengumuman resmi dibagikan melalui sistem kepada peserta didik, tutor, dan wali kelas. Silakan masuk untuk melihat informasi terbaru.</p>
+                        </div>
+                        <a href="{{ route('login') }}" class="inline-flex shrink-0 items-center gap-2 rounded-xl border border-border bg-surface px-4 py-2.5 text-sm font-semibold text-navy transition-colors hover:border-primary/40 hover:bg-primary-soft/40">Masuk</a>
+                    </div>
+                @endif
+            </div>
+        </section>
+
+        {{-- ================= CTA ================= --}}
+        <section class="relative overflow-hidden bg-primary py-16 lg:py-20">
+            <div class="lp-dot-field lp-dot-field-invert pointer-events-none absolute inset-0" aria-hidden="true"></div>
+            <div class="relative mx-auto flex w-full max-w-[1200px] flex-col gap-8 px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
+                <div class="max-w-2xl">
+                    <h2 class="text-[1.7rem] font-bold leading-tight tracking-[-0.01em] text-white lg:text-[2rem]">Siap melanjutkan pendidikan?</h2>
+                    <p class="mt-3 text-[15px] leading-relaxed text-white">Masuk ke sistem untuk melihat program, jadwal, dan informasi pendaftaran yang berlaku.</p>
+                </div>
+                <div class="flex flex-col gap-3 sm:flex-row">
+                    <a href="{{ route('login') }}" class="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-6 py-3.5 text-[15px] font-semibold text-primary-dark transition-colors hover:bg-primary-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-primary">
+                        Masuk Sistem
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{!! $icons['arrow-right'] !!}</svg>
+                    </a>
+                    <a href="#program" class="inline-flex items-center justify-center rounded-xl border border-white/80 px-6 py-3.5 text-[15px] font-semibold text-white transition-colors hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-primary">Lihat program</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    {{-- ================= FOOTER ================= --}}
+    <footer id="kontak" class="scroll-mt-20 bg-navy pb-8 pt-14 text-white/75">
+        <div class="lp-reveal mx-auto w-full max-w-[1200px] px-6 lg:px-8">
+            <div class="grid gap-10 border-b border-white/10 pb-12 md:grid-cols-2 lg:grid-cols-4">
                 <div>
-                    <h4 class="text-white font-bold mb-6 tracking-wide">Navigasi</h4>
-                    <ul class="space-y-3 text-sm">
-                        <li><a href="#" class="hover:text-white transition-colors">Beranda</a></li>
-                        <li><a href="#tentang" class="hover:text-white transition-colors">Profil Lembaga</a></li>
-                        <li><a href="#program" class="hover:text-white transition-colors">Program Studi</a></li>
-                        <li><a href="#lms" class="hover:text-white transition-colors">Pembelajaran</a></li>
-                        <li><a href="#kegiatan" class="hover:text-white transition-colors">Informasi</a></li>
+                    <div class="flex items-center gap-3">
+                        <img src="{{ asset('images/logo-pkbm-aditya-96.png') }}"
+                             srcset="{{ asset('images/logo-pkbm-aditya-96.png') }} 96w, {{ asset('images/logo-pkbm-aditya-192.png') }} 192w"
+                             sizes="40px" alt="Logo PKBM Aditya" width="96" height="96" loading="lazy" decoding="async" class="h-10 w-auto">
+                        <span class="flex flex-col leading-none">
+                            <span class="text-[15px] font-extrabold tracking-tight text-white">PKBM ADITYA</span>
+                            <span class="mt-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/60">Kabupaten Mamuju</span>
+                        </span>
+                    </div>
+                    <p class="mt-5 text-sm leading-relaxed">Pusat kegiatan belajar masyarakat yang menyelenggarakan program pendidikan kesetaraan di Kabupaten Mamuju, Sulawesi Barat.</p>
+                </div>
+
+                <div>
+                    <h2 class="text-[13px] font-semibold uppercase tracking-[0.12em] text-white">Navigasi</h2>
+                    <ul class="mt-4 space-y-2.5 text-sm">
+                        <li><a href="#profil" class="transition-colors hover:text-white focus:outline-none focus-visible:underline">Profil Lembaga</a></li>
+                        <li><a href="#program" class="transition-colors hover:text-white focus:outline-none focus-visible:underline">Program</a></li>
+                        <li><a href="#sistem" class="transition-colors hover:text-white focus:outline-none focus-visible:underline">Sistem Informasi</a></li>
+                        <li><a href="#informasi" class="transition-colors hover:text-white focus:outline-none focus-visible:underline">Informasi</a></li>
                     </ul>
                 </div>
 
-                <!-- Col 3 -->
                 <div>
-                    <h4 class="text-white font-bold mb-6 tracking-wide">Kontak Kami</h4>
-                    <ul class="space-y-4 text-sm">
-                        <li class="flex items-start gap-3">
-                            <i data-lucide="map-pin" class="w-5 h-5 shrink-0 text-white/50"></i>
-                            <span>Kabupaten Mamuju,<br/>Sulawesi Barat, Indonesia</span>
+                    <h2 class="text-[13px] font-semibold uppercase tracking-[0.12em] text-white">Kontak</h2>
+                    <ul class="mt-4 space-y-3 text-sm">
+                        <li class="flex items-start gap-2.5">
+                            <svg class="mt-0.5 h-4 w-4 shrink-0 text-white/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{!! $icons['map-pin'] !!}</svg>
+                            <span>Kabupaten Mamuju,<br>Sulawesi Barat, Indonesia</span>
                         </li>
-                        <li class="flex items-center gap-3">
-                            <i data-lucide="mail" class="w-5 h-5 shrink-0 text-white/50"></i>
-                            <span>info@pkbmaditya.id</span>
-                        </li>
-                        <li class="flex items-center gap-3">
-                            <i data-lucide="phone" class="w-5 h-5 shrink-0 text-white/50"></i>
-                            <span>(0426) 123456</span>
+                        <li class="flex items-start gap-2.5">
+                            <svg class="mt-0.5 h-4 w-4 shrink-0 text-white/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{!! $icons['bell'] !!}</svg>
+                            <span>Informasi resmi lembaga<br>disampaikan melalui sistem.</span>
                         </li>
                     </ul>
                 </div>
 
-                <!-- Col 4 -->
                 <div>
-                    <h4 class="text-white font-bold mb-6 tracking-wide">Akses Sistem</h4>
-                    <ul class="space-y-3 text-sm">
-                        <li><a href="{{ route('login') }}" class="hover:text-white transition-colors">Masuk Sistem</a></li>
-                        <li><a href="{{ route('login') }}" class="hover:text-white transition-colors">LMS PKBM Aditya</a></li>
+                    <h2 class="text-[13px] font-semibold uppercase tracking-[0.12em] text-white">Akses Sistem</h2>
+                    <ul class="mt-4 space-y-2.5 text-sm">
+                        <li><a href="{{ route('login') }}" class="transition-colors hover:text-white focus:outline-none focus-visible:underline">Masuk Sistem</a></li>
+                        <li><a href="{{ route('operator.login.form') }}" class="transition-colors hover:text-white focus:outline-none focus-visible:underline">Login Operator</a></li>
                     </ul>
                 </div>
             </div>
 
-            <div class="border-t border-white/10 pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-xs font-medium">
-                <p>&copy; 2026 PKBM Aditya Kabupaten Mamuju.</p>
+            <div class="flex flex-col gap-2 pt-6 text-xs text-white/55 sm:flex-row sm:items-center sm:justify-between">
+                <p>&copy; {{ date('Y') }} PKBM Aditya Kabupaten Mamuju.</p>
                 <p>Sistem Informasi Manajemen Pendidikan.</p>
             </div>
         </div>
     </footer>
-
-    <!-- Initialize Lucide Icons -->
-    <script>
-        lucide.createIcons();
-    </script>
 </body>
 </html>

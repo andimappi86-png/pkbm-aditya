@@ -106,25 +106,66 @@ class ForumController extends Controller
         if ($user->hasRole('peserta-didik')) {
             $student = $user->student;
             $query->whereHas('penugasanMengajar', fn ($q) => $q->where('classroom_id', $student?->rombel_id));
-        } elseif ($user->hasRole('tutor')) {
-            $tutor = Tutor::where('user_id', $user->id)->first();
-            $query->whereHas('penugasanMengajar', fn ($q) => $q->where('tutor_id', $tutor?->id));
-        } elseif ($user->hasRole('wali-kelas')) {
-            $tutor = Tutor::where('user_id', $user->id)->first();
-            $classroomIds = Classroom::where('wali_kelas_id', $tutor?->id)->pluck('id');
-            $query->whereHas('penugasanMengajar', fn ($q) => $q->whereIn('classroom_id', $classroomIds));
+        } else {
+            $isTutor = $user->hasRole('tutor');
+            $isWali = $user->hasRole('wali-kelas');
+
+            if ($isTutor && $isWali) {
+                $tutor = Tutor::where('user_id', $user->id)->first();
+                $tutorId = $tutor?->id;
+                $classroomIds = Classroom::where('wali_kelas_id', $user->id)->pluck('id');
+
+                $query->whereHas('penugasanMengajar', function ($q) use ($tutorId, $classroomIds) {
+                    $q->where(function ($sub) use ($tutorId, $classroomIds) {
+                        if ($tutorId) {
+                            $sub->where('tutor_id', $tutorId);
+                        }
+                        if ($classroomIds->isNotEmpty()) {
+                            $sub->orWhereIn('classroom_id', $classroomIds);
+                        }
+                        if (! $tutorId && $classroomIds->isEmpty()) {
+                            $sub->whereRaw('1 = 0');
+                        }
+                    });
+                });
+            } elseif ($isTutor) {
+                $tutor = Tutor::where('user_id', $user->id)->first();
+                $query->whereHas('penugasanMengajar', fn ($q) => $q->where('tutor_id', $tutor?->id));
+            } elseif ($isWali) {
+                $classroomIds = Classroom::where('wali_kelas_id', $user->id)->pluck('id');
+                $query->whereHas('penugasanMengajar', fn ($q) => $q->whereIn('classroom_id', $classroomIds));
+            }
         }
     }
 
     private function authorizeAccess($forum, $user)
     {
         $penugasan = $forum->penugasanMengajar;
-        if ($user->hasRole('tutor')) {
-            $tutor = Tutor::where('user_id', $user->id)->first();
-            abort_if($penugasan->tutor_id !== $tutor?->id, 403);
-        } elseif ($user->hasRole('peserta-didik')) {
+        if ($user->hasRole('peserta-didik')) {
             $student = $user->student;
             abort_if($penugasan->classroom_id !== $student?->rombel_id, 403);
+
+            return;
+        }
+
+        $isTutor = $user->hasRole('tutor');
+        $isWali = $user->hasRole('wali-kelas');
+
+        if ($isTutor || $isWali) {
+            $canAccessAsTutor = false;
+            $canAccessAsWali = false;
+
+            if ($isTutor) {
+                $tutor = Tutor::where('user_id', $user->id)->first();
+                $canAccessAsTutor = $tutor && $penugasan->tutor_id === $tutor->id;
+            }
+
+            if ($isWali) {
+                $classroom = $penugasan->classroom;
+                $canAccessAsWali = $classroom && $classroom->wali_kelas_id === $user->id;
+            }
+
+            abort_if(! $canAccessAsTutor && ! $canAccessAsWali, 403);
         }
     }
 

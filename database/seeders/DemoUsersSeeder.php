@@ -6,6 +6,7 @@ use App\Models\Profile;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use RuntimeException;
 
 class DemoUsersSeeder extends Seeder
 {
@@ -14,6 +15,17 @@ class DemoUsersSeeder extends Seeder
      */
     public function run(): void
     {
+        // Safety: only run in demo environment against disposable database
+        if (! app()->environment('demo', 'testing')) {
+            throw new RuntimeException('DemoUsersSeeder hanya boleh dijalankan dengan APP_ENV=demo atau testing.');
+        }
+        $database = \Illuminate\Support\Facades\DB::connection()->getDatabaseName();
+        if ($database !== 'pkbm_aditya_disposable' && ! app()->environment('testing')) {
+            throw new RuntimeException(
+                'DemoUsersSeeder menolak berjalan pada database "'.$database.'". Target wajib pkbm_aditya_disposable.'
+            );
+        }
+
         $this->command->info('Creating demo users for each role...');
 
         // 1. Ketua Yayasan
@@ -23,7 +35,7 @@ class DemoUsersSeeder extends Seeder
                 'name' => 'Ketua Yayasan Demo',
                 'phone' => '081234567801',
                 'status' => 'active',
-                'password' => Hash::make('password'),
+                'password' => Hash::make(config('demo.passwords.ketua-yayasan')),
                 'email_verified_at' => now(),
             ]
         );
@@ -35,7 +47,7 @@ class DemoUsersSeeder extends Seeder
                 'address' => 'Mamuju, Sulawesi Barat',
             ]
         );
-        $this->command->info('✅ Ketua Yayasan: ketua@pkbm-aditya.test / password');
+        $this->command->info('✅ Ketua Yayasan: ketua@pkbm-aditya.test');
 
         // 2. Kepala PKBM
         $kepala = User::firstOrCreate(
@@ -44,7 +56,7 @@ class DemoUsersSeeder extends Seeder
                 'name' => 'Kepala PKBM Demo',
                 'phone' => '081234567802',
                 'status' => 'active',
-                'password' => Hash::make('password'),
+                'password' => Hash::make(config('demo.passwords.kepala-pkbm')),
                 'email_verified_at' => now(),
             ]
         );
@@ -56,7 +68,7 @@ class DemoUsersSeeder extends Seeder
                 'address' => 'Mamuju, Sulawesi Barat',
             ]
         );
-        $this->command->info('✅ Kepala PKBM: kepala@pkbm-aditya.test / password');
+        $this->command->info('✅ Kepala PKBM: kepala@pkbm-aditya.test');
 
         // 3. Wali Kelas
         $walikelas = User::firstOrCreate(
@@ -65,7 +77,7 @@ class DemoUsersSeeder extends Seeder
                 'name' => 'Wali Kelas Demo',
                 'phone' => '081234567803',
                 'status' => 'active',
-                'password' => Hash::make('password'),
+                'password' => Hash::make(config('demo.passwords.wali-kelas')),
                 'email_verified_at' => now(),
             ]
         );
@@ -77,7 +89,7 @@ class DemoUsersSeeder extends Seeder
                 'address' => 'Mamuju, Sulawesi Barat',
             ]
         );
-        $this->command->info('✅ Wali Kelas: walikelas@pkbm-aditya.test / password');
+        $this->command->info('✅ Wali Kelas: walikelas@pkbm-aditya.test');
 
         // 4. Tutor
         $tutor = User::firstOrCreate(
@@ -86,7 +98,7 @@ class DemoUsersSeeder extends Seeder
                 'name' => 'Tutor Demo',
                 'phone' => '081234567804',
                 'status' => 'active',
-                'password' => Hash::make('password'),
+                'password' => Hash::make(config('demo.passwords.tutor')),
                 'email_verified_at' => now(),
             ]
         );
@@ -98,7 +110,7 @@ class DemoUsersSeeder extends Seeder
                 'address' => 'Mamuju, Sulawesi Barat',
             ]
         );
-        $this->command->info('✅ Tutor: tutor@pkbm-aditya.test / password');
+        $this->command->info('✅ Tutor: tutor@pkbm-aditya.test');
 
         // 5. Peserta Didik
         $siswa = User::firstOrCreate(
@@ -107,7 +119,7 @@ class DemoUsersSeeder extends Seeder
                 'name' => 'Siswa Demo',
                 'phone' => '081234567805',
                 'status' => 'active',
-                'password' => Hash::make('password'),
+                'password' => Hash::make(config('demo.passwords.peserta-didik')),
                 'email_verified_at' => now(),
             ]
         );
@@ -119,7 +131,7 @@ class DemoUsersSeeder extends Seeder
                 'address' => 'Mamuju, Sulawesi Barat',
             ]
         );
-        $this->command->info('✅ Peserta Didik: siswa@pkbm-aditya.test / password');
+        $this->command->info('✅ Peserta Didik: siswa@pkbm-aditya.test');
 
         // Assign role to existing admin (kepala-pkbm by default)
         $admin = User::where('email', 'admin@example.test')->first();
@@ -135,7 +147,7 @@ class DemoUsersSeeder extends Seeder
                 'name' => 'Operator Demo',
                 'phone' => '081234567806',
                 'status' => 'active',
-                'password' => Hash::make('password'),
+                'password' => Hash::make(config('demo.passwords.operator')),
                 'email_verified_at' => now(),
             ]
         );
@@ -147,7 +159,7 @@ class DemoUsersSeeder extends Seeder
                 'address' => 'Mamuju, Sulawesi Barat',
             ]
         );
-        $this->command->info('✅ Operator: operator@pkbm-aditya.test / password');
+        $this->command->info('✅ Operator: operator@pkbm-aditya.test');
 
         $this->command->info('');
         $this->command->info('═══════════════════════════════════════');
@@ -159,7 +171,7 @@ class DemoUsersSeeder extends Seeder
         $this->command->info('4. Tutor         : tutor@pkbm-aditya.test');
         $this->command->info('5. Peserta Didik : siswa@pkbm-aditya.test');
         $this->command->info('6. Operator      : operator@pkbm-aditya.test');
-        $this->command->info('Password (all)   : password');
+        $this->command->info('Passwords are unique per role and stored in .env.demo (not displayed)');
         $this->command->info('═══════════════════════════════════════');
     }
 }

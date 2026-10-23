@@ -31,11 +31,17 @@ class Submission extends Model
         ];
     }
 
+    /**
+     * @return BelongsTo<Assignment, $this>
+     */
     public function assignment(): BelongsTo
     {
         return $this->belongsTo(Assignment::class);
     }
 
+    /**
+     * @return BelongsTo<Student, $this>
+     */
     public function student(): BelongsTo
     {
         return $this->belongsTo(Student::class);

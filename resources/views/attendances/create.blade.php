@@ -74,7 +74,12 @@
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="3" class="py-6 text-center text-muted">Tidak ada siswa aktif di rombel ini.</td>
+                                            <td colspan="3" class="py-6 text-center text-muted">
+                                                <div class="flex flex-col items-center justify-center space-y-1">
+                                                    <p class="font-medium text-navy">Belum ada peserta didik dengan status aktif di rombel ini.</p>
+                                                    <p class="text-xs text-muted">Pastikan siswa sudah ditempatkan ke rombel melalui menu Penugasan Rombel dan memiliki status aktif.</p>
+                                                </div>
+                                            </td>
                                         </tr>
                                     @endforelse
                                 </tbody>

@@ -23,6 +23,21 @@ class PenugasanMengajarController extends Controller
 
         $query = PenugasanMengajar::with(['tutor', 'subject', 'classroom', 'academicYear', 'semester']);
 
+        // Search across tutor name, subject name/code, classroom name/code, academic year name
+        if ($request->filled('search')) {
+            $search = $request->string('search')->trim()->toString();
+            if ($search !== '') {
+                $query->where(function ($q) use ($search) {
+                    $q->whereHas('tutor', fn ($tq) => $tq->where('nama_lengkap', 'like', "%{$search}%"))
+                        ->orWhereHas('subject', fn ($sq) => $sq->where('nama', 'like', "%{$search}%")
+                            ->orWhere('kode', 'like', "%{$search}%"))
+                        ->orWhereHas('classroom', fn ($cq) => $cq->where('nama_rombel', 'like', "%{$search}%")
+                            ->orWhere('kode_rombel', 'like', "%{$search}%"))
+                        ->orWhereHas('academicYear', fn ($aq) => $aq->where('nama', 'like', "%{$search}%"));
+                });
+            }
+        }
+
         // Filter by tutor
         if ($request->filled('tutor_id')) {
             $query->where('tutor_id', $request->tutor_id);
@@ -60,7 +75,12 @@ class PenugasanMengajarController extends Controller
         $subjects = Subject::where('status_aktif', true)->latest()->get();
         $classrooms = Classroom::with(['program', 'academicYear'])->latest()->get();
         $academicYears = AcademicYear::where('status_aktif', true)->latest('tanggal_mulai')->get();
-        $semesters = Semester::where('status_aktif', true)->latest('tanggal_mulai')->get();
+        $semesters = Semester::where('semesters.status_aktif', true)
+            ->join('academic_years', 'semesters.tahun_ajaran_id', '=', 'academic_years.id')
+            ->orderBy('academic_years.tanggal_mulai', 'desc')
+            ->orderBy('semesters.kode', 'asc')
+            ->select('semesters.*')
+            ->get();
 
         return view('penugasan-mengajar.index', compact(
             'penugasanans',
@@ -80,7 +100,12 @@ class PenugasanMengajarController extends Controller
         $subjects = Subject::where('status_aktif', true)->latest()->get();
         $classrooms = Classroom::with(['program', 'academicYear'])->latest()->get();
         $academicYears = AcademicYear::where('status_aktif', true)->latest('tanggal_mulai')->get();
-        $semesters = Semester::where('status_aktif', true)->latest('tanggal_mulai')->get();
+        $semesters = Semester::where('semesters.status_aktif', true)
+            ->join('academic_years', 'semesters.tahun_ajaran_id', '=', 'academic_years.id')
+            ->orderBy('academic_years.tanggal_mulai', 'desc')
+            ->orderBy('semesters.kode', 'asc')
+            ->select('semesters.*')
+            ->get();
 
         return view('penugasan-mengajar.create', compact(
             'tutors',
@@ -116,7 +141,12 @@ class PenugasanMengajarController extends Controller
         $subjects = Subject::where('status_aktif', true)->latest()->get();
         $classrooms = Classroom::with(['program', 'academicYear'])->latest()->get();
         $academicYears = AcademicYear::where('status_aktif', true)->latest('tanggal_mulai')->get();
-        $semesters = Semester::where('status_aktif', true)->latest('tanggal_mulai')->get();
+        $semesters = Semester::where('semesters.status_aktif', true)
+            ->join('academic_years', 'semesters.tahun_ajaran_id', '=', 'academic_years.id')
+            ->orderBy('academic_years.tanggal_mulai', 'desc')
+            ->orderBy('semesters.kode', 'asc')
+            ->select('semesters.*')
+            ->get();
 
         return view('penugasan-mengajar.edit', compact(
             'penugasanMengajar',

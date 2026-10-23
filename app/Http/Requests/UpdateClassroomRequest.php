@@ -10,7 +10,7 @@ class UpdateClassroomRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('classrooms.update');
+        return $this->user()->can('classrooms.update') || $this->user()->can('classrooms.manage');
     }
 
     public function rules(): array
@@ -31,14 +31,23 @@ class UpdateClassroomRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        if ($this->has('wali_kelas_name')) {
+        $this->merge([
+            'status_aktif' => $this->boolean('status_aktif'),
+        ]);
+
+        if ($this->filled('wali_kelas_id')) {
+            $user = User::role('wali-kelas')->find($this->wali_kelas_id);
+            if (! $user) {
+                $this->merge(['wali_kelas_id' => null]);
+            }
+        } elseif ($this->has('wali_kelas_name')) {
             $name = trim((string) $this->wali_kelas_name);
             if ($name === '') {
                 $this->merge(['wali_kelas_id' => null]);
             } else {
-                $user = User::role('wali-kelas')->where('name', $name)->first();
-                if ($user) {
-                    $this->merge(['wali_kelas_id' => $user->id]);
+                $users = User::role('wali-kelas')->where('name', $name)->get();
+                if ($users->count() === 1) {
+                    $this->merge(['wali_kelas_id' => $users->first()->id]);
                 }
             }
         }
@@ -54,6 +63,11 @@ class UpdateClassroomRequest extends FormRequest
                     $validator->errors()->add('wali_kelas_name', 'Wali kelas tidak ditemukan.');
                 } elseif ($users->count() > 1) {
                     $validator->errors()->add('wali_kelas_name', 'Nama wali kelas tidak unik.');
+                }
+            } elseif ($this->filled('wali_kelas_id')) {
+                $user = User::role('wali-kelas')->find($this->wali_kelas_id);
+                if (! $user) {
+                    $validator->errors()->add('wali_kelas_id', 'Wali kelas yang dipilih tidak valid.');
                 }
             }
         });

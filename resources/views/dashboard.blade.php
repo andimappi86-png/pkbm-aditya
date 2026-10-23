@@ -54,20 +54,22 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <x-stat-card 
                 title="Peserta Didik" 
+                :value="$totalStudents ?? 0"
+                variant="primary"
             />
             <x-stat-card 
                 title="Tutor" 
-                :value="$totalTutors" 
+                :value="$totalTutors ?? 0"
                 variant="primary" 
             />
             <x-stat-card 
                 title="Rombel" 
-                :value="$totalClassrooms" 
+                :value="$totalClassrooms ?? 0"
                 variant="primary" 
             />
             <x-stat-card 
                 title="Program" 
-                :value="$totalPrograms" 
+                :value="$totalPrograms ?? 0"
                 variant="primary" 
             />
         </div>

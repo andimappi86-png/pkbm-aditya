@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AcademicYearController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\AssignmentController;
 use App\Http\Controllers\AttendanceController;
@@ -14,32 +15,50 @@ use App\Http\Controllers\LetterController;
 use App\Http\Controllers\MaterialController;
 use App\Http\Controllers\OperatorController;
 use App\Http\Controllers\PenugasanMengajarController;
-use App\Http\Controllers\PpdbController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ProgramController;
 use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\QuizAttemptController;
 use App\Http\Controllers\QuizController;
 use App\Http\Controllers\RaporController;
 use App\Http\Controllers\RekapAkademikController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\RoleController;
 use App\Http\Controllers\ScheduleController;
+use App\Http\Controllers\StudentAccountLinkController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\SubjectController;
 use App\Http\Controllers\SubmissionController;
 use App\Http\Controllers\TutorController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('landing');
-})->name('landing');
+Route::get('/debug-dashboard', function () {
+    return response()->json(['user' => auth()->user()?->email, 'id' => auth()->id()]);
+})->middleware(['auth']);
 
-// Dashboard routes with RBAC
+Route::get('/debug-find-user', function (\Illuminate\Http\Request $request) {
+    $db = config('database.connections.mysql.database');
+    $user = \App\Models\User::where('email', $request->query('email'))->first();
+    if ($user) {
+        $check = \Illuminate\Support\Facades\Hash::check($request->query('password'), $user->password);
+        return response()->json(['found' => true, 'id' => $user->id, 'hash_check' => $check, 'db' => $db]);
+    }
+    return response()->json(['found' => false, 'db' => $db]);
+});
+
+// Landing page route
+Route::get('/', fn() => view('landing'))->name('landing');
+
+// Operator login form (guest only)
+Route::get('/operator/login', [OperatorController::class, 'showLoginForm'])
+    ->name('operator.login.form')
+    ->middleware('guest');
+
 Route::middleware(['auth', 'verified'])->group(function () {
     // Main dashboard - redirects based on role
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-
-    Route::get('/operator/login', [OperatorController::class, 'showLoginForm'])->name('operator.login.form')->withoutMiddleware(['auth', 'verified']);
-    Route::post('/operator/login', [OperatorController::class, 'login'])->name('operator.login')->withoutMiddleware(['auth', 'verified']);
+    Route::post('/operator/login', [OperatorController::class, 'login'])->name('operator.login')->middleware('throttle:5,1')->withoutMiddleware(['auth', 'verified']);
 
     // Role-specific dashboards
     Route::get('/dashboard/yayasan', [DashboardController::class, 'yayasan'])
@@ -58,6 +77,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->middleware('can:dashboard.view')
         ->name('dashboard.tutor');
 
+    Route::get('/dashboard/combined', [DashboardController::class, 'combined'])
+        ->middleware('can:dashboard.view')
+        ->name('dashboard.combined');
+
     Route::get('/dashboard/siswa', [DashboardController::class, 'siswa'])
         ->middleware('can:dashboard.view')
         ->name('dashboard.siswa');
@@ -70,25 +93,75 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->middleware('can:dashboard.view')
         ->name('kelas-saya.show');
 
-    Route::resource('jadwal', ScheduleController::class)->parameters([
-        'jadwal' => 'schedule',
-    ]);
+    // Jadwal - view actions
+    Route::middleware(['auth', 'verified', 'can:schedules.view'])->group(function () {
+        Route::get('jadwal', [ScheduleController::class, 'index'])->name('jadwal.index');
+        Route::get('jadwal/{schedule}', [ScheduleController::class, 'show'])->name('jadwal.show');
+    });
+    // Jadwal - manage actions
+    Route::middleware(['auth', 'verified', 'can:schedules.manage'])->group(function () {
+        Route::get('jadwal/create', [ScheduleController::class, 'create'])->name('jadwal.create');
+        Route::post('jadwal', [ScheduleController::class, 'store'])->name('jadwal.store');
+        Route::get('jadwal/{schedule}/edit', [ScheduleController::class, 'edit'])->name('jadwal.edit');
+        Route::put('jadwal/{schedule}', [ScheduleController::class, 'update'])->name('jadwal.update');
+        Route::delete('jadwal/{schedule}', [ScheduleController::class, 'destroy'])->name('jadwal.destroy');
+    });
 
-    Route::resource('absensi', AttendanceController::class)->parameters([
-        'absensi' => 'attendance',
-    ]);
+    // Absensi - manage actions
+    Route::middleware(['auth', 'verified', 'can:attendance.manage'])->group(function () {
+        Route::get('absensi/create', [AttendanceController::class, 'create'])->name('absensi.create');
+        Route::post('absensi', [AttendanceController::class, 'store'])->name('absensi.store');
+        Route::get('absensi/{attendance}/edit', [AttendanceController::class, 'edit'])->name('absensi.edit');
+        Route::put('absensi/{attendance}', [AttendanceController::class, 'update'])->name('absensi.update');
+        Route::delete('absensi/{attendance}', [AttendanceController::class, 'destroy'])->name('absensi.destroy');
+    });
+    // Absensi - view actions
+    Route::middleware(['auth', 'verified', 'can:attendance.view'])->group(function () {
+        Route::get('absensi', [AttendanceController::class, 'index'])->name('absensi.index');
+        Route::get('absensi/{attendance}', [AttendanceController::class, 'show'])->name('absensi.show');
+    });
 
-    Route::resource('nilai', GradeController::class)->parameters([
-        'nilai' => 'grade',
-    ]);
+    // Nilai - manage actions (must precede dynamic {grade} route)
+    Route::middleware(['auth', 'verified', 'can:grades.manage'])->group(function () {
+        Route::get('nilai/create', [GradeController::class, 'create'])->name('nilai.create');
+        Route::post('nilai', [GradeController::class, 'store'])->name('nilai.store');
+        Route::get('nilai/{grade}/edit', [GradeController::class, 'edit'])->name('nilai.edit');
+        Route::put('nilai/{grade}', [GradeController::class, 'update'])->name('nilai.update');
+        Route::delete('nilai/{grade}', [GradeController::class, 'destroy'])->name('nilai.destroy');
+    });
+    // Nilai - view actions
+    Route::middleware(['auth', 'verified', 'can:grades.view'])->group(function () {
+        Route::get('nilai', [GradeController::class, 'index'])->name('nilai.index');
+        Route::get('nilai/{grade}', [GradeController::class, 'show'])->name('nilai.show');
+    });
 
-    Route::resource('materi', MaterialController::class)->parameters([
-        'materi' => 'material',
-    ]);
+    // Materi - manage actions (must precede dynamic {material} route)
+    Route::middleware(['auth', 'verified', 'can:materials.manage'])->group(function () {
+        Route::get('materi/create', [MaterialController::class, 'create'])->name('materi.create');
+        Route::post('materi', [MaterialController::class, 'store'])->name('materi.store');
+        Route::get('materi/{material}/edit', [MaterialController::class, 'edit'])->name('materi.edit');
+        Route::put('materi/{material}', [MaterialController::class, 'update'])->name('materi.update');
+        Route::delete('materi/{material}', [MaterialController::class, 'destroy'])->name('materi.destroy');
+    });
+    // Materi - view actions
+    Route::middleware(['auth', 'verified', 'can:materials.view'])->group(function () {
+        Route::get('materi', [MaterialController::class, 'index'])->name('materi.index');
+        Route::get('materi/{material}', [MaterialController::class, 'show'])->name('materi.show');
+    });
 
-    Route::resource('quiz', QuizController::class)->parameters([
-        'quiz' => 'quiz',
-    ]);
+    // Quiz - manage actions (must precede dynamic {quiz} route)
+    Route::middleware(['auth', 'verified', 'can:quizzes.manage'])->group(function () {
+        Route::get('quiz/create', [QuizController::class, 'create'])->name('quiz.create');
+        Route::post('quiz', [QuizController::class, 'store'])->name('quiz.store');
+        Route::get('quiz/{quiz}/edit', [QuizController::class, 'edit'])->name('quiz.edit');
+        Route::put('quiz/{quiz}', [QuizController::class, 'update'])->name('quiz.update');
+        Route::delete('quiz/{quiz}', [QuizController::class, 'destroy'])->name('quiz.destroy');
+    });
+    // Quiz - view actions
+    Route::middleware(['auth', 'verified', 'can:quizzes.view'])->group(function () {
+        Route::get('quiz', [QuizController::class, 'index'])->name('quiz.index');
+        Route::get('quiz/{quiz}', [QuizController::class, 'show'])->name('quiz.show');
+    });
 
     Route::prefix('quiz/{quiz}')->name('quiz.')->group(function () {
         Route::resource('questions', QuestionController::class)->parameters([
@@ -101,16 +174,39 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('attempts/{attempt}', [QuizAttemptController::class, 'show'])->name('attempts.show');
     });
 
-    Route::resource('forum', ForumController::class)->parameters([
-        'forum' => 'forum',
-    ]);
+    // Forum - view actions (uses announcements permissions)
+    Route::middleware(['auth', 'verified', 'can:announcements.view'])->group(function () {
+        Route::get('forum', [ForumController::class, 'index'])->name('forum.index');
+        Route::get('forum/{forum}', [ForumController::class, 'show'])->name('forum.show');
+    });
+    // Forum - manage actions
+    Route::middleware(['auth', 'verified', 'can:announcements.manage'])->group(function () {
+        Route::get('forum/create', [ForumController::class, 'create'])->name('forum.create');
+        Route::post('forum', [ForumController::class, 'store'])->name('forum.store');
+        Route::get('forum/{forum}/edit', [ForumController::class, 'edit'])->name('forum.edit');
+        Route::put('forum/{forum}', [ForumController::class, 'update'])->name('forum.update');
+        Route::delete('forum/{forum}', [ForumController::class, 'destroy'])->name('forum.destroy');
+    });
 
     Route::post('/forum/{forum}/comments', [ForumCommentController::class, 'store'])->name('forum.comments.store');
     Route::delete('/forum/comments/{comment}', [ForumCommentController::class, 'destroy'])->name('forum.comments.destroy');
 
-    Route::resource('tugas', AssignmentController::class)->parameters([
-        'tugas' => 'assignment',
-    ]);
+    // Tugas - management actions (must precede dynamic {assignment} route)
+    Route::middleware(['auth', 'verified', 'can:assignments.manage'])->group(function () {
+        Route::get('tugas/create', [AssignmentController::class, 'create'])->name('tugas.create');
+        Route::post('tugas', [AssignmentController::class, 'store'])->name('tugas.store');
+        Route::get('tugas/{assignment}/edit', [AssignmentController::class, 'edit'])->name('tugas.edit');
+        Route::put('tugas/{assignment}', [AssignmentController::class, 'update'])->name('tugas.update');
+        Route::delete('tugas/{assignment}', [AssignmentController::class, 'destroy'])->name('tugas.destroy');
+    });
+    // Tugas - view actions
+    Route::middleware(['auth', 'verified', 'can:assignments.view'])->group(function () {
+        Route::get('tugas', [AssignmentController::class, 'index'])->name('tugas.index');
+        Route::get('tugas/{assignment}', [AssignmentController::class, 'show'])->name('tugas.show');
+    });
+
+    Route::get('programs', [ProgramController::class, 'index'])->name('programs.index');
+    Route::get('programs/{program}', [ProgramController::class, 'show'])->name('programs.show');
 
     Route::resource('pengumpulan', SubmissionController::class)->only(['store', 'update', 'destroy'])->parameters([
         'pengumpulan' => 'submission',
@@ -123,32 +219,71 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/rapor/{student}', [RaporController::class, 'show'])->name('rapor.show');
     Route::get('/rapor/{student}/print', [RaporController::class, 'print'])->name('rapor.print');
 
-    Route::resource('tutors', TutorController::class)->parameters([
-        'tutors' => 'tutor',
-    ]);
+    // Tutors - create actions (must precede dynamic {tutor} route)
+    Route::middleware(['auth', 'verified', 'can:tutors.create'])->group(function () {
+        Route::get('tutors/create', [TutorController::class, 'create'])->name('tutors.create');
+        Route::post('tutors', [TutorController::class, 'store'])->name('tutors.store');
+    });
 
-    Route::resource('rombel', ClassroomController::class)->parameters([
-        'rombel' => 'classroom',
-    ]);
+    // Tutors - view actions
+    Route::middleware(['auth', 'verified', 'can:tutors.view'])->group(function () {
+        Route::get('tutors', [TutorController::class, 'index'])->name('tutors.index');
+        Route::get('tutors/{tutor}', [TutorController::class, 'show'])->name('tutors.show');
+    });
 
-    Route::resource('mata-pelajaran', SubjectController::class)->parameters([
-        'mata-pelajaran' => 'subject',
-    ]);
+    Route::middleware(['auth', 'verified', 'can:tutors.update'])->group(function () {
+        Route::get('tutors/{tutor}/edit', [TutorController::class, 'edit'])->name('tutors.edit');
+        Route::put('tutors/{tutor}', [TutorController::class, 'update'])->name('tutors.update');
+    });
 
-    // PPDB Routes
-    Route::prefix('ppdb')->name('ppdb.')->group(function () {
-        Route::get('/', [PpdbController::class, 'index'])->name('index');
-        Route::get('/daftar', [PpdbController::class, 'create'])->name('create');
-        Route::post('/', [PpdbController::class, 'store'])->name('store');
-        Route::get('/{ppdb}', [PpdbController::class, 'show'])->name('show');
-        Route::get('/{ppdb}/bukti', [PpdbController::class, 'bukti'])->name('bukti');
+    Route::middleware(['auth', 'verified', 'can:tutors.delete'])->group(function () {
+        Route::delete('tutors/{tutor}', [TutorController::class, 'destroy'])->name('tutors.destroy');
+    });
 
-        // Verification routes (Kepala PKBM)
-        Route::middleware('can:admissions.manage')->group(function () {
-            Route::get('/{ppdb}/edit', [PpdbController::class, 'edit'])->name('edit');
-            Route::put('/{ppdb}', [PpdbController::class, 'update'])->name('update');
-            Route::post('/{ppdb}/verify', [PpdbController::class, 'verify'])->name('verify');
-        });
+    Route::get('/rombel/search-wali-kelas', [ClassroomController::class, 'searchWaliKelas'])->name('rombel.search-wali-kelas');
+    // Rombel - create actions before dynamic classroom route (create can match show)
+    Route::middleware(['auth', 'verified', 'can:classrooms.create'])->group(function () {
+        Route::get('rombel/create', [ClassroomController::class, 'create'])->name('rombel.create');
+        Route::post('rombel', [ClassroomController::class, 'store'])->name('rombel.store');
+    });
+    // Rombel - view actions
+    Route::middleware(['auth', 'verified', 'can:classrooms.view'])->group(function () {
+        Route::get('rombel', [ClassroomController::class, 'index'])->name('rombel.index');
+        Route::get('rombel/{classroom}', [ClassroomController::class, 'show'])->name('rombel.show');
+    });
+    // Rombel - manage actions
+    Route::middleware(['auth', 'verified', 'can:classrooms.manage'])->group(function () {
+        Route::get('rombel/{classroom}/edit', [ClassroomController::class, 'edit'])->name('rombel.edit');
+        Route::put('rombel/{classroom}', [ClassroomController::class, 'update'])->name('rombel.update');
+        Route::delete('rombel/{classroom}', [ClassroomController::class, 'destroy'])->name('rombel.destroy');
+    });
+
+    // Academic Years - view actions
+    Route::middleware(['auth', 'verified', 'can:academic-years.view'])->group(function () {
+        Route::get('academic-years', [AcademicYearController::class, 'index'])->name('academic-years.index');
+        Route::get('academic-years/{academicYear}', [AcademicYearController::class, 'show'])->name('academic-years.show');
+    });
+    // Academic Years - manage actions
+    Route::middleware(['auth', 'verified', 'can:academic-years.manage'])->group(function () {
+        Route::get('academic-years/create', [AcademicYearController::class, 'create'])->name('academic-years.create');
+        Route::post('academic-years', [AcademicYearController::class, 'store'])->name('academic-years.store');
+        Route::get('academic-years/{academicYear}/edit', [AcademicYearController::class, 'edit'])->name('academic-years.edit');
+        Route::put('academic-years/{academicYear}', [AcademicYearController::class, 'update'])->name('academic-years.update');
+        Route::delete('academic-years/{academicYear}', [AcademicYearController::class, 'destroy'])->name('academic-years.destroy');
+    });
+
+    // Mata Pelajaran - view actions
+    Route::middleware(['auth', 'verified', 'can:subjects.view'])->group(function () {
+        Route::get('mata-pelajaran', [SubjectController::class, 'index'])->name('mata-pelajaran.index');
+        Route::get('mata-pelajaran/{subject}', [SubjectController::class, 'show'])->name('mata-pelajaran.show');
+    });
+    // Mata Pelajaran - manage actions
+    Route::middleware(['auth', 'verified', 'can:subjects.manage'])->group(function () {
+        Route::get('mata-pelajaran/create', [SubjectController::class, 'create'])->name('mata-pelajaran.create');
+        Route::post('mata-pelajaran', [SubjectController::class, 'store'])->name('mata-pelajaran.store');
+        Route::get('mata-pelajaran/{subject}/edit', [SubjectController::class, 'edit'])->name('mata-pelajaran.edit');
+        Route::put('mata-pelajaran/{subject}', [SubjectController::class, 'update'])->name('mata-pelajaran.update');
+        Route::delete('mata-pelajaran/{subject}', [SubjectController::class, 'destroy'])->name('mata-pelajaran.destroy');
     });
 
     // Document Routes
@@ -180,16 +315,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('/{letter}', [LetterController::class, 'destroy'])->name('destroy')->middleware('can:letters.manage');
     });
 
-    // Announcements
-    Route::resource('pengumuman', AnnouncementController::class)->parameters([
-        'pengumuman' => 'announcement',
-    ])->names('announcements');
+    // Announcements (auth only, no email verification required)
+    Route::middleware('auth')->group(function () {
+        Route::resource('pengumuman', AnnouncementController::class)->parameters([
+            'pengumuman' => 'announcement',
+        ])->names('announcements');
+    });
 
     // Operator Routes
     Route::prefix('operator')->name('operator.')->group(function () {
         Route::get('/dashboard', [OperatorController::class, 'dashboard'])->name('dashboard')->middleware('can:dashboard.view');
-        Route::get('/profile', [OperatorController::class, 'profile'])->name('profile')->middleware('can:dashboard.view');
-        Route::put('/profile', [OperatorController::class, 'updateProfile'])->name('profile.update')->middleware('can:dashboard.view');
+        Route::get('/profile', fn () => redirect()->route('profile.edit'))->name('profile')->middleware('can:dashboard.view');
         Route::get('/security/aes-gcm', [OperatorController::class, 'security'])->name('security')->middleware('can:dashboard.view');
         Route::post('/security/encrypt', [OperatorController::class, 'encryptData'])->name('encrypt')->middleware('can:dashboard.view');
         Route::post('/security/decrypt', [OperatorController::class, 'decryptData'])->name('decrypt')->middleware('can:dashboard.view');
@@ -208,6 +344,27 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/import-tutor/template', [OperatorController::class, 'importTutorTemplate'])->name('import-tutor.template')->middleware('can:operator.import');
     });
 
+    // User & Role Management (Operator / Kepala PKBM)
+    Route::middleware('can:users.manage')->group(function () {
+        Route::get('users', [UserController::class, 'index'])->name('users.index')->middleware('can:users.view');
+        Route::get('users/create', [UserController::class, 'create'])->name('users.create');
+        Route::post('users', [UserController::class, 'store'])->name('users.store');
+        Route::post('users/create-with-student', [UserController::class, 'storeWithStudent'])->name('users.store-with-student');
+        Route::get('users/{user}', [UserController::class, 'show'])->name('users.show')->middleware('can:users.view');
+        Route::get('users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
+        Route::put('users/{user}', [UserController::class, 'update'])->name('users.update');
+        Route::post('users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');
+        Route::patch('users/{user}/status', [UserController::class, 'toggleStatus'])->name('users.toggle-status');
+        Route::delete('users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+
+        Route::get('roles', [RoleController::class, 'index'])->name('roles.index');
+        Route::get('roles/create', [RoleController::class, 'create'])->name('roles.create');
+        Route::post('roles', [RoleController::class, 'store'])->name('roles.store');
+        Route::get('roles/{role}/edit', [RoleController::class, 'edit'])->name('roles.edit');
+        Route::put('roles/{role}', [RoleController::class, 'update'])->name('roles.update');
+        Route::delete('roles/{role}', [RoleController::class, 'destroy'])->name('roles.destroy');
+    });
+
     // Reports
     Route::prefix('reports')->name('reports.')->group(function () {
         Route::get('/', [ReportController::class, 'index'])->name('index');
@@ -217,13 +374,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/attendance', [ReportController::class, 'attendance'])->name('attendance');
         Route::get('/grades', [ReportController::class, 'grades'])->name('grades');
         Route::get('/assignments', [ReportController::class, 'assignments'])->name('assignments');
-        Route::get('/ppdb', [ReportController::class, 'ppdb'])->name('ppdb');
         Route::get('/learning', [ReportController::class, 'learningActivity'])->name('learning');
         Route::get('/print/{type}', [ReportController::class, 'print'])->name('print');
     });
 
     // Classroom Assignments
-    Route::middleware(['auth', 'verified'])->group(function () {
+    Route::middleware(['auth', 'verified', 'can:classrooms.manage'])->group(function () {
         Route::get('/classroom-assignments', [ClassroomAssignmentController::class, 'index'])->name('classroom-assignments.index');
         Route::get('/classroom-assignments/create-tutor-subject', [ClassroomAssignmentController::class, 'createTutorSubject'])->name('classroom-assignments.create-tutor-subject');
         Route::post('/classroom-assignments/store-tutor-subject', [ClassroomAssignmentController::class, 'storeTutorSubject'])->name('classroom-assignments.store-tutor-subject');
@@ -246,6 +402,12 @@ Route::middleware('auth')->group(function () {
         Route::get('import', [StudentController::class, 'importForm'])->name('import');
         Route::post('import/preview', [StudentController::class, 'importPreview'])->name('import.preview');
         Route::post('import/process', [StudentController::class, 'importProcess'])->name('import.process');
+        Route::get('penempatan-rombel', [StudentController::class, 'bulkAssignForm'])->name('bulk-assign')->middleware('can:students.update');
+        Route::post('penempatan-rombel/process', [StudentController::class, 'bulkAssignProcess'])->name('bulk-assign.process')->middleware('can:students.update');
+
+        Route::get('penautan-akun', [StudentAccountLinkController::class, 'index'])->name('link-accounts')->middleware('can:students.manage');
+        Route::post('penautan-akun', [StudentAccountLinkController::class, 'store'])->name('link-accounts.store')->middleware('can:students.manage');
+        Route::delete('penautan-akun/{peserta_didik}', [StudentAccountLinkController::class, 'unlink'])->name('link-accounts.destroy')->middleware('can:students.manage');
     });
     Route::resource('peserta-didik', StudentController::class)->parameters([
         'peserta-didik' => 'peserta_didik',
@@ -253,14 +415,19 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    // Penugasan Mengajar (Teaching Assignments)
-    Route::get('/penugasan-mengajar', [PenugasanMengajarController::class, 'index'])->name('penugasan-mengajar.index');
-    Route::get('/penugasan-mengajar/create', [PenugasanMengajarController::class, 'create'])->name('penugasan-mengajar.create');
-    Route::post('/penugasan-mengajar', [PenugasanMengajarController::class, 'store'])->name('penugasan-mengajar.store');
-    Route::get('/penugasan-mengajar/{penugasanMengajar}', [PenugasanMengajarController::class, 'show'])->name('penugasan-mengajar.show');
-    Route::get('/penugasan-mengajar/{penugasanMengajar}/edit', [PenugasanMengajarController::class, 'edit'])->name('penugasan-mengajar.edit');
-    Route::put('/penugasan-mengajar/{penugasanMengajar}', [PenugasanMengajarController::class, 'update'])->name('penugasan-mengajar.update');
-    Route::delete('/penugasan-mengajar/{penugasanMengajar}', [PenugasanMengajarController::class, 'destroy'])->name('penugasan-mengajar.destroy');
+    // Penugasan Mengajar (Teaching Assignments) - view actions
+    Route::middleware('can:classrooms.manage')->group(function () {
+        Route::get('/penugasan-mengajar', [PenugasanMengajarController::class, 'index'])->name('penugasan-mengajar.index');
+        Route::get('/penugasan-mengajar/{penugasanMengajar}', [PenugasanMengajarController::class, 'show'])->name('penugasan-mengajar.show');
+    });
+    // Penugasan Mengajar - manage actions
+    Route::middleware('can:classrooms.manage')->group(function () {
+        Route::get('/penugasan-mengajar/create', [PenugasanMengajarController::class, 'create'])->name('penugasan-mengajar.create');
+        Route::post('/penugasan-mengajar', [PenugasanMengajarController::class, 'store'])->name('penugasan-mengajar.store');
+        Route::get('/penugasan-mengajar/{penugasanMengajar}/edit', [PenugasanMengajarController::class, 'edit'])->name('penugasan-mengajar.edit');
+        Route::put('/penugasan-mengajar/{penugasanMengajar}', [PenugasanMengajarController::class, 'update'])->name('penugasan-mengajar.update');
+        Route::delete('/penugasan-mengajar/{penugasanMengajar}', [PenugasanMengajarController::class, 'destroy'])->name('penugasan-mengajar.destroy');
+    });
 });
 
 require __DIR__.'/auth.php';

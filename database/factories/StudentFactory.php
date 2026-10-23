@@ -34,7 +34,7 @@ class StudentFactory extends Factory
             'kelurahan' => fake()->citySuffix(),
             'kecamatan' => fake()->city(),
             'kabupaten' => fake()->city(),
-            'provinsi' => fake()->state(),
+            'provinsi' => 'Jawa Barat',
             'no_hp' => fake()->phoneNumber(),
             'email' => fake()->unique()->safeEmail(),
 

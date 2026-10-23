@@ -96,7 +96,7 @@ class RekapAkademikTest extends TestCase
         ]);
 
         $response = $this->actingAs($studentUser)->get(route('rekap.show', $this->student));
-        $response->assertRedirect()->assertSessionHas('error', 'Anda tidak memiliki akses ke fitur tersebut.');
+        $response->assertForbidden();
     }
 
     public function test_rekap_filters(): void

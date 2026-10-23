@@ -8,21 +8,21 @@
             @can('classrooms.manage')
             <a href="{{ route('classroom-assignments.create-tutor-subject') }}" class="btn-primary">
                 <x-icon name="plus" class="w-4 h-4" />
-                Aliokasikan Tutor ke Mata Pelajaran
+                Alokasikan Tutor ke Mata Pelajaran
             </a>
             @endcan
             
             @can('classrooms.manage')
             <a href="{{ route('classroom-assignments.create-tutor-classroom') }}" class="btn-primary">
                 <x-icon name="plus" class="w-4 h-4" />
-                Aliokasikan Tutor ke Rombel
+                Alokasikan Tutor ke Rombel
             </a>
             @endcan
             
             @can('classrooms.manage')
             <a href="{{ route('classroom-assignments.create-subject-classroom') }}" class="btn-primary">
                 <x-icon name="plus" class="w-4 h-4" />
-                Aliokasikan Mata Pelajaran ke Rombel
+                Alokasikan Mata Pelajaran ke Rombel
             </a>
             @endcan
         </div>
@@ -34,29 +34,36 @@
                 <table class="min-w-full divide-y divide-border">
                     <thead>
                         <tr>
-                            <th>Tutor</th>
-                            <th>Mata Pelajaran</th>
-                            <th>Rombel</th>
-                            <th class="text-right">Aksi</th>
+                            <th scope="col">Tutor</th>
+                            <th scope="col">Mata Pelajaran</th>
+                            <th scope="col">Rombel</th>
+                            <th scope="col" class="text-right">Aksi</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-border">
-                        @foreach($tutors as $tutor)
+                        @forelse($assignments as $pm)
                         <tr class="border-b">
-                            <td class="font-medium">{{ $tutor->nama_lengkap }}</td>
-                            @foreach($tutor->subjects as $subject)
-                            <td class="text-sm text-muted">{{ $subject->nama }}</td>
-                            @endforeach
-                            @foreach($tutor->classrooms as $classroom)
-                            <td class="text-sm text-muted">{{ $classroom->nama_rombel }}</td>
-                            @endforeach
+                            <td class="font-medium">{{ $pm->tutor_nama }}</td>
+                            <td class="text-sm text-muted">{{ $pm->subject_nama }}</td>
+                            <td class="text-sm text-muted">{{ $pm->classroom_nama }}</td>
+                            <td class="text-right">
+                                <a href="{{ route('classroom-assignments.tutor-assignments', $pm->tutor_id) }}" class="text-sm font-medium text-primary hover:underline">
+                                    Lihat Penugasan
+                                </a>
+                            </td>
                         </tr>
-                        @endforeach
+                        @empty
+                        <tr>
+                            <td colspan="4" class="px-4 py-10 text-center text-sm text-muted">
+                                Belum ada penugasan tutor. Gunakan tombol alokasi di atas untuk menambahkan.
+                            </td>
+                        </tr>
+                        @endforelse
                     </tbody>
                 </table>
             </div>
             
-            {{ $tutors->links() }}
+            {{ $assignments->links() }}
         </div>
     </div>
 </x-app-layout>

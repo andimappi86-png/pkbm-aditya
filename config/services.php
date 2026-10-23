@@ -14,6 +14,10 @@ return [
     |
     */
 
+    'aes_gcm' => [
+        'key' => env('AES_256_GCM_KEY'),
+    ],
+
     'postmark' => [
         'key' => env('POSTMARK_API_KEY'),
     ],

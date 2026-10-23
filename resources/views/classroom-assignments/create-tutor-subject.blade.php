@@ -32,7 +32,7 @@
                         @foreach($subjects as $subject)
                         <div>
                             <label class="flex items-center cursor-pointer select-none px-3 py-1.5 rounded border border-border hover:border-primary/50">
-                                <input type="checkbox" name="subjects[]" value="{{ $subject->id }}" {{ old('subjects', [])->contains($subject->id) ? 'checked' : '' }} class="w-4 h-4 text-primary focus:ring-primary border-border mr-2">
+                                <input type="checkbox" name="subjects[]" value="{{ $subject->id }}" {{ in_array($subject->id, old('subjects', [])) ? 'checked' : '' }} class="w-4 h-4 text-primary focus:ring-primary border-border mr-2">
                                 <span>{{ $subject->kode . ': ' . $subject->nama }}</span>
                             </label>
                         </div>
