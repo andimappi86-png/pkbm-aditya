@@ -5,12 +5,19 @@
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <x-breadcrumb :items="[['label' => 'Rombel']]" />
             
-            @can('classrooms.create')
-            <a href="{{ route('rombel.create') }}" class="btn-primary">
-                <x-icon name="plus" class="w-4 h-4" />
-                Buat Rombel Baru
-            </a>
-            @endcan
+            <div class="flex items-center gap-2">
+                <a href="{{ route('absensi.index', ['tab' => 'members']) }}" class="bg-[#14532D] hover:bg-[#0D2618] text-white rounded-xl px-4 py-2 text-xs sm:text-sm font-semibold inline-flex items-center gap-2 shadow-xs transition-colors">
+                    <x-icon name="user-plus" class="w-4 h-4" />
+                    <span>+ Tambah Siswa ke Kelas</span>
+                </a>
+
+                @can('classrooms.create')
+                <a href="{{ route('rombel.create') }}" class="btn-primary">
+                    <x-icon name="plus" class="w-4 h-4" />
+                    <span>Buat Rombel Baru</span>
+                </a>
+                @endcan
+            </div>
         </div>
 
         <div class="card p-6">
@@ -36,7 +43,7 @@
                         <option value="">Semua Tahun Ajaran</option>
                         @foreach($academicYears as $year)
                             <option value="{{ $year->id }}" {{ request('tahun_ajaran_id') == $year->id ? 'selected' : '' }}>
-                                {{ $year->nama_ajaran }}
+                                {{ $year->nama }}
                             </option>
                         @endforeach
                     </select>
@@ -73,10 +80,10 @@
                             <td>{{ $classroom->kode_rombel }}</td>
                             <td>{{ $classroom->nama_rombel }}</td>
                             <td>{{ $classroom->program->nama ?? '-' }}</td>
-                            <td>{{ $classroom->academicYear->nama_ajaran ?? '-' }}</td>
+                            <td>{{ $classroom->academicYear?->nama ?? '-' }}</td>
                             <td>
                                 @if($classroom->wali_kelas_id)
-                                    {{ $classroom->homeroomTeacher->nama_lengkap ?? 'Tidak diketahui' }}
+                                    {{ $classroom->waliKelas?->name ?? 'Tidak diketahui' }}
                                 @else
                                     <span class="text-xs text-muted">Belum ada wali kelas</span>
                                 @endif
@@ -85,6 +92,9 @@
                                 {{ $classroom->students->count() }} siswa
                             </td>
                             <td class="text-right space-x-2">
+                                <a href="{{ route('absensi.index', ['classroom_id' => $classroom->id, 'tab' => 'members']) }}" class="inline-flex p-2 text-muted hover:text-emerald-700 transition-colors" title="Kelola Anggota Kelas">
+                                    <x-icon name="users" class="w-5 h-5" />
+                                </a>
                                 @can('classrooms.view')
                                 <a href="{{ route('rombel.show', ['classroom' => $classroom]) }}" class="inline-flex p-2 text-muted hover:text-primary-dark transition-colors" title="Lihat">
                                     <x-icon name="eye" class="w-5 h-5" />

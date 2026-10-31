@@ -80,8 +80,7 @@ class OperatorAesTest extends TestCase
         $operator = $this->getOperator();
         $response = $this->actingAs($operator)->get(route('operator.profile'));
 
-        $response->assertStatus(200);
-        $response->assertViewIs('operator.profile');
+        $response->assertRedirect(route('profile.edit'));
     }
 
     public function test_aes_encrypt_decrypt()

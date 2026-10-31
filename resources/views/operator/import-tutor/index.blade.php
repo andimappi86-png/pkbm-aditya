@@ -35,6 +35,7 @@
                              :class="isDragging ? 'border-[#167C80] bg-[#E8F5F4]' : 'border-[#D9E2E5]'"
                              class="border-2 border-dashed rounded-xl p-12 text-center transition-all cursor-pointer">
                             
+                            <label for="fileInput" class="sr-only">Unggah file CSV data tutor</label>
                             <input type="file" id="fileInput" name="file" accept=".csv" required class="hidden" @change="file = $event.target.files[0]">
                             
                             <div x-show="!file">

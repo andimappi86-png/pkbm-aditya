@@ -2,17 +2,18 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Database\Factories\UserFactory;
+use Illuminate\Auth\Passwords\CanResetPassword;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+use Spatie\Permission\Models\Role;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<UserFactory> */
-    use HasFactory, HasRoles;
+    use CanResetPassword, HasFactory, HasRoles, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -59,14 +60,28 @@ class User extends Authenticatable
         return $this->hasOne(Profile::class);
     }
 
+    /**
+     * @return HasOne<Tutor, $this>
+     */
     public function tutor(): HasOne
     {
         return $this->hasOne(Tutor::class);
     }
 
+    /**
+     * @return HasOne<Student, $this>
+     */
     public function student(): HasOne
     {
         return $this->hasOne(Student::class);
+    }
+
+    /**
+     * @return HasMany<Classroom, $this>
+     */
+    public function waliClassrooms(): HasMany
+    {
+        return $this->hasMany(Classroom::class, 'wali_kelas_id');
     }
 
     /**
@@ -125,7 +140,9 @@ class User extends Authenticatable
             return 'calon-peserta';
         }
 
-        return $this->roles->first()?->name ?? 'user';
+        $firstRole = $this->roles->first();
+
+        return ($firstRole instanceof Role) ? (string) $firstRole->name : 'user';
     }
 
     /**
@@ -133,6 +150,11 @@ class User extends Authenticatable
      */
     public function dashboardRoute(): string
     {
+        // Dual role tutor + wali-kelas gets combined dashboard
+        if ($this->hasRole('tutor') && $this->hasRole('wali-kelas')) {
+            return 'dashboard.combined';
+        }
+
         return match ($this->primaryRole()) {
             'operator' => 'operator.dashboard',
             'ketua-yayasan' => 'dashboard.yayasan',
@@ -140,7 +162,7 @@ class User extends Authenticatable
             'wali-kelas' => 'dashboard.walikelas',
             'tutor' => 'dashboard.tutor',
             'peserta-didik' => 'dashboard.siswa',
-            'calon-peserta' => 'ppdb.index',
+            'calon-peserta' => 'announcements.index',
             default => 'dashboard',
         };
     }

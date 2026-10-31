@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreTutorRequest;
 use App\Http\Requests\UpdateTutorRequest;
+use App\Models\PenugasanMengajar;
+use App\Models\Schedule;
 use App\Models\Tutor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -39,11 +41,18 @@ class TutorController extends Controller
         $tutors = $query->latest()->paginate(10)
             ->withQueryString();
 
+        $totalTutors = Tutor::count();
+        $activeTutors = Tutor::where('status_tutor', 'aktif')->count();
+        $inactiveTutors = Tutor::where('status_tutor', 'tidak_aktif')->count();
+
         return view('dashboards.tutor.index', [
             'tutors' => $tutors,
             'search' => $search,
             'status' => $status,
             'statusOptions' => ['aktif', 'tidak_aktif'],
+            'totalTutors' => $totalTutors,
+            'activeTutors' => $activeTutors,
+            'inactiveTutors' => $inactiveTutors,
         ]);
     }
 
@@ -69,8 +78,34 @@ class TutorController extends Controller
     {
         Gate::authorize('tutors.view');
 
+        $tutor->load([
+            'subjects',
+            'classrooms.program',
+            'classrooms.academicYear',
+        ]);
+
+        $penugasan = PenugasanMengajar::with(['subject', 'classroom', 'academicYear', 'semester'])
+            ->where('tutor_id', $tutor->id)
+            ->where('status_aktif', true)
+            ->get();
+
+        $penugasanIds = $penugasan->pluck('id');
+        $schedules = Schedule::with(['penugasanMengajar.subject', 'penugasanMengajar.classroom'])
+            ->whereIn('penugasan_mengajar_id', $penugasanIds)
+            ->where('status_aktif', true)
+            ->orderByRaw("CASE hari WHEN 'Senin' THEN 1 WHEN 'Selasa' THEN 2 WHEN 'Rabu' THEN 3 WHEN 'Kamis' THEN 4 WHEN 'Jumat' THEN 5 WHEN 'Sabtu' THEN 6 WHEN 'Minggu' THEN 7 ELSE 8 END")
+            ->orderBy('jam_mulai', 'asc')
+            ->get();
+
         return view('dashboards.tutor.show', [
             'tutor' => $tutor,
+            'penugasan' => $penugasan,
+            'schedules' => $schedules,
+            'stats' => [
+                'total_rombel' => $tutor->classrooms->count(),
+                'total_mapel' => $tutor->subjects->count(),
+                'total_penugasan' => $penugasan->count(),
+            ],
         ]);
     }
 

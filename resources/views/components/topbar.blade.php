@@ -30,6 +30,8 @@
                 <button 
                     @click="open = !open" 
                     @click.away="open = false"
+                    :aria-expanded="open.toString()"
+                    aria-haspopup="true"
                     class="flex items-center gap-3 p-2 rounded-xl hover:bg-primary-soft transition-colors focus:outline-none focus:ring-2 focus:ring-primary/20"
                 >
                     <x-avatar 

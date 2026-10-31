@@ -7,7 +7,9 @@ use App\Http\Requests\UpdateClassroomRequest;
 use App\Models\AcademicYear;
 use App\Models\Classroom;
 use App\Models\Program;
+use App\Models\Student;
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -19,7 +21,7 @@ class ClassroomController extends Controller
     {
         Gate::authorize('classrooms.view');
 
-        $query = Classroom::with(['program', 'academicYear', 'homeroomTeacher', 'students']);
+        $query = Classroom::with(['program', 'academicYear', 'waliKelas', 'students']);
 
         $user = auth()->user();
 
@@ -84,6 +86,8 @@ class ClassroomController extends Controller
 
     public function store(StoreClassroomRequest $request): RedirectResponse
     {
+        Gate::authorize('create', Classroom::class);
+
         $validated = $request->validated();
 
         Classroom::create($validated);
@@ -94,18 +98,36 @@ class ClassroomController extends Controller
 
     public function show(Classroom $classroom): View
     {
-        Gate::authorize('classrooms.view', $classroom);
+        Gate::authorize('view', $classroom);
 
-        $classroom->load(['program', 'academicYear', 'homeroomTeacher', 'students.user']);
+        $classroom->load([
+            'program',
+            'academicYear',
+            'waliKelas',
+            'students' => fn ($q) => $q->orderBy('nama_lengkap'),
+            'students.user',
+        ]);
 
-        return view('classrooms.show', compact('classroom'));
+        $user = auth()->user();
+        $canManage = $user !== null && app(\App\Policies\StudentPolicy::class)->manageClassroom($user, $classroom);
+
+        $unassignedStudents = Student::query()
+            ->whereNull('rombel_id')
+            ->where('status', 'aktif')
+            ->select(['id', 'nis', 'nisn', 'nama_lengkap', 'jenis_kelamin', 'program_id', 'tahun_ajaran_id'])
+            ->with(['program:id,nama', 'academicYear:id,nama'])
+            ->orderBy('nama_lengkap')
+            ->limit(100)
+            ->get();
+
+        return view('classrooms.show', compact('classroom', 'canManage', 'unassignedStudents'));
     }
 
-    public function edit(Classroom $classroom): View
+    public function edit(Classroom $classroom)
     {
-        Gate::authorize('classrooms.update', $classroom);
+        Gate::authorize('update', $classroom);
 
-        $classroom->load('homeroomTeacher');
+        $classroom->load('waliKelas');
         $programs = Program::where('status_aktif', true)->get()->unique('nama');
         $academicYears = AcademicYear::where('status_aktif', true)->latest('tanggal_mulai')->get();
         $waliKelas = User::role('wali-kelas')->orderBy('name')->get();
@@ -115,7 +137,7 @@ class ClassroomController extends Controller
 
     public function update(UpdateClassroomRequest $request, Classroom $classroom): RedirectResponse
     {
-        Gate::authorize('classrooms.update', $classroom);
+        Gate::authorize('update', $classroom);
 
         $validated = $request->validated();
 
@@ -127,11 +149,31 @@ class ClassroomController extends Controller
 
     public function destroy(Classroom $classroom): RedirectResponse
     {
-        Gate::authorize('classrooms.delete', $classroom);
+        Gate::authorize('delete', $classroom);
 
         $classroom->delete();
 
         return redirect()->route('rombel.index')
             ->with('success', 'Rombel berhasil dihapus.');
+    }
+
+    public function searchWaliKelas(Request $request): JsonResponse
+    {
+        Gate::authorize('classrooms.view');
+
+        $q = trim((string) $request->query('q', ''));
+
+        if (strlen($q) < 1) {
+            return response()->json([]);
+        }
+
+        $waliKelasList = User::role('wali-kelas')
+            ->where('name', 'like', "%{$q}%")
+            ->select(['id', 'name', 'email'])
+            ->orderBy('name')
+            ->limit(10)
+            ->get();
+
+        return response()->json($waliKelasList);
     }
 }

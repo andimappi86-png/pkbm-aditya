@@ -1,6 +1,7 @@
 
 
 import './bootstrap';
+import './landing';
 import Alpine from 'alpinejs';
 
 // Alpine global state for sidebar

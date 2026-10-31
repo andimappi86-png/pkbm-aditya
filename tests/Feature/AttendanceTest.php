@@ -12,6 +12,7 @@ use App\Models\Tutor;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Artisan;
 use Tests\TestCase;
 
 class AttendanceTest extends TestCase
@@ -44,6 +45,7 @@ class AttendanceTest extends TestCase
         $this->tutorUser = User::factory()->create();
         $this->tutorUser->assignRole('tutor');
         $this->tutor = Tutor::factory()->create(['user_id' => $this->tutorUser->id]);
+        Artisan::call('permission:cache-reset');
 
         $this->classroom = Classroom::factory()->create();
         $this->subject = Subject::factory()->create();
@@ -67,6 +69,14 @@ class AttendanceTest extends TestCase
     public function test_admin_can_view_attendance_index(): void
     {
         $response = $this->actingAs($this->admin)->get(route('absensi.index'));
+
+        $response->assertOk();
+        $response->assertViewIs('attendances.index');
+    }
+
+    public function test_tutor_can_view_attendance_index(): void
+    {
+        $response = $this->actingAs($this->tutorUser)->get(route('absensi.index'));
 
         $response->assertOk();
         $response->assertViewIs('attendances.index');
@@ -230,7 +240,7 @@ class AttendanceTest extends TestCase
 
         $response->assertRedirect(route('absensi.index'));
         $this->assertDatabaseHas('attendances', [
-            'id' => $attendance->id,
+            'id' => $attendance->getKey(),
             'status' => 'izin',
         ]);
     }
@@ -246,6 +256,50 @@ class AttendanceTest extends TestCase
         $response = $this->actingAs($this->admin)->delete(route('absensi.destroy', $attendance));
 
         $response->assertRedirect(route('absensi.index'));
-        $this->assertDatabaseMissing('attendances', ['id' => $attendance->id]);
+        $this->assertDatabaseMissing('attendances', ['id' => $attendance->getKey()]);
+    }
+
+    public function test_batch_attendance_accepts_alfa_status_and_persists_as_alpa(): void
+    {
+        $response = $this->actingAs($this->admin)->post(route('absensi.store'), [
+            'classroom_id' => $this->classroom->id,
+            'subject_id' => $this->subject->id,
+            'tanggal' => '2026-09-20',
+            'attendances' => [
+                [
+                    'student_id' => $this->student->id,
+                    'status' => 'alfa',
+                    'keterangan' => 'Tanpa keterangan',
+                ],
+            ],
+        ]);
+
+        $response->assertRedirect(route('absensi.index'));
+        $this->assertDatabaseHas('attendances', [
+            'schedule_id' => $this->schedule->id,
+            'student_id' => $this->student->id,
+            'status' => 'alpa',
+            'keterangan' => 'Tanpa keterangan',
+        ]);
+    }
+
+    public function test_admin_can_view_monthly_recap_matrix(): void
+    {
+        Attendance::factory()->create([
+            'schedule_id' => $this->schedule->id,
+            'student_id' => $this->student->id,
+            'tanggal' => '2026-09-15',
+            'status' => 'hadir',
+        ]);
+
+        $response = $this->actingAs($this->admin)->get(route('absensi.index', [
+            'classroom_id' => $this->classroom->id,
+            'subject_id' => $this->subject->id,
+            'bulan' => '2026-09',
+        ]));
+
+        $response->assertOk();
+        $response->assertViewHas('matrixData');
+        $response->assertSee('Matriks Rekap Absensi Bulanan');
     }
 }

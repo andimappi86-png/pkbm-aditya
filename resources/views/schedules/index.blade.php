@@ -15,6 +15,12 @@
             @endcan
         </div>
 
+        @if($studentNotice)
+            <div class="p-4 rounded-xl bg-amber-50 text-amber-800 border border-amber-200 text-sm">
+                {{ $studentNotice }}
+            </div>
+        @endif
+
         @if(session('success'))
             <div class="p-4 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200">
                 {{ session('success') }}
@@ -27,6 +33,7 @@
 
                 <!-- Filter Form -->
                 <form method="GET" action="{{ route('jadwal.index') }}" class="flex flex-wrap items-center gap-3">
+                    @if(! ($isStudent ?? false))
                     <select name="classroom_id" class="input py-1.5 text-sm" onchange="this.form.submit()">
                         <option value="">-- Semua Rombel --</option>
                         @foreach($classrooms as $cls)
@@ -35,6 +42,7 @@
                             </option>
                         @endforeach
                     </select>
+                    @endif
 
                     <select name="hari" class="input py-1.5 text-sm" onchange="this.form.submit()">
                         <option value="">-- Semua Hari --</option>

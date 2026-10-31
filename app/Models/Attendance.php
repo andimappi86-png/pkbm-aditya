@@ -23,15 +23,21 @@ class Attendance extends Model
     protected function casts(): array
     {
         return [
-            'tanggal' => 'date',
+            'tanggal' => 'date:Y-m-d',
         ];
     }
 
+    /**
+     * @return BelongsTo<Schedule, $this>
+     */
     public function schedule(): BelongsTo
     {
         return $this->belongsTo(Schedule::class);
     }
 
+    /**
+     * @return BelongsTo<Student, $this>
+     */
     public function student(): BelongsTo
     {
         return $this->belongsTo(Student::class);

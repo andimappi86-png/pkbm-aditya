@@ -40,9 +40,16 @@ class Classroom extends Model
         return $this->belongsTo(AcademicYear::class, 'tahun_ajaran_id');
     }
 
+    /** @return BelongsTo<User, $this> */
     public function waliKelas(): BelongsTo
     {
         return $this->belongsTo(User::class, 'wali_kelas_id');
+    }
+
+    /** @return BelongsTo<User, $this> */
+    public function homeroomTeacher(): BelongsTo
+    {
+        return $this->waliKelas();
     }
 
     public function penugasanMengajar(): HasMany
@@ -50,13 +57,23 @@ class Classroom extends Model
         return $this->hasMany(PenugasanMengajar::class, 'classroom_id');
     }
 
+    /** @return BelongsToMany<Tutor, $this> */
     public function tutors(): BelongsToMany
     {
         return $this->belongsToMany(Tutor::class, 'tutor_classroom');
     }
 
+    /** @return BelongsToMany<Subject, $this> */
     public function subjects(): BelongsToMany
     {
         return $this->belongsToMany(Subject::class, 'subject_classroom');
+    }
+
+    /**
+     * @return HasMany<Student, $this>
+     */
+    public function students(): HasMany
+    {
+        return $this->hasMany(Student::class, 'rombel_id');
     }
 }

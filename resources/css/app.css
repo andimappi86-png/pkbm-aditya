@@ -1,8 +1,34 @@
-@import url('https://fonts.bunny.net/css?family=inter:100,200,300,400,500,600,700,800,900');
+@import url('https://fonts.bunny.net/css?family=inter:100,200,300,400,500,600,700,800,900|plus-jakarta-sans:400,500,600,700,800|instrument-serif:400,400i,700,700i');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+    /* Brand Design Tokens (derived directly from official logo) */
+    --color-brand-primary: #0E706A;
+    --color-brand-primary-hover: #094F4B;
+    --color-brand-primary-light: #5DB8B3;
+    --color-brand-primary-subtle: #E8F5F4;
+    --color-brand-primary-border: #CCE8E6;
+
+    --color-brand-accent: #C51618;
+    --color-brand-accent-hover: #9E1214;
+    --color-brand-accent-light: #CE0C0D;
+    --color-brand-accent-subtle: #FDF2F2;
+    --color-brand-accent-border: #FCA5A5;
+
+    --color-brand-bg: #F8FAFA;
+    --color-brand-bg-alt: #EEF5F5;
+    --color-brand-surface: #FFFFFF;
+    --color-brand-surface-dark: #091716;
+    --color-brand-surface-dark-alt: #0D211F;
+    --color-brand-border: #D8E4E3;
+
+    --color-brand-text: #0E1A19;
+    --color-brand-text-muted: #4D5E5C;
+    --color-brand-text-subtle: #6E807E;
+}
 
 @layer base {
     body {
@@ -102,4 +128,158 @@
 
 [x-cloak] {
     display: none !important;
+}
+
+/* ============================================================
+   Landing page publik (resources/views/landing.blade.php)
+   Kelas berprefiks .lp- agar tidak bertabrakan dengan UI aplikasi.
+   ============================================================ */
+@layer components {
+    .lp-label {
+        @apply text-[11px] font-bold uppercase tracking-[0.18em] text-terracotta;
+    }
+
+    .lp-eyebrow {
+        @apply inline-flex items-center gap-2 rounded-full border border-terracotta/30 bg-warm-sand px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-terracotta;
+    }
+
+    .lp-chip {
+        @apply inline-flex items-center rounded-full border border-border bg-background px-2.5 py-1 text-[11px] font-semibold text-muted;
+    }
+
+    /* Pola halus sebagai latar hero (opsional, tidak dot-matrix) */
+    .lp-dot-field {
+        background-image: radial-gradient(#D8E4E3 1px, transparent 1px);
+        background-size: 28px 28px;
+        -webkit-mask-image: radial-gradient(120% 90% at 50% 0%, #000 25%, transparent 80%);
+        mask-image: radial-gradient(120% 90% at 50% 0%, #000 25%, transparent 80%);
+        opacity: 0.45;
+    }
+
+    .lp-dot-field-invert {
+        background-image: radial-gradient(rgba(255, 255, 255, 0.5) 1px, transparent 1px);
+        background-size: 26px 26px;
+        -webkit-mask-image: radial-gradient(80% 120% at 50% 100%, #000 8%, transparent 70%);
+        mask-image: radial-gradient(80% 120% at 50% 100%, #000 8%, transparent 70%);
+        opacity: 0.25;
+    }
+
+    /* Input dropdown styling */
+    .lp-select {
+        @apply w-full rounded-xl border-warm-border bg-white text-navy placeholder-muted focus:border-pine-teal focus:ring-pine-teal/20 focus:ring-2 sm:text-sm transition-colors appearance-none bg-no-repeat;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%234D5E5C' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+        background-size: 16px;
+        background-position: right 0.75rem center;
+        padding-right: 40px;
+    }
+
+    /* Card hover effect */
+    .lp-card {
+        @apply bg-white border border-warm-border rounded-2xl shadow-card transition-all duration-200 hover:shadow-soft-md hover:-translate-y-0.5;
+    }
+
+    /* Tab pill styling */
+    .lp-tab {
+        @apply inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-muted transition-all duration-200 hover:bg-warm-sand hover:text-navy focus:outline-none focus-visible:ring-2 focus-visible:ring-pine-teal/40;
+    }
+
+    .lp-tab-active {
+        @apply bg-pine-teal text-white shadow-soft hover:bg-pine-teal-hover;
+    }
+
+    /* Modal overlay */
+    .lp-modal-overlay {
+        @apply fixed inset-0 bg-black/50 backdrop-blur-sm z-50 transition-opacity;
+    }
+
+    .lp-modal {
+        @apply fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white rounded-2xl shadow-soft-lg z-50 transform transition-all;
+    }
+}
+
+/* Teks sekunder pada halaman publik dinaikkan kontrasnya agar memenuhi WCAG AA
+   Dilingkupi .lp-page supaya tampilan dashboard tidak berubah. */
+.lp-page .text-muted {
+    color: #4D5E5C;
+}
+
+/* Reveal saat elemen masuk viewport. Hanya aktif bila JS berjalan
+   (kelas .js-reveal dipasang di <head>), sehingga konten tetap
+   terbaca ketika JavaScript gagal dimuat. */
+.js-reveal .lp-reveal {
+    opacity: 0;
+    transform: translateY(14px);
+    transition: opacity 0.55s ease-out, transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: opacity, transform;
+}
+
+.js-reveal .lp-reveal.is-visible {
+    opacity: 1;
+    transform: none;
+}
+
+.js-reveal .lp-hero-copy > * {
+    animation: lp-fade-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.js-reveal .lp-hero-copy > *:nth-child(1) { animation-delay: 0.02s; }
+.js-reveal .lp-hero-copy > *:nth-child(2) { animation-delay: 0.08s; }
+.js-reveal .lp-hero-copy > *:nth-child(3) { animation-delay: 0.14s; }
+.js-reveal .lp-hero-copy > *:nth-child(4) { animation-delay: 0.2s; }
+.js-reveal .lp-hero-copy > *:nth-child(5) { animation-delay: 0.26s; }
+
+@keyframes lp-fade-up {
+    from {
+        opacity: 0;
+        transform: translateY(16px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+/* Angka statistik memakai tabular agar tidak terjadi layout shift saat dihitung. */
+[data-count-to] {
+    font-variant-numeric: tabular-nums;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    .js-reveal .lp-reveal,
+    .js-reveal .lp-reveal.is-visible {
+        opacity: 1;
+        transform: none;
+        transition: none;
+    }
+
+    .js-reveal .lp-hero-copy > * {
+        animation: none;
+    }
+}
+
+/* Focus visible untuk aksesibilitas */
+*:focus-visible {
+    outline: 2px solid #0E706A;
+    outline-offset: 2px;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: #EEF5F5;
+}
+::-webkit-scrollbar-thumb {
+    background: #5DB8B3;
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #0E706A;
 }

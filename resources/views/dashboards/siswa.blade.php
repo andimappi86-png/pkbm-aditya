@@ -41,12 +41,12 @@
             <!-- Hari Ini -->
             <div>
                 <h2 class="text-lg font-bold text-navy mb-4 flex items-center gap-2">
-                    <i data-lucide="sun" class="w-5 h-5 text-amber-500"></i> Hari Ini
+                    <x-icon name="sun" class="w-5 h-5 text-amber-500" /> Hari Ini
                 </h2>
                 <div class="bg-surface border border-border rounded-xl p-5 shadow-sm space-y-4">
                     <div class="flex items-center gap-4">
                         <div class="w-10 h-10 rounded-lg bg-primary-soft text-primary flex items-center justify-center shrink-0">
-                            <i data-lucide="calendar" class="w-5 h-5"></i>
+                            <x-icon name="calendar" class="w-5 h-5" />
                         </div>
                         <div class="flex-1 min-w-0">
                             <p class="text-[10px] font-bold text-muted uppercase tracking-wider">Jadwal Berikutnya</p>
@@ -60,7 +60,7 @@
                     </div>
                     <div class="flex items-center gap-4 border-t border-border pt-4">
                         <div class="w-10 h-10 rounded-lg bg-red-50 text-red-600 flex items-center justify-center shrink-0">
-                            <i data-lucide="clipboard-list" class="w-5 h-5"></i>
+                            <x-icon name="clipboard-list" class="w-5 h-5" />
                         </div>
                         <div class="flex-1 min-w-0">
                             <p class="text-[10px] font-bold text-muted uppercase tracking-wider">Tugas Terdekat</p>
@@ -74,7 +74,7 @@
                     </div>
                     <div class="flex items-center gap-4 border-t border-border pt-4">
                         <div class="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-                            <i data-lucide="help-circle" class="w-5 h-5"></i>
+                            <x-icon name="help-circle" class="w-5 h-5" />
                         </div>
                         <div class="flex-1 min-w-0">
                             <p class="text-[10px] font-bold text-muted uppercase tracking-wider">Quiz Tersedia</p>
@@ -92,7 +92,7 @@
             <!-- Ringkasan Pembelajaran -->
             <div>
                 <h2 class="text-lg font-bold text-navy mb-4 flex items-center gap-2">
-                    <i data-lucide="bar-chart-2" class="w-5 h-5 text-primary"></i> Ringkasan Pembelajaran
+                    <x-icon name="bar-chart-2" class="w-5 h-5 text-primary" /> Ringkasan Pembelajaran
                 </h2>
                 <div class="grid grid-cols-2 gap-4">
                     <div class="bg-surface border border-border rounded-xl p-5 shadow-sm text-center">
@@ -122,7 +122,7 @@
         <!-- 3. LANJUTKAN BELAJAR -->
         <div>
             <h2 class="text-lg font-bold text-navy mb-4 flex items-center gap-2">
-                <i data-lucide="play-circle" class="w-5 h-5 text-primary"></i> Lanjutkan Belajar
+                <x-icon name="play-circle" class="w-5 h-5 text-primary" /> Lanjutkan Belajar
             </h2>
             @if($penugasans->count() > 0)
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -174,7 +174,13 @@
                 </div>
             @else
                 <div class="bg-surface border border-border rounded-xl p-8 text-center text-muted">
-                    <p class="text-sm font-medium">Anda belum ditempatkan pada rombel atau kelas aktif.</p>
+                    @if($studentProfileMissing ?? false)
+                        <p class="text-sm font-medium">Akun Anda belum tertaut ke profil peserta didik.</p>
+                        <p class="text-xs mt-1">Hubungi operator agar akun ini dihubungkan dengan data siswa yang benar.</p>
+                    @else
+                        <p class="text-sm font-medium">Anda belum ditempatkan pada rombel atau kelas aktif.</p>
+                        <p class="text-xs mt-1">Hubungi operator untuk melakukan penempatan kelas.</p>
+                    @endif
                 </div>
             @endif
         </div>
@@ -188,7 +194,7 @@
                 <!-- TUGAS YANG PERLU DISELESAIKAN -->
                 <div>
                     <h2 class="text-lg font-bold text-navy mb-4 flex items-center gap-2">
-                        <i data-lucide="clipboard-list" class="w-5 h-5 text-accent"></i> Tugas yang Perlu Diselesaikan
+                        <x-icon name="clipboard-list" class="w-5 h-5 text-accent" /> Tugas yang Perlu Diselesaikan
                     </h2>
                     @if($upcomingAssignments->count() > 0)
                         <div class="bg-surface border border-border rounded-xl overflow-hidden shadow-sm">
@@ -201,7 +207,7 @@
                                                 <span>{{ $assignment->penugasanMengajar->subject->nama }}</span>
                                                 <span>&bull;</span>
                                                 <span class="flex items-center gap-1 text-accent font-medium">
-                                                    <i data-lucide="clock" class="w-3 h-3"></i> 
+                                                    <x-icon name="clock" class="w-3 h-3" />
                                                     {{ $assignment->deadline ? $assignment->deadline->format('d M Y, H:i') : 'Tanpa batas' }}
                                                 </span>
                                             </div>
@@ -225,7 +231,7 @@
                 <!-- QUIZ & UJIAN -->
                 <div>
                     <h2 class="text-lg font-bold text-navy mb-4 flex items-center gap-2">
-                        <i data-lucide="help-circle" class="w-5 h-5 text-primary"></i> Quiz & Ujian
+                        <x-icon name="help-circle" class="w-5 h-5 text-primary" /> Quiz & Ujian
                     </h2>
                     @if($upcomingQuizzes->count() > 0)
                         <div class="grid sm:grid-cols-2 gap-4">
@@ -238,8 +244,8 @@
                                     <p class="text-xs text-muted mb-4">{{ $quiz->penugasanMengajar->subject->nama }}</p>
                                     
                                     <div class="flex items-center gap-4 text-[11px] font-medium text-muted mb-5">
-                                        <span class="flex items-center gap-1"><i data-lucide="file-question" class="w-3.5 h-3.5"></i> {{ $quiz->questions_count ?? 10 }} soal</span>
-                                        <span class="flex items-center gap-1"><i data-lucide="clock" class="w-3.5 h-3.5"></i> {{ $quiz->durasi_menit }} mnt</span>
+                                        <span class="flex items-center gap-1"><x-icon name="file-question" class="w-3.5 h-3.5" /> {{ $quiz->questions_count ?? 10 }} soal</span>
+                                        <span class="flex items-center gap-1"><x-icon name="clock" class="w-3.5 h-3.5" /> {{ $quiz->durasi_menit }} mnt</span>
                                     </div>
                                     
                                     <a href="{{ route('quiz.show', $quiz) }}" class="mt-auto block text-center w-full px-4 py-2 bg-surface border border-border text-navy text-xs font-bold rounded-lg hover:bg-primary-soft hover:text-primary-dark transition-colors">
@@ -259,7 +265,7 @@
                 <div>
                     <div class="flex items-center justify-between mb-4">
                         <h2 class="text-lg font-bold text-navy flex items-center gap-2">
-                            <i data-lucide="calendar" class="w-5 h-5 text-primary"></i> Jadwal Berikutnya
+                            <x-icon name="calendar" class="w-5 h-5 text-primary" /> Jadwal Berikutnya
                         </h2>
                         <a href="{{ route('jadwal.index') }}" class="text-xs font-bold text-primary hover:underline">Lihat Semua Jadwal</a>
                     </div>
@@ -279,7 +285,7 @@
                                         <div class="flex-1 pb-2">
                                             <h4 class="font-bold text-navy text-sm">{{ $schedule->penugasanMengajar->subject->nama }}</h4>
                                             <p class="text-xs text-muted mt-0.5">Tutor: {{ $schedule->penugasanMengajar->tutor->user->name ?? $schedule->penugasanMengajar->tutor->nama_lengkap }}</p>
-                                            <p class="text-[11px] text-muted flex items-center gap-1 mt-1.5"><i data-lucide="map-pin" class="w-3 h-3"></i> {{ $schedule->ruangan ?? 'Daring' }}</p>
+                                            <p class="text-[11px] text-muted flex items-center gap-1 mt-1.5"><x-icon name="map-pin" class="w-3 h-3" /> {{ $schedule->ruangan ?? 'Daring' }}</p>
                                         </div>
                                     </div>
                                 @endforeach
@@ -295,14 +301,14 @@
                 <!-- MATERI TERBARU -->
                 <div>
                     <h2 class="text-lg font-bold text-navy mb-4 flex items-center gap-2">
-                        <i data-lucide="folder-open" class="w-5 h-5 text-primary"></i> Materi Terbaru
+                        <x-icon name="folder-open" class="w-5 h-5 text-primary" /> Materi Terbaru
                     </h2>
                     @if($recentMaterials->count() > 0)
                         <div class="grid sm:grid-cols-2 gap-4">
                             @foreach($recentMaterials as $material)
                                 <div class="bg-surface border border-border rounded-xl p-4 flex items-start gap-4 hover:shadow-soft transition-shadow">
                                     <div class="w-10 h-10 rounded-lg {{ $material->tipe === 'pdf' ? 'bg-red-50 text-red-600' : 'bg-primary-soft text-primary' }} flex items-center justify-center shrink-0">
-                                        <i data-lucide="{{ $material->tipe === 'video' ? 'youtube' : 'file-text' }}" class="w-5 h-5"></i>
+                                        <x-icon :name="$material->tipe === 'video' ? 'youtube' : 'file-text'" class="w-5 h-5" />
                                     </div>
                                     <div class="flex-1 min-w-0">
                                         <h4 class="font-bold text-navy text-sm line-clamp-1 mb-1"><a href="{{ route('materi.show', $material) }}" class="hover:text-primary transition-colors">{{ $material->judul }}</a></h4>
@@ -311,7 +317,7 @@
                                     </div>
                                     <div class="shrink-0">
                                         <a href="{{ route('materi.show', $material) }}" class="p-2 text-muted hover:text-primary transition-colors inline-block" title="Buka Materi">
-                                            <i data-lucide="external-link" class="w-4 h-4"></i>
+                                            <x-icon name="external-link" class="w-4 h-4" />
                                         </a>
                                     </div>
                                 </div>
@@ -456,7 +462,7 @@
                                     <h4 class="font-bold text-navy text-xs line-clamp-1 mb-1"><a href="{{ route('forum.show', $forum) }}" class="hover:text-primary transition-colors">{{ $forum->judul }}</a></h4>
                                     <div class="flex items-center justify-between text-[10px] text-muted">
                                         <span class="truncate pr-2">{{ $forum->penugasanMengajar->subject->nama }}</span>
-                                        <span class="shrink-0 flex items-center gap-1 font-medium"><i data-lucide="message-square" class="w-3 h-3"></i> {{ $forum->comments_count }} balasan</span>
+                                        <span class="shrink-0 flex items-center gap-1 font-medium"><x-icon name="message-square" class="w-3 h-3" /> {{ $forum->comments_count }} balasan</span>
                                     </div>
                                 </div>
                             @endforeach

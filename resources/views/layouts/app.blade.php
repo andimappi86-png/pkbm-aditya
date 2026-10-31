@@ -13,19 +13,20 @@
 
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @stack('scripts')
     </head>
     <body class="font-sans antialiased bg-background" x-data="{ sidebarOpen: false }" :class="sidebarOpen ? 'overflow-hidden lg:overflow-auto' : ''">
-        <div class="min-h-screen">
+        <div class="flex flex-col lg:flex-row min-h-screen">
             <!-- Sidebar -->
             <x-sidebar />
 
             <!-- Main Content Area -->
-            <div class="lg:pl-64">
+            <div class="flex-1 lg:pl-64 flex flex-col min-w-0">
                 <!-- Topbar -->
                 <x-topbar :title="$title ?? ''" />
 
                 <!-- Page Content -->
-                <main class="p-4 lg:p-8">
+                <main class="px-4 lg:px-8 py-2 lg:py-4">
                     <!-- Flash Messages -->
                     <x-toast />
 

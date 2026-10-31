@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Document;
-use App\Models\Ppdb;
 use App\Models\Student;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -24,10 +23,6 @@ class DocumentController extends Controller
             $query->whereHas('student', function ($q) use ($user) {
                 $q->where('user_id', $user->id);
             });
-        } elseif ($user->hasRole('calon-peserta')) {
-            $query->whereHas('ppdb', function ($q) use ($user) {
-                $q->where('user_id', $user->id);
-            });
         } elseif (! $user->can('documents.manage') && ! $user->can('documents.view')) {
             abort(403);
         }
@@ -45,6 +40,7 @@ class DocumentController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('nama_file', 'like', "%{$search}%")
+                    ->orWhere('catatan', 'like', "%{$search}%")
                     ->orWhereHas('student', function ($qs) use ($search) {
                         $qs->where('nama_lengkap', 'like', "%{$search}%");
                     })
@@ -67,18 +63,16 @@ class DocumentController extends Controller
         $user = $request->user();
 
         $students = collect();
-        $ppdbs = collect();
+        $defaultMode = 'manual';
 
         if ($user->can('documents.manage')) {
             $students = Student::orderBy('nama_lengkap')->get();
-            $ppdbs = Ppdb::orderBy('nama_lengkap')->get();
         } elseif ($user->hasRole('peserta-didik')) {
             $students = Student::where('user_id', $user->id)->get();
-        } elseif ($user->hasRole('calon-peserta')) {
-            $ppdbs = Ppdb::where('user_id', $user->id)->get();
+            $defaultMode = 'siswa';
         }
 
-        return view('documents.create', compact('students', 'ppdbs'));
+        return view('documents.create', compact('students', 'defaultMode'));
     }
 
     /**
@@ -86,41 +80,62 @@ class DocumentController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'student_id' => 'nullable|exists:students,id|required_without:ppdb_id',
-            'ppdb_id' => 'nullable|exists:ppdbs,id|required_without:student_id',
+        $user = $request->user();
+
+        // Determine mode
+        $mode = $request->input('mode');
+        if (! $mode && $user->can('documents.manage') && $request->filled('student_id')) {
+            // Backwards compatibility: infer mode from provided fields
+            $mode = 'siswa';
+        } elseif (! $user->can('documents.manage')) {
+            $mode = 'siswa';
+        }
+
+        // Validation rules per mode
+        $rules = [
             'jenis_dokumen' => 'required|string',
             'file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
-        ]);
+        ];
+        $messages = [];
 
-        // Check authorization for specific student/ppdb
-        $user = $request->user();
-        if (! $user->can('documents.manage')) {
-            if ($request->filled('student_id')) {
-                $student = Student::findOrFail($request->student_id);
-                if ($student->user_id !== $user->id) {
-                    abort(403);
-                }
+        if ($mode === 'siswa') {
+            $rules['student_id'] = 'required|exists:students,id';
+            $messages['student_id.required'] = 'Silakan pilih peserta didik.';
+        } else {
+            // Manual mode or mode not provided
+            $rules['student_id'] = 'nullable|exists:students,id';
+            if (! $mode) {
+                $rules['mode'] = 'required|in:siswa,manual';
+                $messages['mode.required'] = 'Silakan pilih mode pencatatan dokumen.';
             }
-            if ($request->filled('ppdb_id')) {
-                $ppdb = Ppdb::findOrFail($request->ppdb_id);
-                if ($ppdb->user_id !== $user->id) {
-                    abort(403);
-                }
+        }
+
+        $request->validate($rules, $messages);
+
+        // Enforce mode-based values
+        if ($mode !== 'siswa') {
+            $request->merge(['student_id' => null]);
+        }
+
+        // Check authorization for specific student
+        if (! $user->can('documents.manage') && $request->filled('student_id')) {
+            $student = Student::findOrFail($request->student_id);
+            if ($student->user_id !== $user->id) {
+                abort(403);
             }
         }
 
         $file = $request->file('file');
         $nama_file = $file->getClientOriginalName();
-        $path = $file->store('documents', 'public');
+        $path = $file->store('documents', 'local');
 
         Document::create([
             'student_id' => $request->student_id,
-            'ppdb_id' => $request->ppdb_id,
             'jenis_dokumen' => $request->jenis_dokumen,
             'nama_file' => $nama_file,
             'file_path' => $path,
             'status_verifikasi' => 'pending',
+            'catatan' => $request->catatan,
         ]);
 
         return redirect()->route('documents.index')->with('success', 'Dokumen berhasil diupload.');
@@ -143,11 +158,11 @@ class DocumentController extends Controller
     {
         $this->authorizeView($request->user(), $document);
 
-        if (! Storage::disk('public')->exists($document->file_path)) {
+        if (! $document->fileExists()) {
             abort(404, 'File not found');
         }
 
-        return Storage::disk('public')->download($document->file_path, $document->nama_file);
+        return Storage::disk($document->getStorageDisk())->download($document->file_path, $document->nama_file);
     }
 
     /**
@@ -165,7 +180,7 @@ class DocumentController extends Controller
             'catatan' => $request->catatan,
         ]);
 
-        return redirect()->route('documents.show', $document)->with('success', 'Status verifikasi dokumen diperbarui.');
+        return redirect()->route('documents.index')->with('success', 'Status verifikasi dokumen berhasil diperbarui.');
     }
 
     /**
@@ -175,15 +190,15 @@ class DocumentController extends Controller
     {
         $user = $request->user();
         if (! $user->can('documents.manage')) {
-            if ($document->student_id) {
-                if ($document->student->user_id !== $user->id) {
-                    abort(403);
-                }
-            } elseif ($document->ppdb_id) {
-                if ($document->ppdb->user_id !== $user->id) {
-                    abort(403);
-                }
+            if ($document->student_id && $document->student?->user_id !== $user->id) {
+                abort(403);
+            } elseif ($document->ppdb_id && $document->ppdb?->user_id !== $user->id) {
+                abort(403);
             }
+        }
+
+        if (Storage::disk('local')->exists($document->file_path)) {
+            Storage::disk('local')->delete($document->file_path);
         }
 
         if (Storage::disk('public')->exists($document->file_path)) {
@@ -195,17 +210,30 @@ class DocumentController extends Controller
         return redirect()->route('documents.index')->with('success', 'Dokumen berhasil dihapus.');
     }
 
-    private function authorizeView($user, Document $document)
+    private function authorizeView($user, Document $document): void
     {
+        // Peserta didik can only view/download their own documents
+        if ($user->hasRole('peserta-didik')) {
+            if ($document->student_id && $document->student?->user_id === $user->id) {
+                return;
+            }
+
+            if ($document->ppdb_id && $document->ppdb?->user_id === $user->id) {
+                return;
+            }
+
+            abort(403);
+        }
+
         if ($user->can('documents.manage') || $user->can('documents.view')) {
             return;
         }
 
-        if ($document->student_id && $document->student->user_id === $user->id) {
+        if ($document->student_id && $document->student?->user_id === $user->id) {
             return;
         }
 
-        if ($document->ppdb_id && $document->ppdb->user_id === $user->id) {
+        if ($document->ppdb_id && $document->ppdb?->user_id === $user->id) {
             return;
         }
 

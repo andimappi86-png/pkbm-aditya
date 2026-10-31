@@ -3,7 +3,6 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class StoreSubjectClassroomRequest extends FormRequest
 {
@@ -15,12 +14,21 @@ class StoreSubjectClassroomRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'subject_kode' => ['required', 'string', 'max:30', Rule::unique('subjects', 'kode')],
-            'subject_nama' => ['required', 'string', 'max:150'],
-            'classroom_kode' => ['required', 'string', 'max:30', Rule::unique('classrooms', 'kode_rombel')],
-            'classroom_nama' => ['required', 'string', 'max:100'],
-            'program_id' => ['required', 'exists:programs,id'],
-            'tahun_ajaran_id' => ['required', 'exists:academic_years,id'],
+            'subjects' => ['required', 'array', 'min:1'],
+            'subjects.*' => ['exists:subjects,id'],
+            'classroom_id' => ['required', 'exists:classrooms,id'],
+            'program_id' => ['nullable', 'exists:programs,id'],
+            'tahun_ajaran_id' => ['nullable', 'exists:academic_years,id'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'subjects.required' => 'Pilih minimal satu mata pelajaran.',
+            'subjects.min' => 'Pilih minimal satu mata pelajaran.',
+            'classroom_id.required' => 'Silakan pilih rombel terlebih dahulu.',
+            'classroom_id.exists' => 'Rombel yang dipilih tidak valid.',
         ];
     }
 }

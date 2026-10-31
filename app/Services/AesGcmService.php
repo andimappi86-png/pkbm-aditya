@@ -16,7 +16,7 @@ class AesGcmService
 
     public function __construct()
     {
-        $this->key = env('AES_256_GCM_KEY');
+        $this->key = (string) config('services.aes_gcm.key');
 
         if (empty($this->key)) {
             throw new \RuntimeException('AES_256_GCM_KEY environment variable is missing.');

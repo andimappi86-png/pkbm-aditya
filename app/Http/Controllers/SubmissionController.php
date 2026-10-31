@@ -6,7 +6,6 @@ use App\Http\Requests\StoreSubmissionRequest;
 use App\Http\Requests\UpdateSubmissionRequest;
 use App\Models\Assignment;
 use App\Models\Submission;
-use App\Models\Tutor;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 
@@ -25,8 +24,9 @@ class SubmissionController extends Controller
         $assignment = Assignment::findOrFail($validated['assignment_id']);
 
         // Pastikan tugas di kelas siswa
+        $penugasan = $assignment->penugasanMengajar;
         abort_if(
-            ! $student->classroom || $assignment->penugasanMengajar->classroom_id !== $student->classroom->id,
+            ! $student->classroom || ! $penugasan || $penugasan->classroom_id !== $student->classroom->id,
             403,
             'Tugas ini tidak tersedia untuk rombel Anda.'
         );
@@ -57,14 +57,12 @@ class SubmissionController extends Controller
 
     public function update(UpdateSubmissionRequest $request, Submission $submission)
     {
+        Gate::authorize('update', $submission);
+
         $user = $request->user();
 
         // Siswa can edit own submission (before graded)
         if ($user->hasRole('peserta-didik')) {
-            Gate::authorize('assignments.submit');
-            abort_if(! $user->student || $submission->student_id !== $user->student->id, 403);
-            abort_if($submission->status === 'graded', 403, 'Tugas sudah dinilai dan tidak dapat diubah.');
-
             $validated = $request->validated();
             unset($validated['feedback'], $validated['nilai']);
 
@@ -81,9 +79,6 @@ class SubmissionController extends Controller
         }
 
         // Tutor/Admin can grade
-        Gate::authorize('assignments.manage');
-        $this->authorizeSubmission($submission, $user);
-
         $validated = $request->validated();
 
         $submission->update([
@@ -96,8 +91,7 @@ class SubmissionController extends Controller
 
     public function destroy(Submission $submission)
     {
-        Gate::authorize('assignments.manage');
-        $this->authorizeSubmission($submission, auth()->user());
+        Gate::authorize('delete', $submission);
 
         if ($submission->file_jawaban) {
             Storage::disk('public')->delete($submission->file_jawaban);
@@ -106,13 +100,5 @@ class SubmissionController extends Controller
         $submission->delete();
 
         return redirect()->route('tugas.show', $submission->assignment)->with('success', 'Pengumpulan berhasil dihapus.');
-    }
-
-    private function authorizeSubmission(Submission $submission, $user): void
-    {
-        if ($user->hasRole('tutor')) {
-            $tutor = Tutor::where('user_id', $user->id)->first();
-            abort_if(! $tutor || $submission->assignment->penugasanMengajar->tutor_id !== $tutor->id, 403);
-        }
     }
 }

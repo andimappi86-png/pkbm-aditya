@@ -1,5 +1,6 @@
 @php
     $penugasan_id = request('penugasan_mengajar_id');
+    $statusFilter = request('status');
     $penugasanMengajar = $penugasan_id ? \App\Models\PenugasanMengajar::find($penugasan_id) : null;
 @endphp
 
@@ -16,7 +17,7 @@
                     <h1 class="text-2xl lg:text-3xl font-bold text-navy mt-2">Kuis & Ujian</h1>
                     <p class="text-muted mt-1">Daftar kuis dan ujian untuk evaluasi pembelajaran.</p>
                 </div>
-                @can('materials.manage')
+                @can('quizzes.manage')
                 <a href="{{ route('quiz.create') }}" class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-white font-medium text-sm hover:bg-primary-dark transition-colors shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
                     Buat Quiz Baru
@@ -24,6 +25,42 @@
                 @endcan
             </div>
         @endif
+
+        {{-- Filter Form --}}
+        <form method="GET" class="card p-4 space-y-4">
+            <div class="flex flex-col sm:flex-row gap-4">
+                <div class="sm:w-1/3">
+                    <label for="penugasan_mengajar_id" class="label">Mata Pelajaran & Kelas</label>
+                    <select name="penugasan_mengajar_id" id="penugasan_mengajar_id" class="input">
+                        <option value="">Semua</option>
+                        @foreach($penugasans as $penugasan)
+                            <option value="{{ $penugasan->id }}" {{ $penugasan_id == $penugasan->id ? 'selected' : '' }}>
+                                {{ $penugasan->subject->nama }} - {{ $penugasan->classroom->nama_rombel }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="sm:w-1/3">
+                    <label for="status" class="label">Status</label>
+                    <select name="status" id="status" class="input">
+                        <option value="">Semua Status</option>
+                        <option value="draf" {{ $statusFilter === 'draf' ? 'selected' : '' }}>Draf</option>
+                        <option value="dijadwalkan" {{ $statusFilter === 'dijadwalkan' ? 'selected' : '' }}>Dijadwalkan</option>
+                        <option value="terbit" {{ $statusFilter === 'terbit' ? 'selected' : '' }}>Terbit</option>
+                        <option value="ditutup" {{ $statusFilter === 'ditutup' ? 'selected' : '' }}>Ditutup</option>
+                    </select>
+                </div>
+                <div class="sm:w-1/3 flex items-end">
+                    <button type="submit" class="btn-primary w-full sm:w-auto">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
+                        Filter
+                    </button>
+                    @if($penugasan_id || $statusFilter)
+                    <a href="{{ route('quiz.index') }}" class="btn-secondary ml-2">Reset</a>
+                    @endif
+                </div>
+            </div>
+        </form>
 
         <div class="space-y-4">
             @forelse($quizzes as $quiz)
@@ -34,27 +71,54 @@
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                         </div>
                         <div class="flex-1 min-w-0">
-                            <div class="flex items-center gap-2 mb-2">
-                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider {{ $quiz->status_aktif ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800' }}">
-                                    {{ $quiz->status_aktif ? 'Aktif' : 'Draft' }}
+                            <div class="flex items-center gap-2 mb-2 flex-wrap">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider {{ $quiz->getStatusBadgeClass() }}">
+                                    {{ $quiz->getStatusLabel() }}
                                 </span>
                                 <span class="text-xs text-muted flex items-center gap-1 bg-gray-50 px-2 py-0.5 rounded border border-border">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                                     {{ $quiz->durasi_menit }} Menit
                                 </span>
+                                @if($quiz->max_attempts > 1)
+                                <span class="text-xs text-muted flex items-center gap-1 bg-gray-50 px-2 py-0.5 rounded border border-border">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                                    Maks {{ $quiz->max_attempts }}x
+                                </span>
+                                @endif
                             </div>
-                            <h3 class="text-base font-bold text-navy group-hover:text-primary transition-colors line-clamp-1"><a href="{{ route('quiz.show', $quiz) }}">{{ $quiz->judul }}</a></h3>
+                            <h3 class="text-base font-bold text-navy group-hover:text-primary transition-colors line-clamp-1">
+                                <a href="{{ route('quiz.show', $quiz) }}">{{ $quiz->judul }}</a>
+                            </h3>
                             <p class="text-sm text-muted line-clamp-1 mt-1">{{ $quiz->penugasanMengajar->subject->nama }} - {{ $quiz->penugasanMengajar->classroom->nama_rombel }}</p>
+                            @if($quiz->buka_waktu || $quiz->tutup_waktu)
+                            <p class="text-xs text-muted mt-1 flex items-center gap-1">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                @if($quiz->buka_waktu)
+                                    Mulai: {{ $quiz->buka_waktu->format('d M Y H:i') }}
+                                @endif
+                                @if($quiz->tutup_waktu)
+                                    @if($quiz->buka_waktu) – @endif
+                                    Selesai: {{ $quiz->tutup_waktu->format('d M Y H:i') }}
+                                @endif
+                            </p>
+                            @endif
                         </div>
                     </div>
-                    
-                    <div class="flex items-center gap-3 shrink-0 sm:ml-4">
-                        <a href="{{ route('quiz.show', $quiz) }}" class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-white font-medium text-sm hover:bg-primary-dark transition-colors shadow-sm hover:shadow-md shrink-0">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                            Mulai Quiz
-                        </a>
-                        
-                        @can('materials.manage')
+
+                    <div class="flex items-center gap-2 shrink-0 sm:ml-4 flex-wrap">
+                        @if(auth()->user()->hasRole('peserta-didik') && $quiz->isOpen())
+                            <a href="{{ route('quiz.attempts.start', $quiz) }}" class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-white font-medium text-sm hover:bg-primary-dark transition-colors shadow-sm hover:shadow-md shrink-0">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                                Mulai
+                            </a>
+                        @else
+                            <a href="{{ route('quiz.show', $quiz) }}" class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-white font-medium text-sm hover:bg-primary-dark transition-colors shadow-sm hover:shadow-md shrink-0">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                                Detail
+                            </a>
+                        @endif
+
+                        @can('quizzes.manage', $quiz)
                         <div class="flex gap-1">
                             <a href="{{ route('quiz.edit', $quiz) }}" class="p-2.5 rounded-xl text-muted hover:text-primary hover:bg-primary-soft transition-colors" title="Edit">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
@@ -77,7 +141,7 @@
                 </svg>
                 <h3 class="mt-2 text-lg font-medium text-navy">Belum Ada Kuis & Ujian</h3>
                 <p class="mt-1 text-sm text-muted">Tidak ada data kuis yang tersedia saat ini.</p>
-                @can('materials.manage')
+                @can('quizzes.manage')
                 <a href="{{ route('quiz.create') }}" class="mt-4 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-white font-medium text-sm hover:bg-primary-dark transition-colors">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
                     Buat Quiz Pertama

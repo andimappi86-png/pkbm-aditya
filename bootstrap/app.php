@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\SecurityHeadersMiddleware;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -19,6 +20,18 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Trusted Proxies:
+        // Explicit proxy IP addresses or CIDR subnets (e.g. 127.0.0.1, 10.0.0.0/8).
+        // Trust-all wildcard ('*') is strictly disallowed until proxy network topology is confirmed.
+        $trustedProxies = app()->has('config') ? config('trustedproxy.proxies') : null;
+        if (! empty($trustedProxies) && $trustedProxies !== '*' && $trustedProxies !== '**') {
+            $middleware->trustProxies(at: $trustedProxies);
+        }
+
+        $middleware->web(append: [
+            SecurityHeadersMiddleware::class,
+        ]);
+
         $middleware->alias([
             'role' => RoleMiddleware::class,
             'permission' => PermissionMiddleware::class,
@@ -42,9 +55,12 @@ return Application::configure(basePath: dirname(__DIR__))
                 }
 
                 if (auth()->check()) {
-                    $route = auth()->user()->dashboardRoute();
+                    if ($request->routeIs('reports.*', 'announcements.show', 'ppdb.show', 'rapor.show', 'rekap.show', 'materi.show', 'forum.show')) {
+                        return response('Anda tidak memiliki akses ke fitur tersebut.', 403);
+                    }
 
-                    return redirect()->route($route)->with('error', 'Anda tidak memiliki akses ke fitur tersebut.');
+                    return redirect()->route(auth()->user()->dashboardRoute())
+                        ->with('error', 'Anda tidak memiliki akses ke fitur tersebut.');
                 }
 
                 return redirect()->route('login')->with('error', 'Anda tidak memiliki akses ke fitur tersebut.');

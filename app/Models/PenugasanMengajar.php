@@ -27,26 +27,41 @@ class PenugasanMengajar extends Model
         ];
     }
 
+    /**
+     * @return BelongsTo<Tutor, $this>
+     */
     public function tutor(): BelongsTo
     {
         return $this->belongsTo(Tutor::class);
     }
 
+    /**
+     * @return BelongsTo<Subject, $this>
+     */
     public function subject(): BelongsTo
     {
         return $this->belongsTo(Subject::class);
     }
 
+    /**
+     * @return BelongsTo<Classroom, $this>
+     */
     public function classroom(): BelongsTo
     {
         return $this->belongsTo(Classroom::class);
     }
 
+    /**
+     * @return BelongsTo<AcademicYear, $this>
+     */
     public function academicYear(): BelongsTo
     {
         return $this->belongsTo(AcademicYear::class, 'academic_year_id');
     }
 
+    /**
+     * @return BelongsTo<Semester, $this>
+     */
     public function semester(): BelongsTo
     {
         return $this->belongsTo(Semester::class, 'semester_id');
@@ -75,5 +90,10 @@ class PenugasanMengajar extends Model
     public function quizzes(): HasMany
     {
         return $this->hasMany(Quiz::class);
+    }
+
+    public function schedules(): HasMany
+    {
+        return $this->hasMany(Schedule::class);
     }
 }

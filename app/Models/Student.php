@@ -45,6 +45,31 @@ class Student extends Model
         'no_hp_wali',
         'alamat_wali',
         'foto',
+        'nomor_akta_lahir',
+        'nomor_kk',
+        'urutan_anak',
+        'titik_koordinat',
+        'jenis_tempat_tinggal',
+        'alat_transportasi',
+        'jarak_rumah',
+        'kebutuhan_khusus',
+        'berat_badan',
+        'tinggi_badan',
+        'lingkar_kepala',
+        'kps_status',
+        'nomor_kps',
+        'pkh_status',
+        'kip_status',
+        'nama_kip',
+        'kks_nomor',
+        'pip_kelayakan',
+        'pip_alasan',
+        'bank_nama',
+        'rekening_nomor',
+        'rekening_nama',
+        'nomor_peserta_un',
+        'ijazah_nomor',
+        'skhun_nomor',
         'catatan',
     ];
 
@@ -52,6 +77,16 @@ class Student extends Model
     {
         return [
             'tanggal_lahir' => 'date',
+            'urutan_anak' => 'integer',
+            'berat_badan' => 'decimal:2',
+            'tinggi_badan' => 'decimal:2',
+            'lingkar_kepala' => 'decimal:2',
+            'kps_status' => 'boolean',
+            'pkh_status' => 'boolean',
+            'kip_status' => 'boolean',
+            'pip_kelayakan' => 'boolean',
+            'nomor_kk' => EncryptedAttribute::class,
+            'rekening_nomor' => EncryptedAttribute::class,
             'nik' => EncryptedAttribute::class,
             'alamat' => EncryptedAttribute::class,
             'no_hp' => EncryptedAttribute::class,
@@ -64,6 +99,9 @@ class Student extends Model
         ];
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
@@ -79,6 +117,9 @@ class Student extends Model
         return $this->belongsTo(AcademicYear::class, 'tahun_ajaran_id');
     }
 
+    /**
+     * @return BelongsTo<Classroom, $this>
+     */
     public function classroom(): BelongsTo
     {
         return $this->belongsTo(Classroom::class, 'rombel_id');
@@ -107,5 +148,13 @@ class Student extends Model
     public function letters(): HasMany
     {
         return $this->hasMany(Letter::class);
+    }
+
+    /**
+     * Parent details (ayah, ibu, wali)
+     */
+    public function parentDetails(): HasMany
+    {
+        return $this->hasMany(ParentDetail::class);
     }
 }

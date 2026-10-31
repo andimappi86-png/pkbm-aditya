@@ -12,7 +12,16 @@
 
                 <div>
                     <label class="label">Penugasan Mengajar (Rombel - Mapel - Tutor) <span class="text-accent">*</span></label>
-                    <select name="penugasan_mengajar_id" class="input @error('penugasan_mengajar_id') input-error @enderror" required>
+                    @if($penugasanMengajars->isEmpty())
+                        <div class="p-4 mb-2 bg-amber-50 border border-amber-200 rounded-lg">
+                            <p class="text-sm text-amber-700">
+                                <strong>Belum ada penugasan mengajar yang valid!</strong> <br>
+                                Jadwal pelajaran hanya dapat dibuat jika terdapat penugasan mengajar lengkap (Tutor, Mata Pelajaran, dan Rombel).
+                                Silakan buat Penugasan Mengajar melalui menu <a href="{{ route('penugasan-mengajar.index') }}" class="font-bold underline hover:text-amber-900">Pengelolaan &gt; Penugasan Mengajar</a> terlebih dahulu.
+                            </p>
+                        </div>
+                    @endif
+                    <select name="penugasan_mengajar_id" class="input @error('penugasan_mengajar_id') input-error @enderror" required {{ $penugasanMengajars->isEmpty() ? 'disabled' : '' }}>
                         <option value="">-- Pilih Penugasan --</option>
                         @foreach($penugasanMengajars as $pm)
                             <option value="{{ $pm->id }}" {{ old('penugasan_mengajar_id') == $pm->id ? 'selected' : '' }}>
@@ -41,7 +50,7 @@
 
                     <div>
                         <label class="label">Jam Mulai <span class="text-accent">*</span></label>
-                        <input type="time" name="jam_mulai" value="{{ old('jam_mulai') }}" class="input @error('jam_mulai') input-error @enderror" required />
+                        <input type="text" name="jam_mulai" pattern="([01]?[0-9]|2[0-3]):[0-5][0-9]" placeholder="HH:mm" value="{{ old('jam_mulai') }}" class="input @error('jam_mulai') input-error @enderror" required />
                         @error('jam_mulai')
                             <p class="text-sm text-accent mt-1">{{ $message }}</p>
                         @enderror
@@ -49,7 +58,7 @@
 
                     <div>
                         <label class="label">Jam Selesai <span class="text-accent">*</span></label>
-                        <input type="time" name="jam_selesai" value="{{ old('jam_selesai') }}" class="input @error('jam_selesai') input-error @enderror" required />
+                        <input type="text" name="jam_selesai" pattern="([01]?[0-9]|2[0-3]):[0-5][0-9]" placeholder="HH:mm" value="{{ old('jam_selesai') }}" class="input @error('jam_selesai') input-error @enderror" required />
                         @error('jam_selesai')
                             <p class="text-sm text-accent mt-1">{{ $message }}</p>
                         @enderror

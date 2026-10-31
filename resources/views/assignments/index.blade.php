@@ -28,6 +28,12 @@
             </div>
         @endif
 
+        @if($studentNotice)
+            <x-alert variant="info" title="Tugas belum dapat ditampilkan">
+                {{ $studentNotice }}
+            </x-alert>
+        @endif
+
         <div class="space-y-4">
             @forelse($assignments as $assignment)
             <div class="bg-surface border border-border rounded-xl p-5 hover:shadow-soft hover:border-primary/50 transition-all flex flex-col sm:flex-row sm:items-center gap-4 justify-between">

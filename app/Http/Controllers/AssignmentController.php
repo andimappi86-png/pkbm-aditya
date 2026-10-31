@@ -8,7 +8,9 @@ use App\Models\Assignment;
 use App\Models\Classroom;
 use App\Models\PenugasanMengajar;
 use App\Models\Tutor;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 
@@ -39,8 +41,9 @@ class AssignmentController extends Controller
         // Role-based filtering
         if ($roles->contains('peserta-didik')) {
             $student = $user->student;
-            abort_if(! $student, 403);
-            $penugasanIds = $student->classroom ? $student->classroom->penugasanMengajar()->where('status_aktif', true)->pluck('id') : [];
+            $penugasanIds = $student && $student->classroom
+                ? $student->classroom->penugasanMengajar()->where('status_aktif', true)->pluck('id')
+                : [];
             $query->whereIn('penugasan_mengajar_id', $penugasanIds);
         } elseif ($roles->contains('tutor')) {
             $tutor = Tutor::where('user_id', $user->id)->first();
@@ -56,7 +59,9 @@ class AssignmentController extends Controller
         // For filter dropdown
         $penugasans = $this->getPenugasansForUser($user, $roles);
 
-        return view('assignments.index', compact('assignments', 'penugasans'));
+        $studentNotice = $this->getStudentProfileNotice($user, $roles);
+
+        return view('assignments.index', compact('assignments', 'penugasans', 'studentNotice'));
     }
 
     public function create(Request $request)
@@ -93,8 +98,7 @@ class AssignmentController extends Controller
 
     public function show(Assignment $assignment)
     {
-        Gate::authorize('assignments.view');
-        $this->authorizeAssignment($assignment, auth()->user());
+        Gate::authorize('view', $assignment);
 
         // Load submissions if tutor/admin
         $submissions = collect();
@@ -109,8 +113,7 @@ class AssignmentController extends Controller
 
     public function edit(Assignment $assignment)
     {
-        Gate::authorize('assignments.manage');
-        $this->authorizeAssignment($assignment, auth()->user());
+        Gate::authorize('update', $assignment);
 
         $penugasans = $this->getPenugasansForUser(auth()->user(), auth()->user()->getRoleNames());
 
@@ -119,8 +122,7 @@ class AssignmentController extends Controller
 
     public function update(UpdateAssignmentRequest $request, Assignment $assignment)
     {
-        Gate::authorize('assignments.manage');
-        $this->authorizeAssignment($assignment, $request->user());
+        Gate::authorize('update', $assignment);
 
         $validated = $request->validated();
 
@@ -139,8 +141,7 @@ class AssignmentController extends Controller
 
     public function destroy(Assignment $assignment)
     {
-        Gate::authorize('assignments.manage');
-        $this->authorizeAssignment($assignment, auth()->user());
+        Gate::authorize('delete', $assignment);
 
         if ($assignment->file_materi) {
             Storage::disk('public')->delete($assignment->file_materi);
@@ -149,6 +150,25 @@ class AssignmentController extends Controller
         $assignment->delete();
 
         return redirect()->route('tugas.index')->with('success', 'Tugas/Quiz berhasil dihapus.');
+    }
+
+    private function getStudentProfileNotice(User $user, Collection $roles): ?string
+    {
+        if (! $roles->contains('peserta-didik')) {
+            return null;
+        }
+
+        $student = $user->student;
+
+        if (! $student) {
+            return 'Akun Anda belum terhubung dengan data peserta didik. Hubungi operator PKBM agar akun ditautkan dengan data siswa sebelum tugas dapat ditampilkan.';
+        }
+
+        if (! $student->classroom) {
+            return 'Anda belum ditempatkan pada rombel. Hubungi operator PKBM agar penempatan rombel diisi sehingga tugas kelas dapat ditampilkan.';
+        }
+
+        return null;
     }
 
     private function getPenugasansForUser($user, $roles)
@@ -170,21 +190,6 @@ class AssignmentController extends Controller
         if ($user->hasRole('tutor')) {
             $tutor = Tutor::where('user_id', $user->id)->first();
             abort_if(! $tutor || $penugasan->tutor_id !== $tutor->id, 403);
-        }
-    }
-
-    private function authorizeAssignment(Assignment $assignment, $user): void
-    {
-        if ($user->hasRole('peserta-didik')) {
-            $student = $user->student;
-            abort_if(! $student || ! $student->classroom || $assignment->penugasanMengajar->classroom_id !== $student->classroom->id, 403);
-        } elseif ($user->hasRole('tutor')) {
-            $tutor = Tutor::where('user_id', $user->id)->first();
-            abort_if(! $tutor || $assignment->penugasanMengajar->tutor_id !== $tutor->id, 403);
-        } elseif ($user->hasRole('wali-kelas')) {
-            $wali = Tutor::where('user_id', $user->id)->first();
-            $classroomIds = Classroom::where('wali_kelas_id', $wali?->id)->pluck('id');
-            abort_if(! $classroomIds->contains($assignment->penugasanMengajar->classroom_id), 403);
         }
     }
 }

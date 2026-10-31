@@ -12,6 +12,7 @@ use App\Models\Semester;
 use App\Models\Student;
 use App\Models\Tutor;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class RaporController extends Controller
 {
@@ -40,11 +41,22 @@ class RaporController extends Controller
         ];
 
         // Role-based restrictions
-        if ($roles->contains('wali-kelas')) {
-            $wali = Tutor::where('user_id', $user->id)->first();
-            $classroomIds = Classroom::where('wali_kelas_id', $wali?->id)->pluck('id');
+        $isTutor = $roles->contains('tutor');
+        $isWali = $roles->contains('wali-kelas');
+
+        $classroomIds = collect();
+        if ($isTutor && $isWali) {
+            $tutor = Tutor::where('user_id', $user->id)->first();
+            $tutorClassroomIds = $tutor
+                ? PenugasanMengajar::where('tutor_id', $tutor->id)->pluck('classroom_id')->unique()
+                : collect();
+            $waliClassroomIds = Classroom::where('wali_kelas_id', $user->id)->pluck('id');
+            $classroomIds = $tutorClassroomIds->merge($waliClassroomIds)->unique();
             $query->whereIn('rombel_id', $classroomIds);
-        } elseif ($roles->contains('tutor')) {
+        } elseif ($isWali) {
+            $classroomIds = Classroom::where('wali_kelas_id', $user->id)->pluck('id');
+            $query->whereIn('rombel_id', $classroomIds);
+        } elseif ($isTutor) {
             $tutor = Tutor::where('user_id', $user->id)->first();
             $classroomIds = PenugasanMengajar::where('tutor_id', $tutor?->id)->pluck('classroom_id')->unique();
             $query->whereIn('rombel_id', $classroomIds);
@@ -63,7 +75,8 @@ class RaporController extends Controller
             $keyword = $filters['keyword'];
             $query->where(function ($q) use ($keyword) {
                 $q->where('nama_lengkap', 'like', "%{$keyword}%")
-                    ->orWhere('nomor_induk', 'like', "%{$keyword}%");
+                    ->orWhere('nis', 'like', "%{$keyword}%")
+                    ->orWhere('nisn', 'like', "%{$keyword}%");
             });
         }
 
@@ -72,9 +85,21 @@ class RaporController extends Controller
         $academicYears = AcademicYear::latest()->get();
         $semesters = Semester::all();
         $programs = Program::all();
-        $classrooms = Classroom::all();
 
-        return view('rapor.index', compact('students', 'filters', 'academicYears', 'semesters', 'programs', 'classrooms'));
+        $classroomsQuery = Classroom::query();
+        if ($isTutor || $isWali) {
+            $classroomsQuery->whereIn('id', $classroomIds);
+        }
+        $classrooms = $classroomsQuery->get();
+
+        $selectedClassroom = null;
+        if ($filters['classroom_id']) {
+            $selectedClassroom = Classroom::with(['program', 'academicYear'])
+                ->withCount('students')
+                ->find($filters['classroom_id']);
+        }
+
+        return view('rapor.index', compact('students', 'filters', 'academicYears', 'semesters', 'programs', 'classrooms', 'selectedClassroom'));
     }
 
     public function show(Request $request, Student $student)
@@ -97,22 +122,35 @@ class RaporController extends Controller
 
     private function authorizeStudentAccess(Student $student): void
     {
-        $user = auth()->user();
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
         abort_if(! $user->can('reports.view') && ! $user->hasAnyRole(['tutor', 'peserta-didik']), 403);
 
         $roles = $user->getRoleNames();
 
+        // Admin/operator roles with reports.view permission have full access
+        if ($user->hasAnyRole(['operator', 'kepala-pkbm', 'ketua-yayasan'])) {
+            return;
+        }
+
+        $canAccess = false;
+
         if ($roles->contains('peserta-didik')) {
-            abort_if($user->student?->id !== $student->id, 403);
-        } elseif ($roles->contains('wali-kelas')) {
-            $wali = Tutor::where('user_id', $user->id)->first();
-            $classroomIds = Classroom::where('wali_kelas_id', $wali?->id)->pluck('id');
-            abort_if(! $classroomIds->contains($student->rombel_id), 403);
-        } elseif ($roles->contains('tutor')) {
+            $canAccess = $user->student?->id === $student->id;
+        }
+
+        if ($roles->contains('wali-kelas')) {
+            $classroomIds = Classroom::where('wali_kelas_id', $user->id)->pluck('id');
+            $canAccess = $canAccess || $classroomIds->contains($student->rombel_id);
+        }
+
+        if ($roles->contains('tutor')) {
             $tutor = Tutor::where('user_id', $user->id)->first();
             $classroomIds = PenugasanMengajar::where('tutor_id', $tutor?->id)->pluck('classroom_id');
-            abort_if(! $classroomIds->contains($student->rombel_id), 403);
+            $canAccess = $canAccess || $classroomIds->contains($student->rombel_id);
         }
+
+        abort_if(! $canAccess, 403);
     }
 
     private function buildRaporData(Student $student, Request $request): array
@@ -120,33 +158,38 @@ class RaporController extends Controller
         $student->load(['classroom.waliKelas', 'program', 'academicYear']);
 
         $academicYearId = $request->input('academic_year_id', $student->tahun_ajaran_id);
-        $selectedAcademicYear = AcademicYear::find($academicYearId) ?? $student->academicYear ?? AcademicYear::latest()->first();
+        $selectedAcademicYear = is_numeric($academicYearId) ? AcademicYear::find($academicYearId) : null;
+        if (! $selectedAcademicYear) {
+            $selectedAcademicYear = $student->academicYear ?? AcademicYear::latest()->first();
+        }
+        $selectedAcademicYearId = $selectedAcademicYear instanceof AcademicYear ? $selectedAcademicYear->id : null;
 
         $semesterId = $request->input('semester_id');
-        $selectedSemester = $semesterId ? Semester::find($semesterId) : Semester::where('is_active', true)->first() ?? Semester::first();
+        $selectedSemester = $semesterId ? Semester::find($semesterId) : Semester::where('status_aktif', true)->first() ?? Semester::first();
+        $selectedSemesterId = $selectedSemester?->id;
 
         // Query Grades
         $gradesQuery = Grade::with(['penugasanMengajar.subject', 'penugasanMengajar.tutor'])
             ->where('student_id', $student->id);
 
-        if ($selectedAcademicYear) {
-            $gradesQuery->whereHas('penugasanMengajar', fn ($q) => $q->where('academic_year_id', $selectedAcademicYear->id));
+        if ($selectedAcademicYearId) {
+            $gradesQuery->whereHas('penugasanMengajar', fn ($q) => $q->where('academic_year_id', $selectedAcademicYearId));
         }
-        if ($selectedSemester) {
-            $gradesQuery->whereHas('penugasanMengajar', fn ($q) => $q->where('semester_id', $selectedSemester->id));
+        if ($selectedSemesterId) {
+            $gradesQuery->whereHas('penugasanMengajar', fn ($q) => $q->where('semester_id', $selectedSemesterId));
         }
 
         $grades = $gradesQuery->get();
 
         // Absensi
         $attendanceQuery = Attendance::where('student_id', $student->id);
-        if ($selectedAcademicYear || $selectedSemester) {
-            $attendanceQuery->whereHas('schedule.penugasanMengajar', function ($q) use ($selectedAcademicYear, $selectedSemester) {
-                if ($selectedAcademicYear) {
-                    $q->where('academic_year_id', $selectedAcademicYear->id);
+        if ($selectedAcademicYearId || $selectedSemesterId) {
+            $attendanceQuery->whereHas('schedule.penugasanMengajar', function ($q) use ($selectedAcademicYearId, $selectedSemesterId) {
+                if ($selectedAcademicYearId) {
+                    $q->where('academic_year_id', $selectedAcademicYearId);
                 }
-                if ($selectedSemester) {
-                    $q->where('semester_id', $selectedSemester->id);
+                if ($selectedSemesterId) {
+                    $q->where('semester_id', $selectedSemesterId);
                 }
             });
         }

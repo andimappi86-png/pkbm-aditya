@@ -46,9 +46,7 @@ class ClassroomAssignmentTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertViewIs('classroom-assignments.index');
-        $response->assertViewHas('tutors');
-        $response->assertViewHas('subjects');
-        $response->assertViewHas('classrooms');
+        $response->assertViewHas('assignments');
     }
 
     public function test_classroom_tutors_relationship_works(): void

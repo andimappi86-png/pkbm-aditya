@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Classroom;
 use App\Models\Profile;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -61,9 +62,18 @@ class DatabaseSeeder extends Seeder
             AssignmentSeeder::class,
             MaterialSeeder::class,
             ForumSeeder::class,
-            PpdbSeeder::class,
             DocumentLetterSeeder::class,
             AnnouncementSeeder::class,
         ]);
+
+        // Pastikan user dengan role Wali Kelas terhubung sebagai wali_kelas_id pada minimal 1 rombel aktif
+        $waliUser = User::role('wali-kelas')->first();
+        if ($waliUser) {
+            $classroom = Classroom::where('status_aktif', true)->first()
+                ?? Classroom::first();
+            if ($classroom && ! $classroom->wali_kelas_id) {
+                $classroom->update(['wali_kelas_id' => $waliUser->id]);
+            }
+        }
     }
 }

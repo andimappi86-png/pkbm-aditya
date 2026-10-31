@@ -10,9 +10,24 @@ class QuizAnswer extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['quiz_attempt_id', 'question_id', 'option_id', 'jawaban_teks', 'benar'];
+    protected $fillable = [
+        'quiz_attempt_id',
+        'question_id',
+        'option_id',
+        'answer_text',
+        'benar',
+        'nilai',
+        'catatan',
+        'dinilai_oleh',
+        'dinilai_pada',
+        'media_path',
+    ];
 
-    protected $casts = ['benar' => 'boolean'];
+    protected $casts = [
+        'benar' => 'boolean',
+        'nilai' => 'decimal:2',
+        'dinilai_pada' => 'datetime',
+    ];
 
     public function attempt(): BelongsTo
     {
@@ -27,5 +42,10 @@ class QuizAnswer extends Model
     public function option(): BelongsTo
     {
         return $this->belongsTo(Option::class);
+    }
+
+    public function grader(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'dinilai_oleh');
     }
 }

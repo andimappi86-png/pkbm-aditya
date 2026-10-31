@@ -78,7 +78,7 @@
             />
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="grid grid-cols-1 gap-6">
             <!-- Program Breakdown -->
             <div class="card p-6">
                 <h3 class="text-lg font-semibold text-text mb-4">Sebaran per Program</h3>
@@ -96,22 +96,78 @@
                     @endforeach
                 </div>
             </div>
+        </div>
 
-            <!-- PPDB Summary -->
-            <div class="card p-6">
-                <h3 class="text-lg font-semibold text-text mb-4">Ringkasan PPDB</h3>
-                <div class="grid grid-cols-3 gap-4">
-                    <div class="p-4 rounded-xl border border-gray-200 bg-surface text-center">
-                        <div class="text-2xl font-bold text-primary">{{ $ppdbStats['total'] }}</div>
-                        <div class="text-sm text-muted">Total Pendaftar</div>
+        <!-- Section Kinerja PKBM -->
+        <div class="card p-6 space-y-6">
+            <div class="border-b border-border pb-4">
+                <h3 class="text-xl font-bold text-navy">Kinerja PKBM</h3>
+                <p class="text-sm text-muted">Ringkasan indikator performa pembelajaran, pengajaran, dan sebaran program.</p>
+            </div>
+
+            <!-- 1. Kinerja Pembelajaran -->
+            <div class="space-y-3">
+                <h4 class="text-sm font-semibold text-text uppercase tracking-wider text-muted">Kinerja Pembelajaran</h4>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="p-4 rounded-xl border border-border bg-surface text-center">
+                        <div class="text-2xl font-bold text-primary">{{ $kinerja['average_grade'] }}</div>
+                        <div class="text-xs text-muted mt-1">Rata-rata Nilai</div>
                     </div>
-                    <div class="p-4 rounded-xl border border-gray-200 bg-surface text-center">
-                        <div class="text-2xl font-bold text-primary">{{ $ppdbStats['diterima'] }}</div>
-                        <div class="text-sm text-muted">Diterima</div>
+                    <div class="p-4 rounded-xl border border-border bg-surface text-center">
+                        <div class="text-2xl font-bold text-emerald-600">{{ $kinerja['attendance_rate'] }}%</div>
+                        <div class="text-xs text-muted mt-1">Kehadiran Siswa</div>
                     </div>
-                    <div class="p-4 rounded-xl border border-gray-200 bg-surface text-center">
-                        <div class="text-2xl font-bold text-primary">{{ $ppdbStats['pending'] }}</div>
-                        <div class="text-sm text-muted">Menunggu Verifikasi</div>
+                    <div class="p-4 rounded-xl border border-border bg-surface text-center">
+                        <div class="text-2xl font-bold text-navy">{{ $kinerja['total_submissions'] }}</div>
+                        <div class="text-xs text-muted mt-1">Tugas Dikumpulkan</div>
+                    </div>
+                    <div class="p-4 rounded-xl border border-border bg-surface text-center">
+                        <div class="text-2xl font-bold text-primary-dark">{{ $kinerja['graded_submissions'] }}</div>
+                        <div class="text-xs text-muted mt-1">Tugas Dinilai</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Kinerja Pengajaran -->
+            <div class="space-y-3">
+                <h4 class="text-sm font-semibold text-text uppercase tracking-wider text-muted">Kinerja Pengajaran</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="p-4 rounded-xl border border-border bg-surface text-center">
+                        <div class="text-2xl font-bold text-navy">{{ $kinerja['active_assignments'] }}</div>
+                        <div class="text-xs text-muted mt-1">Penugasan Mengajar Aktif</div>
+                    </div>
+                    <div class="p-4 rounded-xl border border-border bg-surface text-center">
+                        <div class="text-2xl font-bold text-navy">1 : {{ $kinerja['tutor_student_ratio'] }}</div>
+                        <div class="text-xs text-muted mt-1">Rasio Tutor : Peserta Didik</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Distribusi Program & Rombel Aktif -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+                <!-- Distribusi Peserta Didik per Program -->
+                <div class="space-y-3">
+                    <h4 class="text-sm font-semibold text-text uppercase tracking-wider text-muted">Distribusi Peserta Didik per Program</h4>
+                    <div class="grid grid-cols-3 gap-3 text-center">
+                        @foreach($programStats as $prog)
+                            <div class="p-3 rounded-xl border border-border bg-surface">
+                                <div class="text-lg font-bold text-primary">{{ $prog->students_count }}</div>
+                                <div class="text-xs text-muted mt-0.5">{{ $prog->nama }}</div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+
+                <!-- Rombel Aktif per Program -->
+                <div class="space-y-3">
+                    <h4 class="text-sm font-semibold text-text uppercase tracking-wider text-muted">Rombel Aktif per Program</h4>
+                    <div class="grid grid-cols-3 gap-3 text-center">
+                        @foreach($programStats as $prog)
+                            <div class="p-3 rounded-xl border border-border bg-surface">
+                                <div class="text-lg font-bold text-navy">{{ $prog->classrooms_count }}</div>
+                                <div class="text-xs text-muted mt-0.5">{{ $prog->nama }}</div>
+                            </div>
+                        @endforeach
                     </div>
                 </div>
             </div>

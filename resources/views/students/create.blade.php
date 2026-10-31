@@ -8,8 +8,18 @@
         ]" />
 
         <div class="card p-6">
+            @if (request('from') === 'akun' && auth()->user()->can('users.manage'))
+                <x-alert variant="info" class="mb-4">
+                    Anda membuka halaman ini dari pembuatan akun. Setelah data siswa disimpan, Anda akan kembali ke form akun
+                    dengan profil siswa baru sudah terpilih.
+                </x-alert>
+            @endif
+
             <form action="{{ route('peserta-didik.store') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
                 @csrf
+                @if (request('from') === 'akun' && auth()->user()->can('users.manage'))
+                    <input type="hidden" name="return_to" value="akun">
+                @endif
                 
                 <h3 class="text-lg font-semibold text-navy border-b pb-2">Identitas Utama</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -25,12 +35,18 @@
                     <x-select name="status_perkawinan" label="Status Perkawinan" :options="['Belum Kawin'=>'Belum Kawin','Kawin'=>'Kawin','Cerai Hidup'=>'Cerai Hidup','Cerai Mati'=>'Cerai Mati']" />
                 </div>
 
-                <h3 class="text-lg font-semibold text-navy border-b pb-2 mt-6">Data Pendidikan</h3>
+<h3 class="text-lg font-semibold text-navy border-b pb-2 mt-6">Data Pendidikan</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    @php
+                        $isRombelScoped = app(\App\Policies\StudentPolicy::class)->isScopedToOwnClassrooms(auth()->user());
+                        $statusOptions = $isRombelScoped
+                            ? ['aktif' => 'Aktif', 'nonaktif' => 'Nonaktif']
+                            : ['aktif' => 'Aktif', 'lulus' => 'Lulus', 'keluar' => 'Keluar', 'pindah' => 'Pindah', 'nonaktif' => 'Nonaktif'];
+                    @endphp
                     <x-select name="program_id" label="Program *" :options="$programs->pluck('nama', 'id')->toArray()" required />
                     <x-select name="tahun_ajaran_id" label="Tahun Ajaran Masuk *" :options="$academicYears->pluck('nama', 'id')->toArray()" required />
-                    <x-select name="rombel_id" label="Rombel / Kelas" :options="$classrooms->pluck('nama_rombel', 'id')->toArray()" />
-                    <x-select name="status" label="Status *" :options="['aktif'=>'Aktif','lulus'=>'Lulus','keluar'=>'Keluar','pindah'=>'Pindah','nonaktif'=>'Nonaktif']" required />
+                    <x-select name="rombel_id" label="Rombel / Kelas" :options="$classrooms->pluck('nama_rombel', 'id')->toArray()" :selected="$presetRombelId ?? null" :required="$isRombelScoped" />
+                    <x-select name="status" label="Status *" :options="$statusOptions" required />
                 </div>
 
                 <h3 class="text-lg font-semibold text-navy border-b pb-2 mt-6">Kontak & Alamat</h3>

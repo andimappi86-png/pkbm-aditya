@@ -7,7 +7,6 @@ use App\Models\Attendance;
 use App\Models\Classroom;
 use App\Models\Grade;
 use App\Models\Material;
-use App\Models\Ppdb;
 use App\Models\Program;
 use App\Models\Quiz;
 use App\Models\Student;
@@ -49,7 +48,7 @@ class ReportController extends Controller implements HasMiddleware
         $filters = $this->getFilters($request);
         $query = Student::with(['program', 'classroom', 'user']);
 
-        $this->applyFilters($query, $filters);
+        $this->applyStudentFilters($query, $filters);
 
         $students = $query->orderBy('nis')->paginate(20)->withQueryString();
 
@@ -69,7 +68,17 @@ class ReportController extends Controller implements HasMiddleware
             });
         }
 
-        $tutors = $query->orderBy('nip')->paginate(20)->withQueryString();
+        if ($filters['search']) {
+            $query->where(function ($q) use ($filters) {
+                $q->where('nama_lengkap', 'like', "%{$filters['search']}%")
+                    ->orWhere('nomor_induk', 'like', "%{$filters['search']}%")
+                    ->orWhereHas('user', function ($uq) use ($filters) {
+                        $uq->where('name', 'like', "%{$filters['search']}%");
+                    });
+            });
+        }
+
+        $tutors = $query->orderBy('nama_lengkap')->paginate(20)->withQueryString();
 
         return view('reports.tutors', compact('tutors', 'filters'));
     }
@@ -79,9 +88,9 @@ class ReportController extends Controller implements HasMiddleware
         abort_unless(auth()->user()->can('reports.view'), 403);
 
         $filters = $this->getFilters($request);
-        $query = Classroom::with(['program', 'academicYear', 'waliKelas', 'students']);
+        $query = Classroom::with(['program', 'academicYear', 'waliKelas'])->withCount('students');
 
-        $this->applyFilters($query, $filters);
+        $this->applyClassroomFilters($query, $filters);
 
         $classrooms = $query->orderBy('nama_rombel')->paginate(20)->withQueryString();
 
@@ -94,7 +103,7 @@ class ReportController extends Controller implements HasMiddleware
 
         $filters = $this->getFilters($request);
 
-        $query = Attendance::with(['student.user', 'student.classroom', 'schedule.subject', 'schedule.tutor.user'])
+        $query = Attendance::with(['student.user', 'student.classroom', 'schedule.penugasanMengajar.subject', 'schedule.penugasanMengajar.tutor.user'])
             ->latest('tanggal');
 
         $this->applyFilters($query, $filters);
@@ -149,35 +158,6 @@ class ReportController extends Controller implements HasMiddleware
         return view('reports.assignments', compact('assignments', 'filters'));
     }
 
-    public function ppdb(Request $request): View
-    {
-        abort_unless(auth()->user()->can('reports.view'), 403);
-
-        $filters = $this->getFilters($request);
-        $query = Ppdb::with(['program', 'academicYear', 'user']);
-
-        if ($filters['program_id']) {
-            $query->where('program_id', $filters['program_id']);
-        }
-        if ($filters['search']) {
-            $query->where(function ($q) use ($filters) {
-                $q->where('nama_lengkap', 'like', "%{$filters['search']}%")
-                    ->orWhere('nik', 'like', "%{$filters['search']}%");
-            });
-        }
-
-        $ppdbs = $query->latest()->paginate(20)->withQueryString();
-
-        $stats = [
-            'total' => $ppdbs->total(),
-            'pending' => $ppdbs->where('status', 'pending')->count(),
-            'diterima' => $ppdbs->where('status', 'diterima')->count(),
-            'ditolak' => $ppdbs->where('status', 'ditolak')->count(),
-        ];
-
-        return view('reports.ppdb', compact('ppdbs', 'filters', 'stats'));
-    }
-
     public function learningActivity(Request $request): View
     {
         abort_unless(auth()->user()->can('reports.view'), 403);
@@ -227,10 +207,52 @@ class ReportController extends Controller implements HasMiddleware
             'attendance' => $this->printAttendance($filters),
             'grades' => $this->printGrades($filters),
             'assignments' => $this->printAssignments($filters),
-            'ppdb' => $this->printPpdb($filters),
             'learning' => $this->printLearning($filters),
             default => abort(404),
         };
+    }
+
+    private function applyClassroomFilters($query, array $filters): void
+    {
+        if (! empty($filters['program_id'])) {
+            $query->where('program_id', $filters['program_id']);
+        }
+
+        if (! empty($filters['tahun_ajaran_id'])) {
+            $query->where('tahun_ajaran_id', $filters['tahun_ajaran_id']);
+        }
+
+        if (! empty($filters['search'])) {
+            $query->where('nama_rombel', 'like', "%{$filters['search']}%");
+        }
+    }
+
+    private function applyStudentFilters($query, array $filters): void
+    {
+        if ($filters['tahun_ajaran_id']) {
+            $query->where('tahun_ajaran_id', $filters['tahun_ajaran_id']);
+        }
+        if ($filters['program_id']) {
+            $query->where('program_id', $filters['program_id']);
+        }
+        if ($filters['rombel_id']) {
+            $query->where('rombel_id', $filters['rombel_id']);
+        }
+        if ($filters['status']) {
+            $query->where('status', $filters['status']);
+        }
+        if ($filters['search']) {
+            $search = $filters['search'];
+            $query->where(function ($q) use ($search) {
+                $q->where('nama_lengkap', 'like', "%{$search}%")
+                    ->orWhere('nis', 'like', "%{$search}%")
+                    ->orWhere('nisn', 'like', "%{$search}%")
+                    ->orWhere('nik', 'like', "%{$search}%")
+                    ->orWhereHas('user', function ($uq) use ($search) {
+                        $uq->where('name', 'like', "%{$search}%");
+                    });
+            });
+        }
     }
 
     private function getFilters(Request $request): array
@@ -295,7 +317,7 @@ class ReportController extends Controller implements HasMiddleware
     private function printStudents(array $filters): View
     {
         $query = Student::with(['program', 'classroom', 'user']);
-        $this->applyPrintFilters($query, $filters);
+        $this->applyStudentFilters($query, $filters);
         $students = $query->orderBy('nis')->get();
 
         return view('reports.print.students', compact('students', 'filters'));
@@ -309,15 +331,24 @@ class ReportController extends Controller implements HasMiddleware
                 $q->where('program_id', $filters['program_id']);
             });
         }
-        $tutors = $query->orderBy('nip')->get();
+        if ($filters['search']) {
+            $query->where(function ($q) use ($filters) {
+                $q->where('nama_lengkap', 'like', "%{$filters['search']}%")
+                    ->orWhere('nomor_induk', 'like', "%{$filters['search']}%")
+                    ->orWhereHas('user', function ($uq) use ($filters) {
+                        $uq->where('name', 'like', "%{$filters['search']}%");
+                    });
+            });
+        }
+        $tutors = $query->orderBy('nama_lengkap')->get();
 
         return view('reports.print.tutors', compact('tutors', 'filters'));
     }
 
     private function printClassrooms(array $filters): View
     {
-        $query = Classroom::with(['program', 'academicYear', 'waliKelas', 'students']);
-        $this->applyPrintFilters($query, $filters);
+        $query = Classroom::with(['program', 'academicYear', 'waliKelas'])->withCount('students');
+        $this->applyClassroomFilters($query, $filters);
         $classrooms = $query->orderBy('nama_rombel')->get();
 
         return view('reports.print.classrooms', compact('classrooms', 'filters'));
@@ -325,7 +356,7 @@ class ReportController extends Controller implements HasMiddleware
 
     private function printAttendance(array $filters): View
     {
-        $query = Attendance::with(['student.user', 'student.classroom', 'schedule.subject', 'schedule.tutor.user'])
+        $query = Attendance::with(['student.user', 'student.classroom', 'schedule.penugasanMengajar.subject', 'schedule.penugasanMengajar.tutor.user'])
             ->latest('tanggal');
         $this->applyPrintFilters($query, $filters);
         $attendances = $query->get();
@@ -358,17 +389,6 @@ class ReportController extends Controller implements HasMiddleware
         $assignments = $query->get();
 
         return view('reports.print.assignments', compact('assignments', 'filters'));
-    }
-
-    private function printPpdb(array $filters): View
-    {
-        $query = Ppdb::with(['program', 'academicYear', 'user']);
-        if ($filters['program_id']) {
-            $query->where('program_id', $filters['program_id']);
-        }
-        $ppdbs = $query->latest()->get();
-
-        return view('reports.print.ppdb', compact('ppdbs', 'filters'));
     }
 
     private function printLearning(array $filters): View
