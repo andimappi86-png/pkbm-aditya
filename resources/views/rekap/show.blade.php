@@ -16,10 +16,20 @@
             <div class="flex flex-col md:flex-row justify-between gap-6">
                 <div>
                     <h2 class="text-xl font-bold text-navy mb-1">{{ $student->nama_lengkap }}</h2>
-                    <p class="text-sm text-muted">NISN / Nomor Induk: {{ $student->nomor_induk }}</p>
+                    <p class="text-sm text-muted">NIS / NISN: {{ $student->nis ?: ($student->nisn ?: '-') }}</p>
                     <div class="mt-4 flex flex-wrap gap-4 text-sm">
                         <div><span class="text-muted">Program:</span> <span class="font-medium text-navy">{{ $student->program?->nama ?? '-' }}</span></div>
-                        <div><span class="text-muted">Rombel:</span> <span class="font-medium text-navy">{{ $student->classroom?->nama ?? '-' }}</span></div>
+                        <div>
+                            <span class="text-muted">Rombel:</span>
+                            @if($student->classroom)
+                                <a href="{{ route('rombel.show', $student->classroom) }}" class="font-medium text-primary hover:underline inline-flex items-center gap-1" title="Lihat daftar anggota rombel {{ $student->classroom->nama_rombel }}">
+                                    <span>{{ $student->classroom->nama_rombel }}</span>
+                                    <svg class="w-3.5 h-3.5 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                                </a>
+                            @else
+                                <span class="font-medium text-navy">-</span>
+                            @endif
+                        </div>
                         <div><span class="text-muted">Tahun Ajaran:</span> <span class="font-medium text-navy">{{ $student->academicYear?->nama ?? '-' }}</span></div>
                     </div>
                 </div>

@@ -255,8 +255,9 @@ class StudentController extends Controller
 
         $programs = Program::where('status_aktif', true)->get();
         $academicYears = AcademicYear::where('status_aktif', true)->get();
+        $classrooms = $this->manageableClassrooms($user);
 
-        return view('students.index', compact('students', 'programs', 'academicYears', 'stats'));
+        return view('students.index', compact('students', 'programs', 'academicYears', 'stats', 'classrooms'));
     }
 
     public function create(Request $request): View

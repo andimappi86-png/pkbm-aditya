@@ -110,10 +110,10 @@
 
         <div class="identity">
             <div class="identity-row"><span class="identity-label">Nama Peserta Didik</span>: <span class="identity-value font-bold">{{ $student->nama_lengkap }}</span></div>
-            <div class="identity-row"><span class="identity-label">Nomor Induk / NISN</span>: <span class="identity-value">{{ $student->nomor_induk }}</span></div>
+            <div class="identity-row"><span class="identity-label">NIS / NISN</span>: <span class="identity-value">{{ $student->nis ?: ($student->nisn ?: '-') }}</span></div>
             <div class="identity-row"><span class="identity-label">Tempat, Tanggal Lahir</span>: <span class="identity-value">{{ $student->tempat_lahir ?? '-' }}, {{ $student->tanggal_lahir ? \Carbon\Carbon::parse($student->tanggal_lahir)->format('d F Y') : '-' }}</span></div>
             <div class="identity-row"><span class="identity-label">Program</span>: <span class="identity-value">{{ $student->program?->nama ?? '-' }}</span></div>
-            <div class="identity-row"><span class="identity-label">Rombongan Belajar</span>: <span class="identity-value">{{ $student->classroom?->nama ?? '-' }}</span></div>
+            <div class="identity-row"><span class="identity-label">Rombongan Belajar</span>: <span class="identity-value">{{ $student->classroom?->nama_rombel ?? '-' }}</span></div>
             <div class="identity-row"><span class="identity-label">Tahun Ajaran</span>: <span class="identity-value">{{ $selectedAcademicYear?->nama ?? '-' }}</span></div>
             <div class="identity-row"><span class="identity-label">Semester</span>: <span class="identity-value">{{ $selectedSemester?->nama ?? '-' }}</span></div>
         </div>

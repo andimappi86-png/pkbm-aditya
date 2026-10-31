@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateClassroomRequest;
 use App\Models\AcademicYear;
 use App\Models\Classroom;
 use App\Models\Program;
+use App\Models\Student;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -99,9 +100,27 @@ class ClassroomController extends Controller
     {
         Gate::authorize('view', $classroom);
 
-        $classroom->load(['program', 'academicYear', 'waliKelas', 'students.user']);
+        $classroom->load([
+            'program',
+            'academicYear',
+            'waliKelas',
+            'students' => fn ($q) => $q->orderBy('nama_lengkap'),
+            'students.user',
+        ]);
 
-        return view('classrooms.show', compact('classroom'));
+        $user = auth()->user();
+        $canManage = $user !== null && app(\App\Policies\StudentPolicy::class)->manageClassroom($user, $classroom);
+
+        $unassignedStudents = Student::query()
+            ->whereNull('rombel_id')
+            ->where('status', 'aktif')
+            ->select(['id', 'nis', 'nisn', 'nama_lengkap', 'jenis_kelamin', 'program_id', 'tahun_ajaran_id'])
+            ->with(['program:id,nama', 'academicYear:id,nama'])
+            ->orderBy('nama_lengkap')
+            ->limit(100)
+            ->get();
+
+        return view('classrooms.show', compact('classroom', 'canManage', 'unassignedStudents'));
     }
 
     public function edit(Classroom $classroom)

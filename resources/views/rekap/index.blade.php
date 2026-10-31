@@ -34,7 +34,7 @@
                     <select name="classroom_id" id="classroom_id" class="block w-full rounded-xl border-border bg-background px-3 py-2 text-sm focus:border-primary focus:ring-primary">
                         <option value="">Semua Rombel</option>
                         @foreach($classrooms as $cls)
-                            <option value="{{ $cls->id }}" {{ request('classroom_id') == $cls->id ? 'selected' : '' }}>{{ $cls->nama }}</option>
+                            <option value="{{ $cls->id }}" {{ request('classroom_id') == $cls->id ? 'selected' : '' }}>{{ $cls->nama_rombel }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -50,6 +50,28 @@
                 </div>
             </form>
         </div>
+
+        @if(isset($selectedClassroom) && $selectedClassroom)
+        <div class="mb-6 p-4 rounded-xl border border-slate-200 bg-white shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-primary-soft text-primary-dark flex items-center justify-center shrink-0">
+                    <x-icon name="users" class="w-5 h-5" />
+                </div>
+                <div>
+                    <div class="font-semibold text-navy text-sm sm:text-base">Laporan Kelas: {{ $selectedClassroom->nama_rombel }}</div>
+                    <div class="text-xs text-muted">
+                        {{ $selectedClassroom->program?->nama ?? 'Program Belajar' }} &bull; {{ $selectedClassroom->students_count }} Siswa Terdaftar
+                    </div>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <a href="{{ route('rombel.show', $selectedClassroom) }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-primary text-white hover:bg-primary-dark transition shadow-xs" title="Lihat detail dan kelola anggota kelas">
+                    <x-icon name="users" class="w-3.5 h-3.5" />
+                    <span>Detail Anggota Kelas ({{ $selectedClassroom->students_count }})</span>
+                </a>
+            </div>
+        </div>
+        @endif
 
         <!-- Daftar Siswa -->
         <div class="bg-surface border border-border rounded-2xl overflow-hidden shadow-sm">
@@ -69,32 +91,52 @@
                     <tbody class="divide-y divide-border">
                         @forelse($students as $st)
                         @php
-                            $attCount = $st->attendances()->count();
-                            $attHadir = $st->attendances()->where('status', 'hadir')->count();
-                            $attPct = $attCount > 0 ? round(($attHadir / $attCount) * 100) : 0;
-                            $avgGrade = $st->grades()->avg('nilai_akhir');
+                            $attCount = (int) ($st->attendances_count ?? 0);
+                            $attHadir = (int) ($st->attendances_hadir_count ?? 0);
+                            $attPct = $attCount > 0 ? (int) round(($attHadir / $attCount) * 100) : null;
                         @endphp
                         <tr class="hover:bg-background/50 transition-colors">
                             <td class="px-4 py-3">
                                 <div class="font-medium text-navy">{{ $st->nama_lengkap }}</div>
-                                <div class="text-xs text-muted">{{ $st->nomor_induk }}</div>
+                                <div class="text-xs text-muted">{{ $st->nis ?: ($st->nisn ?: '-') }}</div>
                             </td>
                             <td class="px-4 py-3 text-muted">{{ $st->program?->nama ?? '-' }}</td>
-                            <td class="px-4 py-3 text-muted">{{ $st->classroom?->nama ?? '-' }}</td>
+                            <td class="px-4 py-3">
+                                @if($st->classroom)
+                                    <a href="{{ route('rombel.show', $st->classroom) }}" class="inline-flex items-center gap-1 font-medium text-primary hover:underline text-xs" title="Lihat detail anggota kelas {{ $st->classroom->nama_rombel }}">
+                                        <span>{{ $st->classroom->nama_rombel }}</span>
+                                        <svg class="w-3 h-3 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                                    </a>
+                                @else
+                                    <span class="text-muted text-xs">-</span>
+                                @endif
+                            </td>
                             <td class="px-4 py-3 text-muted">{{ $st->academicYear?->nama ?? '-' }}</td>
                             <td class="px-4 py-3 text-center">
-                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold {{ $attPct >= 75 ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800' }}">
-                                    {{ $attPct }}%
-                                </span>
+                                @if($attPct !== null)
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold {{ $attPct >= 75 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200' }}">
+                                        {{ $attPct }}%
+                                    </span>
+                                    <div class="text-[10px] text-muted mt-0.5">{{ $attHadir }}/{{ $attCount }} sesi</div>
+                                @else
+                                    <span class="text-xs text-muted" title="Belum ada presensi yang diinput">-</span>
+                                @endif
                             </td>
                             <td class="px-4 py-3 text-center font-bold text-navy">
-                                {{ $avgGrade ? round($avgGrade, 1) : '-' }}
+                                {{ $st->grades_avg_nilai_akhir ? round((float) $st->grades_avg_nilai_akhir, 1) : '-' }}
                             </td>
                             <td class="px-4 py-3 text-right">
-                                <a href="{{ route('rekap.show', $st) }}" class="inline-flex items-center gap-1 text-sm font-medium text-primary hover:text-primary-dark transition">
-                                    <span>Lihat Rapor</span>
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
-                                </a>
+                                <div class="flex items-center justify-end gap-2">
+                                    <a href="{{ route('rekap.show', $st) }}" class="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary-dark transition">
+                                        <span>Lihat Rapor</span>
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+                                    </a>
+                                    @if($st->classroom)
+                                        <a href="{{ route('rombel.show', $st->classroom) }}" class="text-xs text-slate-600 hover:text-slate-900 transition px-2 py-1 rounded border border-slate-200 bg-white" title="Lihat detail anggota kelas {{ $st->classroom->nama_rombel }}">
+                                            Anggota
+                                        </a>
+                                    @endif
+                                </div>
                             </td>
                         </tr>
                         @empty

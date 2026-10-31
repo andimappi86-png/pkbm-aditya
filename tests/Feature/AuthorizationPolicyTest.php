@@ -564,6 +564,21 @@ class AuthorizationPolicyTest extends TestCase
         $this->assertDatabaseMissing('quizzes', ['judul' => 'Kuis lintas penugasan']);
     }
 
+    public function test_tutor_can_create_quiz_without_manual_penugasan_id(): void
+    {
+        $this->actingAs($this->tutorA)
+            ->post(route('quiz.store'), [
+                'judul' => 'Kuis Mandiri Tutor A',
+                'status_aktif' => true,
+            ])
+            ->assertRedirect(route('quiz.index'));
+
+        $this->assertDatabaseHas('quizzes', [
+            'judul' => 'Kuis Mandiri Tutor A',
+            'penugasan_mengajar_id' => $this->penugasanA->id,
+        ]);
+    }
+
     public function test_student_cannot_submit_assignment_from_other_classroom(): void
     {
         $this->actingAs($this->studentAUser)

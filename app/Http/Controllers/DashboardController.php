@@ -139,18 +139,24 @@ class DashboardController extends Controller
         abort_unless(auth()->user()->hasRole('wali-kelas'), 403);
 
         $myClassrooms = Classroom::where('wali_kelas_id', auth()->user()->id)
+            ->with(['program', 'academicYear'])
             ->withCount('students')
             ->get();
 
         $classroomIds = $myClassrooms->pluck('id');
 
         $stats = [
-            'total_siswa' => $myClassrooms->sum('students_count'),
+            'total_siswa' => (int) $myClassrooms->sum('students_count'),
             'total_rombel' => $myClassrooms->count(),
             'total_materi' => 0,
             'total_tugas' => 0,
             'total_kuis' => 0,
             'kehadiran_rata' => 0,
+            'presensi_hadir' => 0,
+            'presensi_izin' => 0,
+            'presensi_sakit' => 0,
+            'presensi_alpa' => 0,
+            'presensi_total' => 0,
         ];
 
         $recentAnnouncements = collect();
@@ -162,14 +168,21 @@ class DashboardController extends Controller
             $stats['total_tugas'] = Assignment::whereIn('penugasan_mengajar_id', $penugasanIds)->count();
             $stats['total_kuis'] = Quiz::whereIn('penugasan_mengajar_id', $penugasanIds)->count();
 
-            // Average attendance percentage across all classrooms
+            // Presensi aktual siswa pada rombel yang diampu wali kelas
             $studentIds = Student::whereIn('rombel_id', $classroomIds)->pluck('id');
             if ($studentIds->count() > 0) {
-                $hadirCount = Attendance::whereIn('student_id', $studentIds)
-                    ->whereIn('status', ['hadir', 'izin'])->count();
+                $hadirCount = Attendance::whereIn('student_id', $studentIds)->where('status', 'hadir')->count();
+                $izinCount = Attendance::whereIn('student_id', $studentIds)->where('status', 'izin')->count();
+                $sakitCount = Attendance::whereIn('student_id', $studentIds)->where('status', 'sakit')->count();
+                $alpaCount = Attendance::whereIn('student_id', $studentIds)->where('status', 'alpa')->count();
                 $totalSchedule = Attendance::whereIn('student_id', $studentIds)->count();
 
-                $stats['kehadiran_rata'] = $totalSchedule > 0 ? round(($hadirCount / $totalSchedule) * 100) : 0;
+                $stats['presensi_hadir'] = $hadirCount;
+                $stats['presensi_izin'] = $izinCount;
+                $stats['presensi_sakit'] = $sakitCount;
+                $stats['presensi_alpa'] = $alpaCount;
+                $stats['presensi_total'] = $totalSchedule;
+                $stats['kehadiran_rata'] = $totalSchedule > 0 ? (int) round((($hadirCount + $izinCount) / $totalSchedule) * 100) : 0;
             }
 
             // Get relevant announcements

@@ -42,6 +42,7 @@ class RekapAkademikController extends Controller
         $isTutor = $roles->contains('tutor');
         $isWali = $roles->contains('wali-kelas');
 
+        $classroomIds = collect();
         if ($isTutor && $isWali) {
             $tutor = Tutor::where('user_id', $user->id)->first();
             $tutorClassroomIds = $tutor
@@ -75,17 +76,29 @@ class RekapAkademikController extends Controller
             $keyword = $filters['keyword'];
             $query->where(function ($q) use ($keyword) {
                 $q->where('nama_lengkap', 'like', "%{$keyword}%")
-                    ->orWhere('nomor_induk', 'like', "%{$keyword}%");
+                    ->orWhere('nis', 'like', "%{$keyword}%")
+                    ->orWhere('nisn', 'like', "%{$keyword}%");
             });
         }
 
-        $students = $query->latest()->paginate(15)->withQueryString();
+        $students = $query
+            ->withCount('attendances')
+            ->withCount(['attendances as attendances_hadir_count' => function ($q) {
+                $q->where('status', 'hadir');
+            }])
+            ->withAvg('grades', 'nilai_akhir')
+            ->latest()
+            ->paginate(15)
+            ->withQueryString();
 
         $academicYears = AcademicYear::latest()->get();
         $programs = Program::all();
 
-        // Filter classrooms based on selected academic year and program for relevance
+        // Filter classrooms based on role and selected filters for relevance
         $classroomsQuery = Classroom::query();
+        if ($isTutor || $isWali) {
+            $classroomsQuery->whereIn('id', $classroomIds);
+        }
         if ($filters['academic_year_id']) {
             $classroomsQuery->where('tahun_ajaran_id', $filters['academic_year_id']);
         }
@@ -94,7 +107,14 @@ class RekapAkademikController extends Controller
         }
         $classrooms = $classroomsQuery->get();
 
-        return view('rekap.index', compact('students', 'filters', 'academicYears', 'programs', 'classrooms'));
+        $selectedClassroom = null;
+        if ($filters['classroom_id']) {
+            $selectedClassroom = Classroom::with(['program', 'academicYear'])
+                ->withCount('students')
+                ->find($filters['classroom_id']);
+        }
+
+        return view('rekap.index', compact('students', 'filters', 'academicYears', 'programs', 'classrooms', 'selectedClassroom'));
     }
 
     public function show(Student $student)

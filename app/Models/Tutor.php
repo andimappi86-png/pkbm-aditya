@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Tutor extends Model
 {
@@ -63,5 +64,11 @@ class Tutor extends Model
     public function classrooms(): BelongsToMany
     {
         return $this->belongsToMany(Classroom::class, 'tutor_classroom');
+    }
+
+    /** @return HasMany<PenugasanMengajar, $this> */
+    public function penugasanMengajars(): HasMany
+    {
+        return $this->hasMany(PenugasanMengajar::class, 'tutor_id');
     }
 }

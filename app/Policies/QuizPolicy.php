@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Models\Quiz;
 use App\Models\User;
+use Illuminate\Support\Carbon;
 
 class QuizPolicy
 {
@@ -17,7 +18,8 @@ class QuizPolicy
 
         if ($user->hasRole('peserta-didik')) {
             return $user->student !== null
-                && $user->student->rombel_id === $penugasan->classroom_id;
+                && $user->student->rombel_id === $penugasan->classroom_id
+                && $quiz->isOpen();
         }
 
         if ($user->hasRole('tutor')) {
@@ -30,6 +32,23 @@ class QuizPolicy
         }
 
         return true;
+    }
+
+    public function viewDraft(User $user, Quiz $quiz): bool
+    {
+        if (! $user->can('quizzes.view')) {
+            return false;
+        }
+
+        if ($user->hasAnyRole(['operator', 'kepala-pkbm'])) {
+            return true;
+        }
+
+        if ($user->hasRole('tutor')) {
+            return $quiz->penugasanMengajar->tutor_id === $user->tutor?->id;
+        }
+
+        return false;
     }
 
     public function create(User $user): bool
@@ -49,6 +68,64 @@ class QuizPolicy
     public function delete(User $user, Quiz $quiz): bool
     {
         if (! $user->can('quizzes.manage')) {
+            return false;
+        }
+
+        // Prevent deletion if attempts exist
+        if ($quiz->attempts()->exists()) {
+            return false;
+        }
+
+        return $this->canManage($user, $quiz);
+    }
+
+    public function publish(User $user, Quiz $quiz): bool
+    {
+        if (! $user->can('quizzes.manage')) {
+            return false;
+        }
+
+        return $this->canManage($user, $quiz);
+    }
+
+    public function archive(User $user, Quiz $quiz): bool
+    {
+        if (! $user->can('quizzes.manage')) {
+            return false;
+        }
+
+        return $this->canManage($user, $quiz);
+    }
+
+    public function preview(User $user, Quiz $quiz): bool
+    {
+        if (! $user->can('quizzes.view')) {
+            return false;
+        }
+
+        if ($user->hasAnyRole(['operator', 'kepala-pkbm'])) {
+            return true;
+        }
+
+        if ($user->hasRole('tutor')) {
+            return $quiz->penugasanMengajar->tutor_id === $user->tutor?->id;
+        }
+
+        return false;
+    }
+
+    public function gradeEssay(User $user, Quiz $quiz): bool
+    {
+        if (! $user->can('quizzes.manage')) {
+            return false;
+        }
+
+        return $this->canManage($user, $quiz);
+    }
+
+    public function viewRecap(User $user, Quiz $quiz): bool
+    {
+        if (! $user->can('quizzes.view')) {
             return false;
         }
 

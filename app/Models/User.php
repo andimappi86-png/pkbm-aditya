@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Auth\Passwords\CanResetPassword;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -73,6 +74,14 @@ class User extends Authenticatable
     public function student(): HasOne
     {
         return $this->hasOne(Student::class);
+    }
+
+    /**
+     * @return HasMany<Classroom, $this>
+     */
+    public function waliClassrooms(): HasMany
+    {
+        return $this->hasMany(Classroom::class, 'wali_kelas_id');
     }
 
     /**

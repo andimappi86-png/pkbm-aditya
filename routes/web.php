@@ -6,6 +6,7 @@ use App\Http\Controllers\AssignmentController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\ClassroomAssignmentController;
 use App\Http\Controllers\ClassroomController;
+use App\Http\Controllers\ClassroomMemberController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\ForumCommentController;
@@ -18,8 +19,10 @@ use App\Http\Controllers\PenugasanMengajarController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProgramController;
 use App\Http\Controllers\QuestionController;
+use App\Http\Controllers\QuizAiController;
 use App\Http\Controllers\QuizAttemptController;
 use App\Http\Controllers\QuizController;
+use App\Http\Controllers\QuizEssayGradeController;
 use App\Http\Controllers\RaporController;
 use App\Http\Controllers\RekapAkademikController;
 use App\Http\Controllers\ReportController;
@@ -31,24 +34,29 @@ use App\Http\Controllers\SubjectController;
 use App\Http\Controllers\SubmissionController;
 use App\Http\Controllers\TutorController;
 use App\Http\Controllers\UserController;
+use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/debug-dashboard', function () {
     return response()->json(['user' => auth()->user()?->email, 'id' => auth()->id()]);
 })->middleware(['auth']);
 
-Route::get('/debug-find-user', function (\Illuminate\Http\Request $request) {
+Route::get('/debug-find-user', function (Request $request) {
     $db = config('database.connections.mysql.database');
-    $user = \App\Models\User::where('email', $request->query('email'))->first();
+    $user = User::where('email', $request->query('email'))->first();
     if ($user) {
-        $check = \Illuminate\Support\Facades\Hash::check($request->query('password'), $user->password);
+        $check = Hash::check($request->query('password'), $user->password);
+
         return response()->json(['found' => true, 'id' => $user->id, 'hash_check' => $check, 'db' => $db]);
     }
+
     return response()->json(['found' => false, 'db' => $db]);
 });
 
 // Landing page route
-Route::get('/', fn() => view('landing'))->name('landing');
+Route::get('/', fn () => view('landing'))->name('landing');
 
 // Operator login form (guest only)
 Route::get('/operator/login', [OperatorController::class, 'showLoginForm'])
@@ -118,6 +126,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Absensi - view actions
     Route::middleware(['auth', 'verified', 'can:attendance.view'])->group(function () {
         Route::get('absensi', [AttendanceController::class, 'index'])->name('absensi.index');
+        Route::get('attendances', [AttendanceController::class, 'index'])->name('attendances.index');
         Route::get('absensi/{attendance}', [AttendanceController::class, 'show'])->name('absensi.show');
     });
 
@@ -153,6 +162,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware(['auth', 'verified', 'can:quizzes.manage'])->group(function () {
         Route::get('quiz/create', [QuizController::class, 'create'])->name('quiz.create');
         Route::post('quiz', [QuizController::class, 'store'])->name('quiz.store');
+        Route::post('quiz/ai/generate', [QuizAiController::class, 'generate'])->name('quiz.ai.generate');
         Route::get('quiz/{quiz}/edit', [QuizController::class, 'edit'])->name('quiz.edit');
         Route::put('quiz/{quiz}', [QuizController::class, 'update'])->name('quiz.update');
         Route::delete('quiz/{quiz}', [QuizController::class, 'destroy'])->name('quiz.destroy');
@@ -172,6 +182,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('attempts/{attempt}/answer', [QuizAttemptController::class, 'answer'])->name('attempts.answer');
         Route::post('attempts/{attempt}/submit', [QuizAttemptController::class, 'submit'])->name('attempts.submit');
         Route::get('attempts/{attempt}', [QuizAttemptController::class, 'show'])->name('attempts.show');
+        Route::get('attempts/{attempt}/result', [QuizAttemptController::class, 'viewResult'])->name('attempts.result');
+
+        // Tutor actions
+        Route::middleware(['can:quizzes.manage'])->group(function () {
+            Route::post('publish', [QuizController::class, 'publish'])->name('publish');
+            Route::post('archive', [QuizController::class, 'archive'])->name('archive');
+            Route::get('preview', [QuizController::class, 'preview'])->name('preview');
+            Route::get('essay-grade', [QuizEssayGradeController::class, 'index'])->name('essay-grade');
+            Route::get('essay-grade/{attempt}', [QuizEssayGradeController::class, 'show'])->name('essay-grade.show');
+            Route::post('essay-grade/{attempt}', [QuizEssayGradeController::class, 'grade'])->name('essay-grade.grade');
+            Route::post('essay-grade/{attempt}/complete', [QuizEssayGradeController::class, 'completeGrading'])->name('essay-grade.complete');
+            Route::get('recap', [QuizController::class, 'recap'])->name('recap');
+        });
     });
 
     // Forum - view actions (uses announcements permissions)
@@ -256,6 +279,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('rombel/{classroom}/edit', [ClassroomController::class, 'edit'])->name('rombel.edit');
         Route::put('rombel/{classroom}', [ClassroomController::class, 'update'])->name('rombel.update');
         Route::delete('rombel/{classroom}', [ClassroomController::class, 'destroy'])->name('rombel.destroy');
+
+        // Rombel - member management (wali kelas & operator)
+        Route::get('rombel/{classroom}/unassigned-students', [ClassroomMemberController::class, 'unassignedStudents'])->name('rombel.unassigned-students');
+        Route::post('rombel/{classroom}/students/assign', [ClassroomMemberController::class, 'assignExisting'])->name('rombel.students.assign');
+        Route::post('rombel/{classroom}/students/quick-store', [ClassroomMemberController::class, 'quickStore'])->name('rombel.students.quick-store');
+        Route::post('rombel/{classroom}/students/bulk-preview', [ClassroomMemberController::class, 'bulkPreview'])->name('rombel.students.bulk-preview');
+        Route::post('rombel/{classroom}/students/bulk-store', [ClassroomMemberController::class, 'bulkStore'])->name('rombel.students.bulk-store');
+        Route::post('rombel/{classroom}/students/{student}/remove', [ClassroomMemberController::class, 'remove'])->name('rombel.students.remove');
+        Route::delete('rombel/{classroom}/students/{student}', [ClassroomMemberController::class, 'remove'])->name('rombel.students.destroy');
     });
 
     // Academic Years - view actions
@@ -381,6 +413,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Classroom Assignments
     Route::middleware(['auth', 'verified', 'can:classrooms.manage'])->group(function () {
         Route::get('/classroom-assignments', [ClassroomAssignmentController::class, 'index'])->name('classroom-assignments.index');
+        Route::post('/classroom-assignments/wali-kelas', [ClassroomAssignmentController::class, 'assignWaliKelas'])->name('classroom-assignments.assign-wali-kelas');
+        Route::delete('/classroom-assignments/wali-kelas/{classroom}', [ClassroomAssignmentController::class, 'removeWaliKelas'])->name('classroom-assignments.remove-wali-kelas');
+        Route::post('/classroom-assignments/teaching', [ClassroomAssignmentController::class, 'storeTeachingAssignment'])->name('classroom-assignments.store-teaching');
+        Route::put('/classroom-assignments/teaching/{penugasanMengajar}', [ClassroomAssignmentController::class, 'updateTeachingAssignment'])->name('classroom-assignments.update-teaching');
+        Route::patch('/classroom-assignments/teaching/{penugasanMengajar}/toggle-status', [ClassroomAssignmentController::class, 'toggleTeachingStatus'])->name('classroom-assignments.toggle-teaching-status');
+        Route::delete('/classroom-assignments/teaching/{penugasanMengajar}', [ClassroomAssignmentController::class, 'destroyTeachingAssignment'])->name('classroom-assignments.destroy-teaching');
         Route::get('/classroom-assignments/create-tutor-subject', [ClassroomAssignmentController::class, 'createTutorSubject'])->name('classroom-assignments.create-tutor-subject');
         Route::post('/classroom-assignments/store-tutor-subject', [ClassroomAssignmentController::class, 'storeTutorSubject'])->name('classroom-assignments.store-tutor-subject');
         Route::get('/classroom-assignments/create-tutor-classroom', [ClassroomAssignmentController::class, 'createTutorClassroom'])->name('classroom-assignments.create-tutor-classroom');
@@ -397,6 +435,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     Route::prefix('peserta-didik')->name('peserta-didik.')->group(function () {
+        Route::post('quick-store', [ClassroomMemberController::class, 'quickStore'])->name('quick-store');
         Route::get('template', [StudentController::class, 'template'])->name('template');
         Route::get('template/csv', [StudentController::class, 'templateCsv'])->name('template.csv');
         Route::get('import', [StudentController::class, 'importForm'])->name('import');

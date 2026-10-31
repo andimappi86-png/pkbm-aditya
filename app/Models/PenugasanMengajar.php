@@ -91,4 +91,9 @@ class PenugasanMengajar extends Model
     {
         return $this->hasMany(Quiz::class);
     }
+
+    public function schedules(): HasMany
+    {
+        return $this->hasMany(Schedule::class);
+    }
 }

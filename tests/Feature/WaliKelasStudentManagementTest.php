@@ -440,4 +440,301 @@ class WaliKelasStudentManagementTest extends TestCase
         $responseCreate->assertStatus(200);
         $this->assertEquals($this->rombelWali->id, $responseCreate->viewData('presetRombelId'));
     }
+
+    /** Skenario 13: Wali kelas dapat menambahkan siswa baru ke kelasnya via form ringkas (name/nisn/gender) tanpa pencatatan kehadiran otomatis. */
+    public function test_wali_kelas_can_add_student_via_quick_store_without_automatic_attendance(): void
+    {
+        $payload = [
+            'name' => 'Bintang Nusantara',
+            'nisn' => '0091234567',
+            'gender' => 'L',
+            'status_masuk' => 'Warga Belajar Baru',
+            'kontak' => '081234567899',
+            'rombel_id' => $this->rombelWali->id,
+            'tanggal' => '2026-10-27',
+        ];
+
+        $response = $this->actingAs($this->waliKelas)
+            ->post(route('rombel.students.quick-store', $this->rombelWali), $payload);
+
+        $response->assertSessionHas('success');
+
+        $this->assertDatabaseHas('students', [
+            'nama_lengkap' => 'Bintang Nusantara',
+            'nisn' => '0091234567',
+            'rombel_id' => $this->rombelWali->id,
+            'jenis_kelamin' => 'Laki-laki',
+        ]);
+
+        $student = Student::where('nisn', '0091234567')->firstOrFail();
+
+        // Pastikan tidak ada pencatatan kehadiran otomatis
+        $this->assertDatabaseMissing('attendances', [
+            'student_id' => $student->id,
+        ]);
+    }
+
+    /** Skenario 14: Wali kelas dapat memasukkan siswa unassigned ke kelasnya dan muncul di rombel. */
+    public function test_wali_kelas_can_assign_unassigned_students_to_own_classroom_via_modal(): void
+    {
+        $unassigned = Student::factory()->create([
+            'nama_lengkap' => 'Zaskia Gotik',
+            'nis' => 'UNASS01',
+            'nisn' => '0099887766',
+            'rombel_id' => null,
+            'program_id' => $this->programA->id,
+            'tahun_ajaran_id' => $this->academicYear->id,
+            'status' => 'aktif',
+        ]);
+
+        $response = $this->actingAs($this->waliKelas)
+            ->post(route('rombel.students.assign', $this->rombelWali), [
+                'student_ids' => [$unassigned->id],
+            ]);
+
+        $response->assertSessionHas('success');
+        $this->assertEquals($this->rombelWali->id, $unassigned->fresh()->rombel_id);
+    }
+
+    /** Skenario 15: Siswa yang baru ditambahkan tampil pada halaman absensi kelas dan halaman Kelasku. */
+    public function test_newly_added_student_appears_on_attendance_page_and_members_tab(): void
+    {
+        $student = Student::factory()->create([
+            'nama_lengkap' => 'Citra Kirana',
+            'nis' => 'CK01',
+            'nisn' => '0097766554',
+            'rombel_id' => $this->rombelWali->id,
+            'program_id' => $this->programA->id,
+            'tahun_ajaran_id' => $this->academicYear->id,
+            'status' => 'aktif',
+        ]);
+
+        $response = $this->actingAs($this->waliKelas)
+            ->get(route('absensi.index', [
+                'classroom_id' => $this->rombelWali->id,
+            ]));
+
+        $response->assertStatus(200);
+        $response->assertSee('Citra Kirana');
+
+        $kelaskuResponse = $this->actingAs($this->waliKelas)
+            ->get(route('peserta-didik.index'));
+
+        $kelaskuResponse->assertStatus(200);
+        $kelaskuResponse->assertSee('Citra Kirana');
+        $kelaskuResponse->assertSee('0097766554');
+        $kelaskuResponse->assertSee('+ Tambah Siswa');
+    }
+
+    /** Skenario 16: Halaman absensi murni untuk presensi harian dan rekap bulanan tanpa form input anggota kelas. */
+    public function test_attendance_page_does_not_contain_add_student_form(): void
+    {
+        $response = $this->actingAs($this->waliKelas)
+            ->get(route('absensi.index', ['classroom_id' => $this->rombelWali->id]));
+
+        $response->assertStatus(200);
+        $response->assertDontSee('+ Tambah Siswa ke Kelas');
+        $response->assertDontSee('3. Anggota Kelas (Wali Kelas)');
+    }
+
+    /** Skenario 17: Wali kelas ditolak (403) mengelola rombel yang bukan tanggung jawabnya (lintas rombel / unassigned). */
+    public function test_wali_kelas_cannot_manage_other_or_unassigned_classrooms(): void
+    {
+        // 1. Ditolak mengelola rombel milik wali kelas lain
+        $resOtherQuick = $this->actingAs($this->waliKelas)
+            ->post(route('rombel.students.quick-store', $this->rombelOther), [
+                'nama_lengkap' => 'Siswa Selundup 1',
+                'nisn' => '0081234567',
+                'gender' => 'L',
+                'rombel_id' => $this->rombelOther->id,
+            ]);
+        $this->assertTrue($resOtherQuick->status() === 403 || ($resOtherQuick->isRedirect() && session('error') !== null));
+
+        // 2. Ditolak mengelola rombel tanpa wali kelas (unassigned)
+        $unassignedRombel = Classroom::create([
+            'kode_rombel' => 'RBL-UNASSIGNED-1',
+            'nama_rombel' => 'Kelas Mandiri Terbuka',
+            'tingkat' => '10',
+            'program_id' => $this->programA->id,
+            'tahun_ajaran_id' => $this->academicYear->id,
+            'wali_kelas_id' => null,
+            'status_aktif' => true,
+        ]);
+
+        $resUnassignedQuick = $this->actingAs($this->waliKelas)
+            ->post(route('rombel.students.quick-store', $unassignedRombel), [
+                'nama_lengkap' => 'Siswa Mandiri Liar',
+                'nisn' => '0089887711',
+                'gender' => 'P',
+                'rombel_id' => $unassignedRombel->id,
+            ]);
+        $this->assertTrue($resUnassignedQuick->status() === 403 || ($resUnassignedQuick->isRedirect() && session('error') !== null));
+
+        // 3. Tombol kelola siswa tidak tampil di halaman absensi
+        $absensiOtherRes = $this->actingAs($this->waliKelas)
+            ->get(route('absensi.index', ['classroom_id' => $this->rombelOther->id]));
+        $absensiOtherRes->assertStatus(200);
+        $absensiOtherRes->assertDontSee('+ Tambah Siswa ke Kelas');
+    }
+
+    /** Skenario 18: Sidebar dan Dashboard menampilkan pintu akses ke fitur Kelasku / Tambah Siswa untuk wali kelas. */
+    public function test_sidebar_and_dashboard_display_access_to_class_members_for_wali_kelas(): void
+    {
+        $dashResponse = $this->actingAs($this->waliKelas)
+            ->get(route('dashboard.walikelas'));
+
+        $dashResponse->assertStatus(200);
+        $dashResponse->assertSee('+ Tambah Siswa');
+        $dashResponse->assertSee('Lihat Anggota Kelas');
+        $dashResponse->assertSee('Kelasku');
+    }
+
+    /** Skenario 19: Wali kelas dapat menambahkan siswa secara massal langsung ke rombelnya dan langsung terlihat di absensi. */
+    public function test_wali_kelas_can_bulk_store_students_to_own_classroom_and_see_in_attendance(): void
+    {
+        $rawText = "Raka Pratama | 0098877001 | L | 081211112222\nSiti Rahma | 0098877002 | P | 081233334444";
+
+        $response = $this->actingAs($this->waliKelas)
+            ->post(route('rombel.students.bulk-store', $this->rombelWali), [
+                'raw_text' => $rawText,
+            ]);
+
+        $response->assertSessionHas('success');
+
+        $this->assertDatabaseHas('students', [
+            'nama_lengkap' => 'Raka Pratama',
+            'nisn' => '0098877001',
+            'rombel_id' => $this->rombelWali->id,
+        ]);
+        $this->assertDatabaseHas('students', [
+            'nama_lengkap' => 'Siti Rahma',
+            'nisn' => '0098877002',
+            'rombel_id' => $this->rombelWali->id,
+        ]);
+
+        // Cek halaman absensi rombel wali: siswa baru langsung terlihat
+        $attResponse = $this->actingAs($this->waliKelas)
+            ->get(route('absensi.index', ['classroom_id' => $this->rombelWali->id]));
+        $attResponse->assertStatus(200);
+        $attResponse->assertSee('Raka Pratama');
+        $attResponse->assertSee('Siti Rahma');
+    }
+
+    /** Skenario 20: Halaman Kelasku (Daftar Peserta Didik) menampilkan tombol + Tambah Siswa dan dropdown hanya rombel ampu. */
+    public function test_wali_kelas_sees_add_student_button_and_only_own_rombel_in_dropdown(): void
+    {
+        $response = $this->actingAs($this->waliKelas)
+            ->get(route('peserta-didik.index'));
+
+        $response->assertStatus(200);
+        $response->assertSee('+ Tambah Siswa');
+        $response->assertSee($this->rombelWali->nama_rombel);
+        $response->assertDontSee($this->rombelOther->nama_rombel);
+    }
+
+    /** Skenario 21: Wali kelas dapat menambahkan siswa langsung dari Kelasku dengan NIK, terdaftar di rombel dan absensi, tanpa akun login otomatis. */
+    public function test_wali_kelas_can_quick_store_student_from_kelasku_without_auto_user_account(): void
+    {
+        $initialUserCount = User::count();
+
+        $response = $this->actingAs($this->waliKelas)
+            ->post(route('peserta-didik.quick-store'), [
+                'rombel_id' => $this->rombelWali->id,
+                'nama_lengkap' => 'Budi Santoso',
+                'nisn' => '0098877009',
+                'nik' => '3201010101010001',
+                'jenis_kelamin' => 'L',
+                'status_masuk' => 'Siswa Baru',
+                'no_hp' => '081234567890',
+                'redirect_to' => route('peserta-didik.index'),
+            ]);
+
+        $response->assertRedirect(route('peserta-didik.index'));
+        $response->assertSessionHas('success');
+
+        // Pastikan tidak ada user account otomatis dibuat
+        $this->assertEquals($initialUserCount, User::count());
+
+        // Verifikasi di database siswa (nik terenkripsi, cek via model)
+        $student = Student::where('nisn', '0098877009')->firstOrFail();
+        $this->assertEquals('Budi Santoso', $student->nama_lengkap);
+        $this->assertEquals('3201010101010001', $student->nik);
+        $this->assertEquals($this->rombelWali->id, $student->rombel_id);
+        $this->assertEquals('aktif', $student->status);
+
+        // Verifikasi muncul di halaman Kelasku
+        $kelaskuResponse = $this->actingAs($this->waliKelas)
+            ->get(route('peserta-didik.index'));
+        $kelaskuResponse->assertStatus(200);
+        $kelaskuResponse->assertSee('Budi Santoso');
+        $kelaskuResponse->assertSee('0098877009');
+
+        // Verifikasi muncul di absensi rombel ampu
+        $absensiResponse = $this->actingAs($this->waliKelas)
+            ->get(route('absensi.index', ['classroom_id' => $this->rombelWali->id]));
+        $absensiResponse->assertStatus(200);
+        $absensiResponse->assertSee('Budi Santoso');
+    }
+
+    /** Skenario 22: Wali kelas dilarang menambahkan siswa ke rombel lain melalui quick-store. */
+    public function test_wali_kelas_cannot_quick_store_student_to_unauthorized_rombel(): void
+    {
+        $response = $this->actingAs($this->waliKelas)
+            ->post(route('peserta-didik.quick-store'), [
+                'rombel_id' => $this->rombelOther->id,
+                'nama_lengkap' => 'Ilegal Student',
+                'nisn' => '0098877999',
+                'jenis_kelamin' => 'L',
+            ]);
+
+        $response->assertRedirect(route('dashboard.walikelas'));
+        $response->assertSessionHas('error');
+        $this->assertDatabaseMissing('students', [
+            'nama_lengkap' => 'Ilegal Student',
+        ]);
+
+        // Cek juga via JSON request
+        $jsonResponse = $this->actingAs($this->waliKelas)
+            ->postJson(route('peserta-didik.quick-store'), [
+                'rombel_id' => $this->rombelOther->id,
+                'nama_lengkap' => 'Ilegal Student JSON',
+                'nisn' => '0098877998',
+                'jenis_kelamin' => 'L',
+            ]);
+        $jsonResponse->assertStatus(403);
+    }
+
+    /** Skenario 23: Quick-store memvalidasi duplikasi NISN dan NIK. */
+    public function test_quick_store_validates_duplicate_nisn_and_nik(): void
+    {
+        Student::factory()->create([
+            'nis' => '0011223344',
+            'nisn' => '0011223344',
+            'nik' => '3201010101019999',
+            'rombel_id' => $this->rombelWali->id,
+            'tahun_ajaran_id' => $this->academicYear->id,
+            'program_id' => $this->programA->id,
+        ]);
+
+        // Duplikasi NISN
+        $dupNisn = $this->actingAs($this->waliKelas)
+            ->post(route('peserta-didik.quick-store'), [
+                'rombel_id' => $this->rombelWali->id,
+                'nama_lengkap' => 'Siswa Baru Duplikat NISN',
+                'nisn' => '0011223344',
+                'jenis_kelamin' => 'L',
+            ]);
+        $dupNisn->assertSessionHasErrors(['nisn']);
+
+        // Duplikasi NIK
+        $dupNik = $this->actingAs($this->waliKelas)
+            ->post(route('peserta-didik.quick-store'), [
+                'rombel_id' => $this->rombelWali->id,
+                'nama_lengkap' => 'Siswa Baru Duplikat NIK',
+                'nisn' => '0011223388',
+                'nik' => '3201010101019999',
+                'jenis_kelamin' => 'L',
+            ]);
+        $dupNik->assertSessionHasErrors(['nik']);
+    }
 }

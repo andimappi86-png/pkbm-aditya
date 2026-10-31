@@ -12,6 +12,7 @@ use App\Models\Semester;
 use App\Models\Student;
 use App\Models\Tutor;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class RaporController extends Controller
 {
@@ -43,6 +44,7 @@ class RaporController extends Controller
         $isTutor = $roles->contains('tutor');
         $isWali = $roles->contains('wali-kelas');
 
+        $classroomIds = collect();
         if ($isTutor && $isWali) {
             $tutor = Tutor::where('user_id', $user->id)->first();
             $tutorClassroomIds = $tutor
@@ -73,7 +75,8 @@ class RaporController extends Controller
             $keyword = $filters['keyword'];
             $query->where(function ($q) use ($keyword) {
                 $q->where('nama_lengkap', 'like', "%{$keyword}%")
-                    ->orWhere('nomor_induk', 'like', "%{$keyword}%");
+                    ->orWhere('nis', 'like', "%{$keyword}%")
+                    ->orWhere('nisn', 'like', "%{$keyword}%");
             });
         }
 
@@ -82,9 +85,21 @@ class RaporController extends Controller
         $academicYears = AcademicYear::latest()->get();
         $semesters = Semester::all();
         $programs = Program::all();
-        $classrooms = Classroom::all();
 
-        return view('rapor.index', compact('students', 'filters', 'academicYears', 'semesters', 'programs', 'classrooms'));
+        $classroomsQuery = Classroom::query();
+        if ($isTutor || $isWali) {
+            $classroomsQuery->whereIn('id', $classroomIds);
+        }
+        $classrooms = $classroomsQuery->get();
+
+        $selectedClassroom = null;
+        if ($filters['classroom_id']) {
+            $selectedClassroom = Classroom::with(['program', 'academicYear'])
+                ->withCount('students')
+                ->find($filters['classroom_id']);
+        }
+
+        return view('rapor.index', compact('students', 'filters', 'academicYears', 'semesters', 'programs', 'classrooms', 'selectedClassroom'));
     }
 
     public function show(Request $request, Student $student)
@@ -107,7 +122,8 @@ class RaporController extends Controller
 
     private function authorizeStudentAccess(Student $student): void
     {
-        $user = auth()->user();
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
         abort_if(! $user->can('reports.view') && ! $user->hasAnyRole(['tutor', 'peserta-didik']), 403);
 
         $roles = $user->getRoleNames();

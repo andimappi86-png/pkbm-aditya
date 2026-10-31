@@ -37,23 +37,29 @@ class StudentPolicy
      */
     public function manageClassroom(User $user, Classroom $classroom): bool
     {
+        if ($user->hasAnyRole(['admin', 'operator', 'kepala-pkbm'])) {
+            return true;
+        }
+
+        if ($this->isScopedToOwnClassrooms($user)) {
+            return (int) $classroom->wali_kelas_id === (int) $user->id;
+        }
+
         if (! $user->can('students.create') && ! $user->can('students.update')) {
             return false;
         }
 
-        return $this->isScopedToOwnClassrooms($user)
-            ? (int) $classroom->wali_kelas_id === (int) $user->id
-            : true;
+        return (int) $classroom->wali_kelas_id === (int) $user->id;
     }
 
     /**
      * True ketika pengguna adalah wali kelas tanpa peran administratif
-     * (operator/kepala-pkbm): hanya boleh mengelola rombel miliknya sendiri.
+     * (operator/kepala-pkbm/admin): hanya boleh mengelola rombel miliknya sendiri.
      */
     public function isScopedToOwnClassrooms(User $user): bool
     {
-        return $user->hasRole('wali-kelas')
-            && ! $user->hasAnyRole(['operator', 'kepala-pkbm']);
+        return $user->hasAnyRole(['wali-kelas', 'wali_kelas', 'wali kelas'])
+            && ! $user->hasAnyRole(['operator', 'kepala-pkbm', 'admin']);
     }
 
     private function canAccess(User $user, Student $student): bool

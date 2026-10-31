@@ -42,8 +42,19 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 mb-8 text-sm">
                 <div class="flex"><span class="w-32 font-semibold">Nama Peserta Didik</span><span class="mr-2">:</span><span class="font-bold">{{ $student->nama_lengkap }}</span></div>
                 <div class="flex"><span class="w-32 font-semibold">Program</span><span class="mr-2">:</span><span>{{ $student->program?->nama ?? '-' }}</span></div>
-                <div class="flex"><span class="w-32 font-semibold">Nomor Induk / NISN</span><span class="mr-2">:</span><span>{{ $student->nomor_induk }}</span></div>
-                <div class="flex"><span class="w-32 font-semibold">Rombongan Belajar</span><span class="mr-2">:</span><span>{{ $student->classroom?->nama ?? '-' }}</span></div>
+                <div class="flex"><span class="w-32 font-semibold">NIS / NISN</span><span class="mr-2">:</span><span>{{ $student->nis ?: ($student->nisn ?: '-') }}</span></div>
+                <div class="flex">
+                    <span class="w-32 font-semibold">Rombongan Belajar</span>
+                    <span class="mr-2">:</span>
+                    @if($student->classroom)
+                        <a href="{{ route('rombel.show', $student->classroom) }}" class="font-semibold text-primary hover:underline inline-flex items-center gap-1" title="Lihat detail rombel {{ $student->classroom->nama_rombel }}">
+                            <span>{{ $student->classroom->nama_rombel }}</span>
+                            <svg class="w-3.5 h-3.5 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                        </a>
+                    @else
+                        <span>-</span>
+                    @endif
+                </div>
                 <div class="flex"><span class="w-32 font-semibold">Tahun Ajaran</span><span class="mr-2">:</span><span>{{ $selectedAcademicYear?->nama ?? '-' }}</span></div>
                 <div class="flex"><span class="w-32 font-semibold">Semester</span><span class="mr-2">:</span><span>{{ $selectedSemester?->nama ?? '-' }}</span></div>
             </div>

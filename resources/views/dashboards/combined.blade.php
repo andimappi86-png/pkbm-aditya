@@ -100,12 +100,19 @@
 
         <!-- SECTION 2: Ringkasan Rombel Binaan (Wali Kelas) -->
         <div>
-            <div class="flex items-center justify-between mb-3">
-                <h2 class="text-base font-bold text-navy uppercase tracking-wider flex items-center gap-2">
-                    <x-icon name="layers" class="w-5 h-5 text-emerald-600" />
-                    Tanggung Jawab Binaan (Wali Kelas)
-                </h2>
-                <span class="text-xs text-muted">Berdasarkan SK penetapan wali kelas</span>
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div class="flex items-center gap-2">
+                    <h2 class="text-lg font-bold text-navy flex items-center gap-2">
+                        <x-icon name="layers" class="w-5 h-5 text-emerald-600" />
+                        Tanggung Jawab Binaan (Wali Kelas)
+                    </h2>
+                    <span class="text-xs text-muted">Berdasarkan SK penetapan wali kelas</span>
+                </div>
+                <a href="{{ route('absensi.index', ['tab' => 'members']) }}"
+                   class="bg-[#14532D] hover:bg-[#0D2618] text-white rounded-xl px-3.5 py-1.5 text-xs font-semibold inline-flex items-center gap-1.5 whitespace-nowrap shadow-xs transition-colors self-start sm:self-auto">
+                    <x-icon name="user-plus" class="w-3.5 h-3.5" />
+                    <span>+ Kelola Siswa Kelas</span>
+                </a>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <x-stat-card

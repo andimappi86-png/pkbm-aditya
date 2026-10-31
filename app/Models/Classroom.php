@@ -40,11 +40,13 @@ class Classroom extends Model
         return $this->belongsTo(AcademicYear::class, 'tahun_ajaran_id');
     }
 
+    /** @return BelongsTo<User, $this> */
     public function waliKelas(): BelongsTo
     {
         return $this->belongsTo(User::class, 'wali_kelas_id');
     }
 
+    /** @return BelongsTo<User, $this> */
     public function homeroomTeacher(): BelongsTo
     {
         return $this->waliKelas();
