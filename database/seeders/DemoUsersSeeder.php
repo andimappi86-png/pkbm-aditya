@@ -29,7 +29,7 @@ class DemoUsersSeeder extends Seeder
         $this->command->info('Creating demo users for each role...');
 
         // 1. Ketua Yayasan
-        $ketua = User::firstOrCreate(
+        $ketua = User::updateOrCreate(
             ['email' => 'ketua@pkbm-aditya.test'],
             [
                 'name' => 'Ketua Yayasan Demo',
@@ -50,7 +50,7 @@ class DemoUsersSeeder extends Seeder
         $this->command->info('✅ Ketua Yayasan: ketua@pkbm-aditya.test');
 
         // 2. Kepala PKBM
-        $kepala = User::firstOrCreate(
+        $kepala = User::updateOrCreate(
             ['email' => 'kepala@pkbm-aditya.test'],
             [
                 'name' => 'Kepala PKBM Demo',
@@ -71,7 +71,7 @@ class DemoUsersSeeder extends Seeder
         $this->command->info('✅ Kepala PKBM: kepala@pkbm-aditya.test');
 
         // 3. Wali Kelas
-        $walikelas = User::firstOrCreate(
+        $walikelas = User::updateOrCreate(
             ['email' => 'walikelas@pkbm-aditya.test'],
             [
                 'name' => 'Wali Kelas Demo',
@@ -92,7 +92,7 @@ class DemoUsersSeeder extends Seeder
         $this->command->info('✅ Wali Kelas: walikelas@pkbm-aditya.test');
 
         // 4. Tutor
-        $tutor = User::firstOrCreate(
+        $tutor = User::updateOrCreate(
             ['email' => 'tutor@pkbm-aditya.test'],
             [
                 'name' => 'Tutor Demo',
@@ -113,7 +113,7 @@ class DemoUsersSeeder extends Seeder
         $this->command->info('✅ Tutor: tutor@pkbm-aditya.test');
 
         // 5. Peserta Didik
-        $siswa = User::firstOrCreate(
+        $siswa = User::updateOrCreate(
             ['email' => 'siswa@pkbm-aditya.test'],
             [
                 'name' => 'Siswa Demo',
@@ -141,7 +141,7 @@ class DemoUsersSeeder extends Seeder
         }
 
         // 6. Operator
-        $operator = User::firstOrCreate(
+        $operator = User::updateOrCreate(
             ['email' => 'operator@pkbm-aditya.test'],
             [
                 'name' => 'Operator Demo',
